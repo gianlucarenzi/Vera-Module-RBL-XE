@@ -757,30 +757,6 @@ F 3 "https://www.onsemi.com/pub/Collateral/BSS138-D.PDF" H 2500 6500 50  0001 L 
 	1    2500 6500
 	0    1    1    0   
 $EndComp
-$Comp
-L Device:R_Small R34
-U 1 1 68D181AC
-P 2775 6375
-F 0 "R34" H 2834 6421 50  0000 L CNN
-F 1 "10K" H 2834 6330 50  0000 L CNN
-F 2 "" H 2775 6375 50  0001 C CNN
-F 3 "~" H 2775 6375 50  0001 C CNN
-F 4 "" H 2775 6375 50  0001 C CNN "LCSC"
-	1    2775 6375
-	1    0    0    -1  
-$EndComp
-$Comp
-L Device:R_Small R33
-U 1 1 68D19087
-P 2200 6375
-F 0 "R33" H 2259 6421 50  0000 L CNN
-F 1 "10K" H 2259 6330 50  0000 L CNN
-F 2 "" H 2200 6375 50  0001 C CNN
-F 3 "~" H 2200 6375 50  0001 C CNN
-F 4 "" H 2200 6375 50  0001 C CNN "LCSC"
-	1    2200 6375
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	2200 6275 2200 6150
 Wire Wire Line
@@ -944,4 +920,32 @@ Wire Notes Line
 	750  5250 750  7125
 Text GLabel 2850 4775 0    39   BiDi ~ 0
 IO0
+$Comp
+L Device:R_Small R?
+U 1 1 6895B658
+P 2775 6375
+AR Path="/68821B60/6895B658" Ref="R?"  Part="1" 
+AR Path="/68821BC9/6895B658" Ref="R?"  Part="1" 
+F 0 "R?" H 2834 6421 50  0000 L CNN
+F 1 "10K" H 2834 6330 50  0000 L CNN
+F 2 "" H 2775 6375 50  0001 C CNN
+F 3 "~" H 2775 6375 50  0001 C CNN
+F 4 "C17902" H 2775 6375 50  0001 C CNN "LCSC"
+	1    2775 6375
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:R_Small R?
+U 1 1 68964972
+P 2200 6375
+AR Path="/68821B60/68964972" Ref="R?"  Part="1" 
+AR Path="/68821BC9/68964972" Ref="R?"  Part="1" 
+F 0 "R?" H 2259 6421 50  0000 L CNN
+F 1 "10K" H 2259 6330 50  0000 L CNN
+F 2 "" H 2200 6375 50  0001 C CNN
+F 3 "~" H 2200 6375 50  0001 C CNN
+F 4 "C17902" H 2200 6375 50  0001 C CNN "LCSC"
+	1    2200 6375
+	1    0    0    -1  
+$EndComp
 $EndSCHEMATC
