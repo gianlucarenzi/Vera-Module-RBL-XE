@@ -60,20 +60,6 @@ F 3 "" H 9125 5475 50  0001 C CNN
 $EndComp
 Wire Wire Line
 	9950 5075 9850 5075
-$Comp
-L Device:C_Small C?
-U 1 1 688FE722
-P 9550 5225
-AR Path="/68821B60/688FE722" Ref="C?"  Part="1" 
-AR Path="/688FC286/688FE722" Ref="C43"  Part="1" 
-F 0 "C43" H 9458 5179 50  0000 R CNN
-F 1 "1uF" H 9458 5270 50  0000 R CNN
-F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 9550 5225 50  0001 C CNN
-F 3 "~" H 9550 5225 50  0001 C CNN
-F 4 "" H 9550 5225 50  0001 C CNN "LCSC"
-	1    9550 5225
-	-1   0    0    1   
-$EndComp
 Wire Wire Line
 	9550 5125 9550 5075
 Connection ~ 9550 5075
@@ -131,20 +117,6 @@ F 3 "" H 7000 5550 50  0001 C CNN
 	1    7000 5550
 	1    0    0    -1  
 $EndComp
-$Comp
-L Device:C_Small C?
-U 1 1 68903E63
-P 7750 5275
-AR Path="/68821B60/68903E63" Ref="C?"  Part="1" 
-AR Path="/688FC286/68903E63" Ref="C46"  Part="1" 
-F 0 "C46" H 7658 5229 50  0000 R CNN
-F 1 "100nF" H 7658 5320 50  0000 R CNN
-F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 7750 5275 50  0001 C CNN
-F 3 "~" H 7750 5275 50  0001 C CNN
-F 4 "" H 7750 5275 50  0001 C CNN "LCSC"
-	1    7750 5275
-	-1   0    0    1   
-$EndComp
 Wire Wire Line
 	7300 5100 7375 5100
 Wire Wire Line
@@ -162,20 +134,6 @@ F 2 "" H 7925 5025 50  0001 C CNN
 F 3 "" H 7925 5025 50  0001 C CNN
 	1    7925 5025
 	1    0    0    -1  
-$EndComp
-$Comp
-L Device:C_Small C?
-U 1 1 6891484E
-P 6525 5275
-AR Path="/68821B60/6891484E" Ref="C?"  Part="1" 
-AR Path="/688FC286/6891484E" Ref="C44"  Part="1" 
-F 0 "C44" H 6500 5200 50  0000 R CNN
-F 1 "100nF" H 6500 5375 50  0000 R CNN
-F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 6525 5275 50  0001 C CNN
-F 3 "~" H 6525 5275 50  0001 C CNN
-F 4 "" H 6525 5275 50  0001 C CNN "LCSC"
-	1    6525 5275
-	-1   0    0    1   
 $EndComp
 Wire Wire Line
 	6400 5100 6525 5100
@@ -204,17 +162,6 @@ Wire Wire Line
 Connection ~ 7925 5100
 Wire Wire Line
 	7925 5100 8100 5100
-$Comp
-L Device:CP_Small C45
-U 1 1 689293A6
-P 7375 5275
-F 0 "C45" H 7463 5321 50  0000 L CNN
-F 1 "10uF" H 7463 5230 50  0000 L CNN
-F 2 "" H 7375 5275 50  0001 C CNN
-F 3 "~" H 7375 5275 50  0001 C CNN
-	1    7375 5275
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	7375 5475 7750 5475
 Wire Wire Line
@@ -946,31 +893,6 @@ Wire Wire Line
 Wire Wire Line
 	2875 5600 2875 5500
 Connection ~ 2875 5600
-$Comp
-L Device:CP_Small C48
-U 1 1 68FB0C2A
-P 3350 5400
-F 0 "C48" H 3438 5446 50  0000 L CNN
-F 1 "10uF" H 3438 5355 50  0000 L CNN
-F 2 "" H 3350 5400 50  0001 C CNN
-F 3 "~" H 3350 5400 50  0001 C CNN
-	1    3350 5400
-	1    0    0    -1  
-$EndComp
-$Comp
-L Device:C_Small C?
-U 1 1 68FB1DD4
-P 3750 5425
-AR Path="/68821B60/68FB1DD4" Ref="C?"  Part="1" 
-AR Path="/688FC286/68FB1DD4" Ref="C49"  Part="1" 
-F 0 "C49" H 3658 5379 50  0000 R CNN
-F 1 "100nF" H 3658 5470 50  0000 R CNN
-F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 3750 5425 50  0001 C CNN
-F 3 "~" H 3750 5425 50  0001 C CNN
-F 4 "" H 3750 5425 50  0001 C CNN "LCSC"
-	1    3750 5425
-	-1   0    0    1   
-$EndComp
 Wire Wire Line
 	3175 5200 3350 5200
 Wire Wire Line
@@ -1210,4 +1132,72 @@ Wire Notes Line
 	3975 6075 2075 6075
 Wire Notes Line
 	2075 6075 2075 7425
+$Comp
+L TCAP3528:10uF C48
+U 1 1 68927AA5
+P 3350 5400
+F 0 "C48" H 3438 5446 50  0000 L CNN
+F 1 "10uF" H 3438 5355 50  0000 L CNN
+F 2 "Capacitor_Tantalum_SMD:CP_EIA-3528-12_Kemet-T_Pad1.50x2.35mm_HandSolder" H 3360 5750 50  0001 C CNN
+F 3 "" H 3350 5400 50  0001 C CNN
+F 4 "C8017" H 3155 5660 50  0001 C CNN "LCSC"
+	1    3350 5400
+	1    0    0    -1  
+$EndComp
+$Comp
+L CCAP1206:100nF C49
+U 1 1 6892AC25
+P 3750 5425
+F 0 "C49" H 3658 5379 50  0000 R CNN
+F 1 "100nF" H 3658 5470 50  0000 R CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 3750 5425 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/" H 3750 5425 50  0001 C CNN
+	1    3750 5425
+	-1   0    0    1   
+$EndComp
+$Comp
+L CCAP1206:100nF C44
+U 1 1 6892FF44
+P 6525 5275
+F 0 "C44" H 6433 5229 50  0000 R CNN
+F 1 "100nF" H 6433 5320 50  0000 R CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 6525 5275 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/" H 6525 5275 50  0001 C CNN
+	1    6525 5275
+	-1   0    0    1   
+$EndComp
+$Comp
+L TCAP3528:10uF C45
+U 1 1 68930A38
+P 7375 5275
+F 0 "C45" H 7463 5321 50  0000 L CNN
+F 1 "10uF" H 7463 5230 50  0000 L CNN
+F 2 "Capacitor_Tantalum_SMD:CP_EIA-3528-12_Kemet-T_Pad1.50x2.35mm_HandSolder" H 7385 5625 50  0001 C CNN
+F 3 "" H 7375 5275 50  0001 C CNN
+F 4 "C8017" H 7180 5535 50  0001 C CNN "LCSC"
+	1    7375 5275
+	1    0    0    -1  
+$EndComp
+$Comp
+L CCAP1206:100nF C46
+U 1 1 68936E59
+P 7750 5275
+F 0 "C46" H 7658 5229 50  0000 R CNN
+F 1 "100nF" H 7658 5320 50  0000 R CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 7750 5275 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/" H 7750 5275 50  0001 C CNN
+	1    7750 5275
+	-1   0    0    1   
+$EndComp
+$Comp
+L CCAP1206:1uF C43
+U 1 1 68937CC3
+P 9550 5225
+F 0 "C43" H 9642 5271 50  0000 L CNN
+F 1 "1uF" H 9642 5180 50  0000 L CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 9550 5225 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/" H 9550 5225 50  0001 C CNN
+	1    9550 5225
+	1    0    0    -1  
+$EndComp
 $EndSCHEMATC

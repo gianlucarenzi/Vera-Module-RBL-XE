@@ -52,18 +52,6 @@ F 3 "" H 8050 4425 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Device:C_Small C29
-U 1 1 68DD4EC9
-P 6700 4775
-F 0 "C29" H 6792 4821 50  0000 L CNN
-F 1 "100nF" H 6792 4730 50  0000 L CNN
-F 2 "" H 6700 4775 50  0001 C CNN
-F 3 "~" H 6700 4775 50  0001 C CNN
-F 4 "" H 6700 4775 50  0001 C CNN "LCSC"
-	1    6700 4775
-	1    0    0    -1  
-$EndComp
-$Comp
 L power:GND #PWR089
 U 1 1 68DD51F9
 P 6700 4875
@@ -496,18 +484,6 @@ F 3 "" H 6400 1675 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Device:C_Small C27
-U 1 1 68EB1B7B
-P 4800 1375
-F 0 "C27" H 4892 1421 50  0000 L CNN
-F 1 "100nF" H 4892 1330 50  0000 L CNN
-F 2 "" H 4800 1375 50  0001 C CNN
-F 3 "~" H 4800 1375 50  0001 C CNN
-F 4 "" H 4800 1375 50  0001 C CNN "LCSC"
-	1    4800 1375
-	1    0    0    -1  
-$EndComp
-$Comp
 L power:GND #PWR076
 U 1 1 68EB2005
 P 4800 1475
@@ -581,22 +557,6 @@ F 3 "" H 1225 6150 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Device:C_Small C36
-U 1 1 68ED83D1
-P 2825 6675
-F 0 "C36" H 2917 6721 50  0000 L CNN
-F 1 "2.2uF" H 2917 6630 50  0000 L CNN
-F 2 "" H 2825 6675 50  0001 C CNN
-F 3 "~" H 2825 6675 50  0001 C CNN
-F 4 "" H 2825 6675 50  0001 C CNN "LCSC"
-	1    2825 6675
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	2500 6550 2825 6550
-Wire Wire Line
-	2825 6550 2825 6575
-$Comp
 L power:GND #PWR094
 U 1 1 68EDE8EA
 P 2825 6900
@@ -614,29 +574,14 @@ Wire Wire Line
 Wire Wire Line
 	2600 6350 2500 6350
 Wire Wire Line
-	2825 6775 2825 6850
-Wire Wire Line
 	2600 6350 3175 6350
 Wire Wire Line
 	3175 6350 3175 6850
 Wire Wire Line
 	3175 6850 2825 6850
 Connection ~ 2600 6350
-Connection ~ 2825 6850
 Wire Wire Line
 	2825 6850 2825 6900
-$Comp
-L Device:C_Small C33
-U 1 1 68EEEC9E
-P 3300 6425
-F 0 "C33" H 3392 6471 50  0000 L CNN
-F 1 "1uF" H 3392 6380 50  0000 L CNN
-F 2 "" H 3300 6425 50  0001 C CNN
-F 3 "~" H 3300 6425 50  0001 C CNN
-F 4 "" H 3300 6425 50  0001 C CNN "LCSC"
-	1    3300 6425
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	3175 6850 3300 6850
 Wire Wire Line
@@ -724,18 +669,6 @@ F 7 "W25Q16JVSNIQ-ND" H 8050 4825 39  0001 C CNN "Supply 1 Part Number"
 	1    8050 4825
 	1    0    0    -1  
 $EndComp
-$Comp
-L Device:C_Small C32
-U 1 1 69A0A5B1
-P 2900 5800
-F 0 "C32" H 2992 5846 50  0000 L CNN
-F 1 "1uF" H 2992 5755 50  0000 L CNN
-F 2 "" H 2900 5800 50  0001 C CNN
-F 3 "~" H 2900 5800 50  0001 C CNN
-F 4 "" H 2900 5800 50  0001 C CNN "LCSC"
-	1    2900 5800
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	2500 5750 2675 5750
 Wire Wire Line
@@ -749,30 +682,6 @@ Wire Wire Line
 Wire Wire Line
 	2675 5900 2900 5900
 $Comp
-L Device:C_Small C30
-U 1 1 69A15180
-P 3375 5575
-F 0 "C30" H 3467 5621 50  0000 L CNN
-F 1 "1uF" H 3467 5530 50  0000 L CNN
-F 2 "" H 3375 5575 50  0001 C CNN
-F 3 "~" H 3375 5575 50  0001 C CNN
-F 4 "" H 3375 5575 50  0001 C CNN "LCSC"
-	1    3375 5575
-	1    0    0    -1  
-$EndComp
-$Comp
-L Device:C_Small C31
-U 1 1 69A15873
-P 3875 5575
-F 0 "C31" H 3967 5621 50  0000 L CNN
-F 1 "1uF" H 3967 5530 50  0000 L CNN
-F 2 "" H 3875 5575 50  0001 C CNN
-F 3 "~" H 3875 5575 50  0001 C CNN
-F 4 "" H 3875 5575 50  0001 C CNN "LCSC"
-	1    3875 5575
-	1    0    0    -1  
-$EndComp
-$Comp
 L power:GND #PWR091
 U 1 1 69A15D35
 P 4250 5725
@@ -784,12 +693,7 @@ F 3 "" H 4250 5725 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	3375 5675 3875 5675
-Wire Wire Line
-	3875 5675 4250 5675
-Wire Wire Line
 	4250 5675 4250 5725
-Connection ~ 3875 5675
 Wire Wire Line
 	2500 5350 2950 5350
 $Comp
@@ -938,18 +842,6 @@ F 3 "" H 2575 1650 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Device:C_Small C28
-U 1 1 68D0AC10
-P 2575 1550
-F 0 "C28" H 2667 1596 50  0000 L CNN
-F 1 "100nF" H 2667 1505 50  0000 L CNN
-F 2 "" H 2575 1550 50  0001 C CNN
-F 3 "~" H 2575 1550 50  0001 C CNN
-F 4 "" H 2575 1550 50  0001 C CNN "LCSC"
-	1    2575 1550
-	1    0    0    -1  
-$EndComp
-$Comp
 L power:+3.3V #PWR072
 U 1 1 68D043D7
 P 1850 1100
@@ -1066,4 +958,104 @@ Wire Notes Line
 	6350 3775 6350 5725
 Text Notes 6450 3950 0    79   Italic 16
 SPI 16MB FLASH
+$Comp
+L CCAP1206:100nF C28
+U 1 1 688E1708
+P 2575 1550
+F 0 "C28" H 2667 1596 50  0000 L CNN
+F 1 "100nF" H 2667 1505 50  0000 L CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 2575 1550 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/" H 2575 1550 50  0001 C CNN
+	1    2575 1550
+	1    0    0    -1  
+$EndComp
+$Comp
+L CCAP1206:100nF C27
+U 1 1 688E9AA2
+P 4800 1375
+F 0 "C27" H 4892 1421 50  0000 L CNN
+F 1 "100nF" H 4892 1330 50  0000 L CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 4800 1375 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/" H 4800 1375 50  0001 C CNN
+	1    4800 1375
+	1    0    0    -1  
+$EndComp
+$Comp
+L CCAP1206:100nF C29
+U 1 1 688EC5F1
+P 6700 4775
+F 0 "C29" H 6608 4729 50  0000 R CNN
+F 1 "100nF" H 6608 4820 50  0000 R CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 6700 4775 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/" H 6700 4775 50  0001 C CNN
+	1    6700 4775
+	-1   0    0    1   
+$EndComp
+$Comp
+L CCAP1206:1uF C30
+U 1 1 688EEE98
+P 3375 5575
+F 0 "C30" H 3467 5621 50  0000 L CNN
+F 1 "1uF" H 3467 5530 50  0000 L CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 3375 5575 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/" H 3375 5575 50  0001 C CNN
+	1    3375 5575
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3375 5675 3875 5675
+$Comp
+L CCAP1206:1uF C31
+U 1 1 688F1F47
+P 3875 5575
+F 0 "C31" H 3967 5621 50  0000 L CNN
+F 1 "1uF" H 3967 5530 50  0000 L CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 3875 5575 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/" H 3875 5575 50  0001 C CNN
+	1    3875 5575
+	1    0    0    -1  
+$EndComp
+Connection ~ 3875 5675
+Wire Wire Line
+	3875 5675 4250 5675
+$Comp
+L CCAP1206:1uF C33
+U 1 1 688F250D
+P 3300 6425
+F 0 "C33" H 3208 6379 50  0000 R CNN
+F 1 "1uF" H 3208 6470 50  0000 R CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 3300 6425 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/" H 3300 6425 50  0001 C CNN
+	1    3300 6425
+	-1   0    0    1   
+$EndComp
+$Comp
+L CCAP1206:1uF C32
+U 1 1 688F2A93
+P 2900 5800
+F 0 "C32" H 2992 5846 50  0000 L CNN
+F 1 "1uF" H 2992 5755 50  0000 L CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 2900 5800 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/" H 2900 5800 50  0001 C CNN
+	1    2900 5800
+	1    0    0    -1  
+$EndComp
+$Comp
+L CCAP1206:2.2uF C36
+U 1 1 688F33A1
+P 2825 6675
+F 0 "C36" H 2728 6629 50  0000 R CNN
+F 1 "2.2uF" H 2728 6720 50  0000 R CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 2825 6675 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/" H 2825 6675 50  0001 C CNN
+	1    2825 6675
+	-1   0    0    1   
+$EndComp
+Wire Wire Line
+	2500 6550 2825 6550
+Wire Wire Line
+	2825 6550 2825 6575
+Wire Wire Line
+	2825 6775 2825 6850
+Connection ~ 2825 6850
 $EndSCHEMATC

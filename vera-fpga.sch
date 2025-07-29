@@ -57,18 +57,6 @@ F 3 "http://www.latticesemi.com/Products/FPGAandCPLD/iCE40Ultra" H 6950 4575 50 
 	4    7350 3575
 	1    0    0    -1  
 $EndComp
-$Comp
-L Device:C_Small C4
-U 1 1 68830330
-P 1950 2375
-F 0 "C4" V 1721 2375 50  0000 C CNN
-F 1 "1uF" V 1812 2375 50  0000 C CNN
-F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 1950 2375 50  0001 C CNN
-F 3 "~" H 1950 2375 50  0001 C CNN
-F 4 "" H 1950 2375 50  0001 C CNN "LCSC"
-	1    1950 2375
-	0    1    1    0   
-$EndComp
 Wire Wire Line
 	1775 2550 1775 2375
 Wire Wire Line
@@ -86,18 +74,6 @@ F 3 "" H 2125 2375 50  0001 C CNN
 	1    2125 2375
 	1    0    0    -1  
 $EndComp
-$Comp
-L Device:C_Small C5
-U 1 1 68839293
-P 4250 2375
-F 0 "C5" V 4021 2375 50  0000 C CNN
-F 1 "1uF" V 4112 2375 50  0000 C CNN
-F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 4250 2375 50  0001 C CNN
-F 3 "~" H 4250 2375 50  0001 C CNN
-F 4 "" H 4250 2375 50  0001 C CNN "LCSC"
-	1    4250 2375
-	0    1    1    0   
-$EndComp
 Wire Wire Line
 	4075 2550 4075 2375
 Wire Wire Line
@@ -114,18 +90,6 @@ F 2 "" H 4425 2375 50  0001 C CNN
 F 3 "" H 4425 2375 50  0001 C CNN
 	1    4425 2375
 	1    0    0    -1  
-$EndComp
-$Comp
-L Device:C_Small C6
-U 1 1 6883FE04
-P 6100 2850
-F 0 "C6" V 5871 2850 50  0000 C CNN
-F 1 "1uF" V 5962 2850 50  0000 C CNN
-F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 6100 2850 50  0001 C CNN
-F 3 "~" H 6100 2850 50  0001 C CNN
-F 4 "" H 6100 2850 50  0001 C CNN "LCSC"
-	1    6100 2850
-	0    1    1    0   
 $EndComp
 Wire Wire Line
 	5925 3025 5925 2850
@@ -195,30 +159,6 @@ Wire Wire Line
 Wire Wire Line
 	7450 2975 7450 3175
 Connection ~ 7450 2975
-$Comp
-L Device:C_Small C7
-U 1 1 688647EE
-P 7725 3125
-F 0 "C7" H 7633 3079 50  0000 R CNN
-F 1 "1uF" H 7633 3170 50  0000 R CNN
-F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 7725 3125 50  0001 C CNN
-F 3 "~" H 7725 3125 50  0001 C CNN
-F 4 "" H 7725 3125 50  0001 C CNN "LCSC"
-	1    7725 3125
-	-1   0    0    1   
-$EndComp
-$Comp
-L Device:C_Small C8
-U 1 1 68865C48
-P 8050 3125
-F 0 "C8" H 7958 3079 50  0000 R CNN
-F 1 "1uF" H 7958 3170 50  0000 R CNN
-F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 8050 3125 50  0001 C CNN
-F 3 "~" H 8050 3125 50  0001 C CNN
-F 4 "" H 8050 3125 50  0001 C CNN "LCSC"
-	1    8050 3125
-	-1   0    0    1   
-$EndComp
 Wire Wire Line
 	8050 2975 8050 3025
 Wire Wire Line
@@ -529,18 +469,6 @@ Text Label 7700 1600 0    39   ~ 0
 VSYSCLK
 Text GLabel 7700 1900 2    39   Output ~ 0
 ASYSCLK
-$Comp
-L Device:C_Small C3
-U 1 1 68A1A115
-P 6225 1725
-F 0 "C3" H 6317 1771 50  0000 L CNN
-F 1 "1uF" H 6317 1680 50  0000 L CNN
-F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 6225 1725 50  0001 C CNN
-F 3 "~" H 6225 1725 50  0001 C CNN
-F 4 "" H 6225 1725 50  0001 C CNN "LCSC"
-	1    6225 1725
-	1    0    0    -1  
-$EndComp
 $Comp
 L power:+3.3V #PWR014
 U 1 1 68A1E478
@@ -1304,18 +1232,6 @@ F 3 "" H 8525 1250 50  0001 C CNN
 	1    8525 1250
 	1    0    0    -1  
 $EndComp
-$Comp
-L Device:C_Small C1
-U 1 1 692448FC
-P 8525 1375
-F 0 "C1" H 8617 1421 50  0000 L CNN
-F 1 "1uF" H 8617 1330 50  0000 L CNN
-F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 8525 1375 50  0001 C CNN
-F 3 "~" H 8525 1375 50  0001 C CNN
-F 4 "" H 8525 1375 50  0001 C CNN "LCSC"
-	1    8525 1375
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	9925 1150 9925 1200
 Wire Wire Line
@@ -1342,18 +1258,6 @@ F 1 "+3.3V" H 9940 1323 50  0000 C CNN
 F 2 "" H 9925 1150 50  0001 C CNN
 F 3 "" H 9925 1150 50  0001 C CNN
 	1    9925 1150
-	1    0    0    -1  
-$EndComp
-$Comp
-L Device:C_Small C2
-U 1 1 692AF4F7
-P 8975 1375
-F 0 "C2" H 9067 1421 50  0000 L CNN
-F 1 "1uF" H 9067 1330 50  0000 L CNN
-F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 8975 1375 50  0001 C CNN
-F 3 "~" H 8975 1375 50  0001 C CNN
-F 4 "" H 8975 1375 50  0001 C CNN "LCSC"
-	1    8975 1375
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
@@ -1460,18 +1364,6 @@ F 3 "" H 8675 3125 50  0001 C CNN
 	1    8675 3125
 	1    0    0    -1  
 $EndComp
-$Comp
-L Device:C_Small C9
-U 1 1 695CACC4
-P 8675 3250
-F 0 "C9" H 8767 3296 50  0000 L CNN
-F 1 "1uF" H 8767 3205 50  0000 L CNN
-F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 8675 3250 50  0001 C CNN
-F 3 "~" H 8675 3250 50  0001 C CNN
-F 4 "" H 8675 3250 50  0001 C CNN "LCSC"
-	1    8675 3250
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	8675 3125 8675 3150
 Wire Wire Line
@@ -1485,18 +1377,6 @@ F 1 "GND" H 8680 3202 50  0000 C CNN
 F 2 "" H 8675 3375 50  0001 C CNN
 F 3 "" H 8675 3375 50  0001 C CNN
 	1    8675 3375
-	1    0    0    -1  
-$EndComp
-$Comp
-L Device:C_Small C10
-U 1 1 695CACDB
-P 9125 3250
-F 0 "C10" H 9217 3296 50  0000 L CNN
-F 1 "1uF" H 9217 3205 50  0000 L CNN
-F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 9125 3250 50  0001 C CNN
-F 3 "~" H 9125 3250 50  0001 C CNN
-F 4 "" H 9125 3250 50  0001 C CNN "LCSC"
-	1    9125 3250
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
@@ -1536,18 +1416,6 @@ F 3 "" H 8725 4725 50  0001 C CNN
 	1    8725 4725
 	1    0    0    -1  
 $EndComp
-$Comp
-L Device:C_Small C11
-U 1 1 695EBEB1
-P 8725 4850
-F 0 "C11" H 8817 4896 50  0000 L CNN
-F 1 "1uF" H 8817 4805 50  0000 L CNN
-F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 8725 4850 50  0001 C CNN
-F 3 "~" H 8725 4850 50  0001 C CNN
-F 4 "" H 8725 4850 50  0001 C CNN "LCSC"
-	1    8725 4850
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	8725 4725 8725 4750
 Wire Wire Line
@@ -1561,18 +1429,6 @@ F 1 "GND" H 8730 4802 50  0000 C CNN
 F 2 "" H 8725 4975 50  0001 C CNN
 F 3 "" H 8725 4975 50  0001 C CNN
 	1    8725 4975
-	1    0    0    -1  
-$EndComp
-$Comp
-L Device:C_Small C12
-U 1 1 695EBEC8
-P 9175 4850
-F 0 "C12" H 9267 4896 50  0000 L CNN
-F 1 "1uF" H 9267 4805 50  0000 L CNN
-F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 9175 4850 50  0001 C CNN
-F 3 "~" H 9175 4850 50  0001 C CNN
-F 4 "" H 9175 4850 50  0001 C CNN "LCSC"
-	1    9175 4850
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
@@ -1973,5 +1829,137 @@ F 3 "~" H 9475 1125 50  0001 C CNN
 F 4 "C17902" H 9475 1125 50  0001 C CNN "LCSC"
 	1    9475 1125
 	1    0    0    -1  
+$EndComp
+$Comp
+L CCAP1206:1uF C4
+U 1 1 688A05E5
+P 1950 2375
+F 0 "C4" V 1721 2375 50  0000 C CNN
+F 1 "1uF" V 1812 2375 50  0000 C CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 1950 2375 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/" H 1950 2375 50  0001 C CNN
+	1    1950 2375
+	0    1    1    0   
+$EndComp
+$Comp
+L CCAP1206:1uF C5
+U 1 1 688A40AE
+P 4250 2375
+F 0 "C5" V 4021 2375 50  0000 C CNN
+F 1 "1uF" V 4112 2375 50  0000 C CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 4250 2375 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/" H 4250 2375 50  0001 C CNN
+	1    4250 2375
+	0    1    1    0   
+$EndComp
+$Comp
+L CCAP1206:1uF C6
+U 1 1 688A4E93
+P 6100 2850
+F 0 "C6" V 5871 2850 50  0000 C CNN
+F 1 "1uF" V 5962 2850 50  0000 C CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 6100 2850 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/" H 6100 2850 50  0001 C CNN
+	1    6100 2850
+	0    1    1    0   
+$EndComp
+$Comp
+L CCAP1206:1uF C3
+U 1 1 688A5F25
+P 6225 1725
+F 0 "C3" H 6133 1679 50  0000 R CNN
+F 1 "1uF" H 6133 1770 50  0000 R CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 6225 1725 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/" H 6225 1725 50  0001 C CNN
+	1    6225 1725
+	-1   0    0    1   
+$EndComp
+$Comp
+L CCAP1206:1uF C1
+U 1 1 688A78AA
+P 8525 1375
+F 0 "C1" H 8433 1329 50  0000 R CNN
+F 1 "1uF" H 8433 1420 50  0000 R CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 8525 1375 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/" H 8525 1375 50  0001 C CNN
+	1    8525 1375
+	-1   0    0    1   
+$EndComp
+$Comp
+L CCAP1206:1uF C2
+U 1 1 688A863F
+P 8975 1375
+F 0 "C2" H 8883 1329 50  0000 R CNN
+F 1 "1uF" H 8883 1420 50  0000 R CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 8975 1375 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/" H 8975 1375 50  0001 C CNN
+	1    8975 1375
+	-1   0    0    1   
+$EndComp
+$Comp
+L CCAP1206:1uF C7
+U 1 1 688AA35E
+P 7725 3125
+F 0 "C7" H 7633 3079 50  0000 R CNN
+F 1 "1uF" H 7633 3170 50  0000 R CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 7725 3125 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/" H 7725 3125 50  0001 C CNN
+	1    7725 3125
+	-1   0    0    1   
+$EndComp
+$Comp
+L CCAP1206:1uF C8
+U 1 1 688AAC62
+P 8050 3125
+F 0 "C8" H 7958 3079 50  0000 R CNN
+F 1 "1uF" H 7958 3170 50  0000 R CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 8050 3125 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/" H 8050 3125 50  0001 C CNN
+	1    8050 3125
+	-1   0    0    1   
+$EndComp
+$Comp
+L CCAP1206:1uF C9
+U 1 1 688AB7E6
+P 8675 3250
+F 0 "C9" H 8583 3204 50  0000 R CNN
+F 1 "1uF" H 8583 3295 50  0000 R CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 8675 3250 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/" H 8675 3250 50  0001 C CNN
+	1    8675 3250
+	-1   0    0    1   
+$EndComp
+$Comp
+L CCAP1206:1uF C10
+U 1 1 688ABFC1
+P 9125 3250
+F 0 "C10" H 9033 3204 50  0000 R CNN
+F 1 "1uF" H 9033 3295 50  0000 R CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 9125 3250 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/" H 9125 3250 50  0001 C CNN
+	1    9125 3250
+	-1   0    0    1   
+$EndComp
+$Comp
+L CCAP1206:1uF C11
+U 1 1 688AF3FA
+P 8725 4850
+F 0 "C11" H 8633 4804 50  0000 R CNN
+F 1 "1uF" H 8633 4895 50  0000 R CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 8725 4850 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/" H 8725 4850 50  0001 C CNN
+	1    8725 4850
+	-1   0    0    1   
+$EndComp
+$Comp
+L CCAP1206:1uF C12
+U 1 1 688AFA0E
+P 9175 4850
+F 0 "C12" H 9083 4804 50  0000 R CNN
+F 1 "1uF" H 9083 4895 50  0000 R CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 9175 4850 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/" H 9175 4850 50  0001 C CNN
+	1    9175 4850
+	-1   0    0    1   
 $EndComp
 $EndSCHEMATC
