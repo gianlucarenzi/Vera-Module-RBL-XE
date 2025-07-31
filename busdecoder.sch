@@ -180,57 +180,57 @@ Wire Wire Line
 Wire Wire Line
 	2350 2850 2350 2775
 Connection ~ 2350 2775
-Text GLabel 9350 3875 2    39   BiDi ~ 0
+Text GLabel 9350 4275 2    39   BiDi ~ 0
 mA0
-Text GLabel 9350 3575 2    39   BiDi ~ 0
+Text GLabel 9350 4075 2    39   BiDi ~ 0
 mA1
 Text GLabel 9350 3175 2    39   BiDi ~ 0
 mA2
-Text GLabel 9350 3475 2    39   BiDi ~ 0
-mA3
-Text GLabel 9350 3775 2    39   BiDi ~ 0
-mA4
-Text GLabel 2975 3875 0    39   BiDi ~ 0
-mA5
-Text GLabel 2975 3975 0    39   BiDi ~ 0
-mA6
 Text GLabel 2975 4075 0    39   BiDi ~ 0
-mA7
-Text GLabel 2975 3675 0    39   BiDi ~ 0
-mA8
+mA3
 Text GLabel 2975 3775 0    39   BiDi ~ 0
-mA9
-Text GLabel 2975 3475 0    39   BiDi ~ 0
-mA10
-Text GLabel 2975 3575 0    39   BiDi ~ 0
-mA11
-Text GLabel 2975 2975 0    39   BiDi ~ 0
-mA12
-Text GLabel 2975 3075 0    39   BiDi ~ 0
-mA13
+mA4
+Text GLabel 2975 3675 0    39   BiDi ~ 0
+mA5
 Text GLabel 2975 3175 0    39   BiDi ~ 0
+mA6
+Text GLabel 2975 3075 0    39   BiDi ~ 0
+mA7
+Text GLabel 2750 4675 0    39   BiDi ~ 0
+mA8
+Text GLabel 9350 3975 2    39   BiDi ~ 0
+mA9
+Text GLabel 2975 4275 0    39   BiDi ~ 0
+mA10
+Text GLabel 2975 4575 0    39   BiDi ~ 0
+mA11
+Text GLabel 2975 3475 0    39   BiDi ~ 0
+mA12
+Text GLabel 2975 3575 0    39   BiDi ~ 0
+mA13
+Text GLabel 2975 2975 0    39   BiDi ~ 0
 mA14
 Text GLabel 2975 3275 0    39   BiDi ~ 0
 mA15
-Text GLabel 9350 4475 2    39   BiDi ~ 0
+Text GLabel 2850 4875 0    39   BiDi ~ 0
 mD0
-Text GLabel 9350 4375 2    39   BiDi ~ 0
-mD1
-Text GLabel 2975 4275 0    39   BiDi ~ 0
-mD2
 Text GLabel 2975 4475 0    39   BiDi ~ 0
-mD3
+mD1
 Text GLabel 2975 4175 0    39   BiDi ~ 0
-mD4
-Text GLabel 2975 4575 0    39   BiDi ~ 0
-mD5
+mD2
 Text GLabel 9350 4875 2    39   BiDi ~ 0
-mD6
+mD3
 Text GLabel 9350 4675 2    39   BiDi ~ 0
+mD4
+Text GLabel 9350 3875 2    39   BiDi ~ 0
+mD5
+Text GLabel 9350 3575 2    39   BiDi ~ 0
+mD6
+Text GLabel 9350 3475 2    39   BiDi ~ 0
 mD7
-Text GLabel 9350 4575 2    39   BiDi ~ 0
+Text GLabel 9350 3775 2    39   BiDi ~ 0
 mPHI2
-Text GLabel 9350 4075 2    39   BiDi ~ 0
+Text GLabel 2975 3875 0    39   BiDi ~ 0
 mR~W
 Wire Wire Line
 	2350 2775 2900 2775
@@ -266,8 +266,6 @@ Wire Wire Line
 Wire Wire Line
 	2975 3875 3050 3875
 Wire Wire Line
-	3050 3975 2975 3975
-Wire Wire Line
 	2975 4075 3050 4075
 Wire Wire Line
 	2975 4175 3050 4175
@@ -281,12 +279,6 @@ Wire Wire Line
 	9250 4875 9350 4875
 Wire Wire Line
 	9250 4675 9350 4675
-Wire Wire Line
-	9250 4575 9350 4575
-Wire Wire Line
-	9250 4475 9350 4475
-Wire Wire Line
-	9250 4375 9350 4375
 Wire Wire Line
 	9250 4075 9350 4075
 Wire Wire Line
@@ -371,13 +363,11 @@ Text GLabel 9575 4175 2    39   BiDi ~ 0
 Wire Wire Line
 	9250 4175 9575 4175
 Wire Wire Line
-	9250 4275 9875 4275
-Text GLabel 9875 4275 2    39   BiDi ~ 0
+	9250 4275 9350 4275
+Text GLabel 9825 4475 2    39   BiDi ~ 0
 ~mD1XX
-Text GLabel 9550 4775 2    39   BiDi ~ 0
+Text GLabel 2800 3975 0    39   BiDi ~ 0
 ~mVCS0
-Wire Wire Line
-	9250 4775 9550 4775
 $Comp
 L power:GND #PWR054
 U 1 1 68C29464
@@ -480,14 +470,14 @@ Wire Wire Line
 Wire Wire Line
 	10175 3875 10550 3875
 Connection ~ 10550 3875
-Text GLabel 9575 3975 2    39   BiDi ~ 0
+Text GLabel 9550 4375 2    39   BiDi ~ 0
 ~mEXSEL
 Wire Wire Line
 	2850 4775 3050 4775
 Wire Wire Line
 	3050 4875 2850 4875
 Wire Wire Line
-	9575 3975 9250 3975
+	9350 3975 9250 3975
 $Comp
 L power:GND #PWR058
 U 1 1 68C509A5
@@ -564,8 +554,7 @@ Wire Notes Line
 	9300 1800 6775 1800
 Wire Notes Line
 	6775 1800 6775 2250
-NoConn ~ 2850 4875
-Text GLabel 2750 4675 0    39   BiDi ~ 0
+Text GLabel 9525 4575 2    39   BiDi ~ 0
 ~mCCTL
 Wire Wire Line
 	2750 4675 3050 4675
@@ -1000,4 +989,15 @@ F 3 "" H 2860 1295 50  0001 C CNN
 	1    2860 1295
 	0    1    1    0   
 $EndComp
+Wire Wire Line
+	2800 3975 3050 3975
+Wire Wire Line
+	9250 4375 9550 4375
+Wire Wire Line
+	9250 4475 9825 4475
+Wire Wire Line
+	9250 4575 9525 4575
+Wire Wire Line
+	9250 4775 9300 4775
+NoConn ~ 9300 4775
 $EndSCHEMATC
