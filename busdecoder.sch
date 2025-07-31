@@ -48,7 +48,7 @@ R~W
 Wire Wire Line
 	900  1050 1125 1050
 Wire Wire Line
-	2500 950  2875 950 
+	2500 950  2650 950 
 Text GLabel 2875 950  2    39   Output ~ 0
 ~RE
 $Comp
@@ -70,7 +70,7 @@ Connection ~ 1125 1050
 Wire Wire Line
 	1125 1050 1900 1050
 Wire Wire Line
-	2525 1650 2875 1650
+	2525 1650 2650 1650
 Text GLabel 2875 1650 2    39   Output ~ 0
 ~WE
 Wire Wire Line
@@ -947,5 +947,57 @@ F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 10425 2075 50 
 F 3 "https://lcsc.com/datasheet/" H 10425 2075 50  0001 C CNN
 	1    10425 2075
 	-1   0    0    1   
+$EndComp
+$Comp
+L CRES1206:4K7 R59
+U 1 1 688AA68E
+P 2650 1095
+F 0 "R59" H 2709 1136 50  0000 L CNN
+F 1 "4K7" H 2709 1045 50  0000 L CNN
+F 2 "Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder" H 2650 1095 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2411221126_UNI-ROYAL-1206W4F4701T5E_C17936.pdf" H 2650 1095 50  0001 C CNN
+F 4 "C17936" H 2650 1095 50  0001 C CNN "LCSC"
+	1    2650 1095
+	1    0    0    -1  
+$EndComp
+$Comp
+L CRES1206:4K7 R60
+U 1 1 688AB27D
+P 2650 1500
+F 0 "R60" H 2709 1541 50  0000 L CNN
+F 1 "4K7" H 2709 1450 50  0000 L CNN
+F 2 "Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder" H 2650 1500 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2411221126_UNI-ROYAL-1206W4F4701T5E_C17936.pdf" H 2650 1500 50  0001 C CNN
+F 4 "C17936" H 2650 1500 50  0001 C CNN "LCSC"
+	1    2650 1500
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2650 950  2650 1000
+Connection ~ 2650 950 
+Wire Wire Line
+	2650 950  2875 950 
+Wire Wire Line
+	2650 1405 2650 1295
+Wire Wire Line
+	2650 1605 2650 1650
+Connection ~ 2650 1650
+Wire Wire Line
+	2650 1650 2875 1650
+Wire Wire Line
+	2650 1295 2860 1295
+Connection ~ 2650 1295
+Wire Wire Line
+	2650 1295 2650 1200
+$Comp
+L power:+5V #PWR0117
+U 1 1 688D16D3
+P 2860 1295
+F 0 "#PWR0117" H 2860 1145 50  0001 C CNN
+F 1 "+5V" V 2875 1423 50  0000 L CNN
+F 2 "" H 2860 1295 50  0001 C CNN
+F 3 "" H 2860 1295 50  0001 C CNN
+	1    2860 1295
+	0    1    1    0   
 $EndComp
 $EndSCHEMATC
