@@ -615,8 +615,6 @@ F 3 "https://www.onsemi.com/pub/Collateral/BSS138-D.PDF" H 2500 6500 50  0001 L 
 	0    1    1    0   
 $EndComp
 Wire Wire Line
-	2200 6275 2200 6150
-Wire Wire Line
 	2200 6150 2500 6150
 Wire Wire Line
 	2500 6150 2500 6300
@@ -633,7 +631,6 @@ F 3 "" H 2200 6150 50  0001 C CNN
 	1    2200 6150
 	1    0    0    -1  
 $EndComp
-Connection ~ 2200 6150
 $Comp
 L power:+5V #PWR066
 U 1 1 68D20217
@@ -652,11 +649,6 @@ Wire Wire Line
 Connection ~ 2775 6600
 Wire Wire Line
 	2775 6600 2850 6600
-Wire Wire Line
-	2200 6475 2200 6600
-Wire Wire Line
-	2200 6600 2300 6600
-Connection ~ 2200 6600
 $Comp
 L power:+3.3V #PWR063
 U 1 1 68D37F13
@@ -668,8 +660,6 @@ F 3 "" H 1600 5725 50  0001 C CNN
 	1    1600 5725
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	1850 6600 2200 6600
 Text Notes 1075 7000 0    79   ~ 0
 Accessing $D5XX area space
 Wire Notes Line
@@ -778,20 +768,6 @@ F 2 "" H 2775 6375 50  0001 C CNN
 F 3 "~" H 2775 6375 50  0001 C CNN
 F 4 "C17902" H 2775 6375 50  0001 C CNN "LCSC"
 	1    2775 6375
-	1    0    0    -1  
-$EndComp
-$Comp
-L Device:R_Small R?
-U 1 1 68964972
-P 2200 6375
-AR Path="/68821B60/68964972" Ref="R?"  Part="1" 
-AR Path="/68821BC9/68964972" Ref="R33"  Part="1" 
-F 0 "R33" H 2259 6421 50  0000 L CNN
-F 1 "10K" H 2259 6330 50  0000 L CNN
-F 2 "" H 2200 6375 50  0001 C CNN
-F 3 "~" H 2200 6375 50  0001 C CNN
-F 4 "C17902" H 2200 6375 50  0001 C CNN "LCSC"
-	1    2200 6375
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -1000,4 +976,26 @@ Wire Wire Line
 Wire Wire Line
 	9250 4775 9300 4775
 NoConn ~ 9300 4775
+$Comp
+L CRES0805:3K3 R33
+U 1 1 688D264D
+P 2200 6350
+F 0 "R33" H 2259 6391 50  0000 L CNN
+F 1 "3K3" H 2259 6300 50  0000 L CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" H 2200 6350 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2506161110_YAGEO-RC0805FR-073K3L_C114531.pdf" H 2200 6350 50  0001 C CNN
+F 4 "C114531" H 2200 6350 50  0001 C CNN "LCSC"
+	1    2200 6350
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1850 6600 2200 6600
+Connection ~ 2200 6600
+Wire Wire Line
+	2200 6600 2300 6600
+Wire Wire Line
+	2200 6455 2200 6600
+Wire Wire Line
+	2200 6255 2200 6150
+Connection ~ 2200 6150
 $EndSCHEMATC
