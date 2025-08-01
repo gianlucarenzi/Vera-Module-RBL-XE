@@ -1177,17 +1177,6 @@ F 4 "C8017" H 7180 5535 50  0001 C CNN "LCSC"
 	1    7375 5275
 	1    0    0    -1  
 $EndComp
-$Comp
-L Switch:SW_DIP_x02 SW2
-U 1 1 688F58E5
-P 8350 2350
-F 0 "SW2" H 8350 2717 50  0000 C CNN
-F 1 "ESP_PROG" H 8350 2626 50  0000 C CNN
-F 2 "" H 8350 2350 50  0001 C CNN
-F 3 "~" H 8350 2350 50  0001 C CNN
-	1    8350 2350
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	7950 2350 7950 2900
 Wire Wire Line
@@ -1225,4 +1214,16 @@ Wire Wire Line
 	8650 2250 8775 2250
 Text Notes 7975 1800 0    59   ~ 0
 When programmig ESP32,\nall level shifters must be\nDISABLED
+$Comp
+L RetroBitLab:SPST_SWITCH_SMD_4P,4.1x5.4mm SW2
+U 1 1 688D3398
+P 8350 2350
+F 0 "SW2" H 8350 2625 50  0000 C CNN
+F 1 "SPST_SWITCH_SMD_4P,4.1x5.4mm" H 8400 1650 50  0000 C CNN
+F 2 "RetroBitLab:SW_DIP_SPSTx02_DSHP02TS-S" H 8350 2350 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2110151630_XKB-Connection-DSHP02TS-S_C319052.pdf" H 8350 2350 50  0001 C CNN
+F 4 "C319052" H 8350 2350 50  0001 C CNN "LCSC"
+	1    8350 2350
+	1    0    0    -1  
+$EndComp
 $EndSCHEMATC
