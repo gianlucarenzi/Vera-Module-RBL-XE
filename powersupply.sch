@@ -14,83 +14,36 @@ Comment3 ""
 Comment4 ""
 $EndDescr
 $Comp
-L Regulator_Linear:TLV71325PDBV U14
-U 1 1 688FE70A
-P 9125 5175
-F 0 "U14" H 9125 5517 50  0000 C CNN
-F 1 "TLV71325PDBV" H 9125 5426 50  0000 C CNN
-F 2 "Package_TO_SOT_SMD:SOT-23-5" H 9125 5500 50  0001 C CIN
-F 3 "http://www.ti.com/lit/ds/symlink/tlv713p.pdf" H 9125 5225 50  0001 C CNN
-F 4 "" H 9125 5175 50  0001 C CNN "LCSC"
-	1    9125 5175
-	1    0    0    -1  
-$EndComp
-$Comp
 L power:+5V #PWR?
 U 1 1 688FE710
-P 8700 5075
+P 8450 5100
 AR Path="/68821B60/688FE710" Ref="#PWR?"  Part="1" 
 AR Path="/688FC286/688FE710" Ref="#PWR0106"  Part="1" 
-F 0 "#PWR0106" H 8700 4925 50  0001 C CNN
-F 1 "+5V" H 8715 5248 50  0000 C CNN
-F 2 "" H 8700 5075 50  0001 C CNN
-F 3 "" H 8700 5075 50  0001 C CNN
-	1    8700 5075
+F 0 "#PWR0106" H 8450 4950 50  0001 C CNN
+F 1 "+5V" H 8465 5273 50  0000 C CNN
+F 2 "" H 8450 5100 50  0001 C CNN
+F 3 "" H 8450 5100 50  0001 C CNN
+	1    8450 5100
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	8700 5075 8825 5075
-Wire Wire Line
-	8825 5175 8700 5175
-Wire Wire Line
-	8700 5175 8700 5075
-Connection ~ 8700 5075
+	8550 5100 8725 5100
 $Comp
 L power:GND #PWR?
 U 1 1 688FE71A
-P 9125 5475
+P 9025 5500
 AR Path="/68821B60/688FE71A" Ref="#PWR?"  Part="1" 
 AR Path="/688FC286/688FE71A" Ref="#PWR0110"  Part="1" 
-F 0 "#PWR0110" H 9125 5225 50  0001 C CNN
-F 1 "GND" H 9130 5302 50  0000 C CNN
-F 2 "" H 9125 5475 50  0001 C CNN
-F 3 "" H 9125 5475 50  0001 C CNN
-	1    9125 5475
+F 0 "#PWR0110" H 9025 5250 50  0001 C CNN
+F 1 "GND" H 9030 5327 50  0000 C CNN
+F 2 "" H 9025 5500 50  0001 C CNN
+F 3 "" H 9025 5500 50  0001 C CNN
+	1    9025 5500
 	1    0    0    -1  
 $EndComp
+Connection ~ 9450 5100
 Wire Wire Line
-	9950 5075 9850 5075
-Wire Wire Line
-	9550 5125 9550 5075
-Connection ~ 9550 5075
-Wire Wire Line
-	9550 5075 9425 5075
-Wire Wire Line
-	9550 5325 9550 5375
-$Comp
-L power:GND #PWR0109
-U 1 1 688FE72C
-P 9550 5375
-F 0 "#PWR0109" H 9550 5125 50  0001 C CNN
-F 1 "GND" H 9555 5202 50  0000 C CNN
-F 2 "" H 9550 5375 50  0001 C CNN
-F 3 "" H 9550 5375 50  0001 C CNN
-	1    9550 5375
-	1    0    0    -1  
-$EndComp
-Text GLabel 9950 5075 2    50   Input ~ 0
-2V5
-$Comp
-L Regulator_Linear:AMS1117-3.3 U13
-U 1 1 68900238
-P 7000 5100
-F 0 "U13" H 7000 5342 50  0000 C CNN
-F 1 "AMS1117-3.3" H 7000 5251 50  0000 C CNN
-F 2 "Package_TO_SOT_SMD:SOT-223-3_TabPin2" H 7000 5300 50  0001 C CNN
-F 3 "http://www.advanced-monolithic.com/pdf/ds1117.pdf" H 7100 4850 50  0001 C CNN
-	1    7000 5100
-	1    0    0    -1  
-$EndComp
+	9450 5100 9325 5100
 $Comp
 L power:+5V #PWR?
 U 1 1 68901F96
@@ -172,22 +125,6 @@ Wire Wire Line
 Connection ~ 7750 5100
 Wire Wire Line
 	7750 5100 7925 5100
-$Comp
-L power:+2V5 #PWR0105
-U 1 1 689309E4
-P 9850 5025
-F 0 "#PWR0105" H 9850 4875 50  0001 C CNN
-F 1 "+2V5" H 9865 5198 50  0000 C CNN
-F 2 "" H 9850 5025 50  0001 C CNN
-F 3 "" H 9850 5025 50  0001 C CNN
-	1    9850 5025
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	9850 5025 9850 5075
-Connection ~ 9850 5075
-Wire Wire Line
-	9850 5075 9550 5075
 $Comp
 L Interface_USB:CH340T U12
 U 1 1 68E19F52
@@ -283,18 +220,6 @@ F 3 "" H 4950 1775 50  0001 C CNN
 	1    4950 1775
 	1    0    0    -1  
 $EndComp
-$Comp
-L Device:R_Small R48
-U 1 1 68E2B317
-P 5925 1400
-F 0 "R48" V 6000 1400 50  0000 C CNN
-F 1 "10K" V 6075 1400 50  0000 C CNN
-F 2 "" H 5925 1400 50  0001 C CNN
-F 3 "~" H 5925 1400 50  0001 C CNN
-F 4 "" V 5925 1400 50  0001 C CNN "LCSC"
-	1    5925 1400
-	0    1    1    0   
-$EndComp
 Wire Wire Line
 	5600 1400 5825 1400
 Connection ~ 5600 1400
@@ -324,8 +249,6 @@ F 3 "http://www.vishay.com/docs/88525/1n5817.pdf" H 6550 2125 50  0001 C CNN
 	1    6550 2125
 	-1   0    0    1   
 $EndComp
-Wire Wire Line
-	6025 1400 6775 1400
 Wire Wire Line
 	6775 1400 6775 1900
 Wire Wire Line
@@ -374,24 +297,10 @@ Wire Wire Line
 Connection ~ 6125 2000
 Wire Wire Line
 	6125 2000 6400 2000
-$Comp
-L Device:R_Small R47
-U 1 1 68E4E992
-P 5925 1250
-F 0 "R47" V 5850 1250 50  0000 C CNN
-F 1 "10K" V 5775 1250 50  0000 C CNN
-F 2 "" H 5925 1250 50  0001 C CNN
-F 3 "~" H 5925 1250 50  0001 C CNN
-F 4 "" V 5925 1250 50  0001 C CNN "LCSC"
-	1    5925 1250
-	0    1    1    0   
-$EndComp
 Wire Wire Line
 	6025 1250 6125 1250
 Wire Wire Line
 	5700 1700 5700 1250
-Wire Wire Line
-	5700 1250 5825 1250
 Wire Wire Line
 	5700 1250 4725 1250
 Wire Wire Line
@@ -509,10 +418,6 @@ F 15 "JAE Industry Ltd." H 3175 3300 50  0001 L BNN "MANUFACTURER"
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	3225 1950 3300 1950
-Wire Wire Line
-	3225 2050 3300 2050
-Wire Wire Line
 	2025 2050 1925 2050
 Wire Wire Line
 	2025 1950 1925 1950
@@ -584,18 +489,6 @@ Wire Wire Line
 	3500 2500 3500 3575
 Wire Wire Line
 	3275 3150 3275 3250
-$Comp
-L Device:R_Small R51
-U 1 1 68F21D80
-P 3500 2325
-F 0 "R51" H 3600 2325 50  0000 C CNN
-F 1 "5K1" H 3375 2325 50  0000 C CNN
-F 2 "" H 3500 2325 50  0001 C CNN
-F 3 "~" H 3500 2325 50  0001 C CNN
-F 4 "" V 3500 2325 50  0001 C CNN "LCSC"
-	1    3500 2325
-	-1   0    0    1   
-$EndComp
 Wire Wire Line
 	3225 2350 3275 2350
 Wire Wire Line
@@ -625,20 +518,6 @@ NoConn ~ 3300 1850
 Wire Wire Line
 	3225 1850 3300 1850
 $Comp
-L Device:R_Small R50
-U 1 1 68F847BE
-P 1675 1850
-F 0 "R50" V 1600 1850 50  0000 C CNN
-F 1 "5K1" V 1750 1850 50  0000 C CNN
-F 2 "" H 1675 1850 50  0001 C CNN
-F 3 "~" H 1675 1850 50  0001 C CNN
-F 4 "" V 1675 1850 50  0001 C CNN "LCSC"
-	1    1675 1850
-	0    1    1    0   
-$EndComp
-Wire Wire Line
-	1775 1850 2025 1850
-$Comp
 L power:GND #PWR?
 U 1 1 68F8AA9B
 P 1500 1850
@@ -651,8 +530,6 @@ F 3 "" H 1500 1850 50  0001 C CNN
 	1    1500 1850
 	0    1    1    0   
 $EndComp
-Wire Wire Line
-	1500 1850 1575 1850
 NoConn ~ 2025 2150
 Wire Wire Line
 	1600 2350 1600 2450
@@ -931,7 +808,8 @@ P 3750 5400
 F 0 "C49" H 3975 5450 50  0000 R CNN
 F 1 "100nF" H 4050 5350 50  0000 R CNN
 F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 3750 5400 50  0001 C CNN
-F 3 "https://lcsc.com/datasheet/" H 3750 5400 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C2858001.pdf" H 3750 5400 50  0001 C CNN
+F 4 "C2858001" H 0   0   50  0001 C CNN "LCSC"
 	1    3750 5400
 	1    0    0    -1  
 $EndComp
@@ -942,7 +820,8 @@ P 6525 5275
 F 0 "C44" H 6700 5350 50  0000 R CNN
 F 1 "100nF" H 6775 5200 50  0000 R CNN
 F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 6525 5275 50  0001 C CNN
-F 3 "https://lcsc.com/datasheet/" H 6525 5275 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C2858001.pdf" H 6525 5275 50  0001 C CNN
+F 4 "C2858001" H 0   0   50  0001 C CNN "LCSC"
 	1    6525 5275
 	1    0    0    -1  
 $EndComp
@@ -953,19 +832,9 @@ P 7750 5275
 F 0 "C46" H 7975 5325 50  0000 R CNN
 F 1 "100nF" H 8000 5200 50  0000 R CNN
 F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 7750 5275 50  0001 C CNN
-F 3 "https://lcsc.com/datasheet/" H 7750 5275 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C2858001.pdf" H 7750 5275 50  0001 C CNN
+F 4 "C2858001" H 0   0   50  0001 C CNN "LCSC"
 	1    7750 5275
-	1    0    0    -1  
-$EndComp
-$Comp
-L CCAP1206:1uF C43
-U 1 1 68937CC3
-P 9550 5225
-F 0 "C43" H 9642 5271 50  0000 L CNN
-F 1 "1uF" H 9642 5180 50  0000 L CNN
-F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 9550 5225 50  0001 C CNN
-F 3 "https://lcsc.com/datasheet/" H 9550 5225 50  0001 C CNN
-	1    9550 5225
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -1084,7 +953,8 @@ P 4725 1575
 F 0 "C37" H 4525 1675 50  0000 L CNN
 F 1 "22uF" H 4475 1525 50  0000 L CNN
 F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 4725 1575 50  0001 C CNN
-F 3 "https://lcsc.com/datasheet/" H 4725 1575 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C711007.pdf" H 4725 1575 50  0001 C CNN
+F 4 "C711007" H 0   0   50  0001 C CNN "LCSC"
 	1    4725 1575
 	1    0    0    -1  
 $EndComp
@@ -1095,7 +965,8 @@ P 4950 1575
 F 0 "C38" H 5042 1621 50  0000 L CNN
 F 1 "100nF" H 5042 1530 50  0000 L CNN
 F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 4950 1575 50  0001 C CNN
-F 3 "https://lcsc.com/datasheet/" H 4950 1575 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C2858001.pdf" H 4950 1575 50  0001 C CNN
+F 4 "C2858001" H 4950 1575 50  0001 C CNN "LCSC"
 	1    4950 1575
 	1    0    0    -1  
 $EndComp
@@ -1106,7 +977,8 @@ P 1600 2550
 F 0 "C40" H 1692 2596 50  0000 L CNN
 F 1 "100nF" H 1692 2505 50  0000 L CNN
 F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 1600 2550 50  0001 C CNN
-F 3 "https://lcsc.com/datasheet/" H 1600 2550 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C2858001.pdf" H 1600 2550 50  0001 C CNN
+F 4 "C2858001" H 0   0   50  0001 C CNN "LCSC"
 	1    1600 2550
 	1    0    0    -1  
 $EndComp
@@ -1117,7 +989,8 @@ P 3275 3350
 F 0 "C42" H 3050 3400 50  0000 L CNN
 F 1 "100nF" H 2975 3275 50  0000 L CNN
 F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 3275 3350 50  0001 C CNN
-F 3 "https://lcsc.com/datasheet/" H 3275 3350 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C2858001.pdf" H 3275 3350 50  0001 C CNN
+F 4 "C2858001" H 0   0   50  0001 C CNN "LCSC"
 	1    3275 3350
 	1    0    0    -1  
 $EndComp
@@ -1216,4 +1089,183 @@ F 4 "C17902" H 8725 2495 50  0001 C CNN "LCSC"
 	1    8725 2495
 	1    0    0    -1  
 $EndComp
+$Comp
+L RetroBitLab:AMS1117-3.3 U13
+U 1 1 68B71504
+P 7000 5150
+F 0 "U13" H 7000 5441 50  0000 C CNN
+F 1 "AMS1117-3.3" H 7000 5350 50  0000 C CNN
+F 2 "Package_TO_SOT_SMD:SOT-223-3_TabPin2" H 6975 5125 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C6186.pdf" H 6975 5125 50  0001 C CNN
+F 4 "C6186" H 6975 5125 50  0001 C CNN "LCSC"
+	1    7000 5150
+	1    0    0    -1  
+$EndComp
+$Comp
+L RetroBitLab:AMS1117-2.5 U14
+U 1 1 68B9537A
+P 9025 5150
+F 0 "U14" H 9025 5441 50  0000 C CNN
+F 1 "AMS1117-2.5" H 9025 5350 50  0000 C CNN
+F 2 "Package_TO_SOT_SMD:SOT-223-3_TabPin2" H 9075 4975 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C12087.pdf" H 9075 4975 50  0001 C CNN
+F 4 "C12087" H 9075 4975 50  0001 C CNN "LCSC"
+	1    9025 5150
+	1    0    0    -1  
+$EndComp
+$Comp
+L CCAP1206:100nF C50
+U 1 1 68B963FE
+P 8550 5275
+F 0 "C50" H 8750 5350 50  0000 R CNN
+F 1 "100nF" H 8800 5200 50  0000 R CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 8550 5275 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C2858001.pdf" H 8550 5275 50  0001 C CNN
+F 4 "C2858001" H 0   0   50  0001 C CNN "LCSC"
+	1    8550 5275
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	8550 5100 8550 5175
+Connection ~ 8550 5100
+Wire Wire Line
+	8550 5375 8550 5475
+Wire Wire Line
+	8550 5475 9025 5475
+Wire Wire Line
+	9025 5475 9025 5500
+Wire Wire Line
+	9025 5400 9025 5475
+Connection ~ 9025 5475
+Text GLabel 10275 5100 2    50   Input ~ 0
+2V5
+Wire Wire Line
+	10275 5100 10100 5100
+Connection ~ 10100 5100
+$Comp
+L power:+2V5 #PWR0105
+U 1 1 689309E4
+P 10100 5050
+F 0 "#PWR0105" H 10100 4900 50  0001 C CNN
+F 1 "+2V5" H 10115 5223 50  0000 C CNN
+F 2 "" H 10100 5050 50  0001 C CNN
+F 3 "" H 10100 5050 50  0001 C CNN
+	1    10100 5050
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	10100 5050 10100 5100
+$Comp
+L CCAP1206:1uF C43
+U 1 1 68937CC3
+P 9800 5275
+F 0 "C43" H 9892 5321 50  0000 L CNN
+F 1 "1uF" H 9892 5230 50  0000 L CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 9800 5275 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/" H 9800 5275 50  0001 C CNN
+	1    9800 5275
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	9800 5175 9800 5100
+Wire Wire Line
+	10100 5100 9800 5100
+Wire Wire Line
+	9800 5100 9450 5100
+Connection ~ 9800 5100
+Wire Wire Line
+	9800 5375 9800 5475
+Wire Wire Line
+	9025 5475 9450 5475
+Wire Wire Line
+	9450 5475 9800 5475
+Connection ~ 9450 5475
+$Comp
+L TCAP3528:10uF-20V C51
+U 1 1 68BD341B
+P 9450 5275
+F 0 "C51" H 9538 5321 50  0000 L CNN
+F 1 "10uF-20V" H 9300 5000 50  0000 L CNN
+F 2 "Capacitor_Tantalum_SMD:CP_EIA-3528-12_Kemet-T_Pad1.50x2.35mm_HandSolder" H 9460 5625 50  0001 C CNN
+F 3 "" H 9450 5275 50  0001 C CNN
+F 4 "C8017" H 9255 5535 50  0001 C CNN "LCSC"
+	1    9450 5275
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	9450 5175 9450 5100
+Wire Wire Line
+	9450 5375 9450 5475
+Wire Wire Line
+	8450 5100 8550 5100
+$Comp
+L CRES1206:10K R47
+U 1 1 68C78A35
+P 5930 1250
+F 0 "R47" V 5855 1245 50  0000 C CNN
+F 1 "10K" V 5780 1250 50  0000 C CNN
+F 2 "Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder" H 5930 1250 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2411221126_UNI-ROYAL-1206W4F1002T5E_C17902.pdf" H 5930 1250 50  0001 C CNN
+F 4 "C17902" H 5930 1250 50  0001 C CNN "LCSC"
+	1    5930 1250
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	5700 1250 5825 1250
+$Comp
+L CRES1206:10K R48
+U 1 1 68C7DB71
+P 5920 1400
+F 0 "R48" V 5845 1395 50  0000 C CNN
+F 1 "10K" V 5770 1400 50  0000 C CNN
+F 2 "Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder" H 5920 1400 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2411221126_UNI-ROYAL-1206W4F1002T5E_C17902.pdf" H 5920 1400 50  0001 C CNN
+F 4 "C17902" H 5920 1400 50  0001 C CNN "LCSC"
+	1    5920 1400
+	0    -1   -1   0   
+$EndComp
+Wire Wire Line
+	6025 1400 6775 1400
+$Comp
+L CRES1206:5K1 R51
+U 1 1 68CAC2CE
+P 3500 2320
+F 0 "R51" H 3559 2361 50  0000 L CNN
+F 1 "5K1" H 3559 2270 50  0000 L CNN
+F 2 "Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder" H 3500 2320 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C20166753.pdf" H 3500 2320 50  0001 C CNN
+F 4 "C20166753" H 3500 2320 50  0001 C CNN "LCSC"
+	1    3500 2320
+	1    0    0    -1  
+$EndComp
+$Comp
+L CRES1206:5K1 R50
+U 1 1 68CAEA03
+P 1815 1850
+F 0 "R50" V 1619 1845 50  0000 C CNN
+F 1 "5K1" V 1710 1845 50  0000 C CNN
+F 2 "Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder" H 1815 1850 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C20166753.pdf" H 1815 1850 50  0001 C CNN
+F 4 "C20166753" H 1815 1850 50  0001 C CNN "LCSC"
+	1    1815 1850
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	1910 1850 2025 1850
+Wire Wire Line
+	1500 1850 1710 1850
+Wire Wire Line
+	3225 2050 3300 2050
+Wire Wire Line
+	3225 1950 3300 1950
+Text Notes 3445 2010 0    50   ~ 0
+Differential Pairs 90 Ohm
+Wire Notes Line
+	3435 1900 3435 2045
+Wire Notes Line
+	3435 2045 4440 2045
+Wire Notes Line
+	4440 2045 4440 1895
+Wire Notes Line
+	4440 1895 3435 1895
 $EndSCHEMATC
