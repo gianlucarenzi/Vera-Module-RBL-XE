@@ -5,7 +5,7 @@ $Descr A4 11693 8268
 encoding utf-8
 Sheet 1 6
 Title "VERA FPGA Audio & Video Board"
-Date "2025-07-28"
+Date "2025-09-02"
 Rev "1.0"
 Comp "RetroBit Lab"
 Comment1 "Gianluca Renzi"
