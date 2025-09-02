@@ -5,7 +5,7 @@ $Descr A4 11693 8268
 encoding utf-8
 Sheet 5 6
 Title ""
-Date "2025-07-28"
+Date "2025-09-02"
 Rev "1.0"
 Comp "RetroBit Lab"
 Comment1 "Gianluca Renzi"
@@ -45,7 +45,7 @@ L power:+3.3V #PWR086
 U 1 1 68DCCB4E
 P 8050 4425
 F 0 "#PWR086" H 8050 4275 50  0001 C CNN
-F 1 "+3.3V" H 8065 4598 50  0000 C CNN
+F 1 "+3.3V" H 8050 4570 50  0000 C CNN
 F 2 "" H 8050 4425 50  0001 C CNN
 F 3 "" H 8050 4425 50  0001 C CNN
 	1    8050 4425
@@ -642,21 +642,6 @@ F 3 "" H 3625 6000 50  0001 C CNN
 $EndComp
 Wire Wire Line
 	3625 6000 3625 6050
-$Comp
-L RetroBitLab:W25Q16JVSNIQ U10
-U 1 1 68F87805
-P 8050 4825
-F 0 "U10" H 7700 5200 50  0000 C CNN
-F 1 "W25Q16JVSNIQ" H 8475 4400 50  0000 C CNN
-F 2 "Package_SO:SOIC-8_5.23x5.23mm_P1.27mm" H 8050 4825 50  0001 C CNN
-F 3 "http://www.winbond.com/resource-files/w25q32jv%20revg%2003272018%20plus.pdf" H 8050 4825 50  0001 C CNN
-F 4 "Winbond Electronics" H 8050 4825 39  0001 C CNN "Manufacturer"
-F 5 "W25Q16JVSNIQ" H 8050 4825 39  0001 C CNN "Man_PN"
-F 6 "DigiKey" H 8050 4825 39  0001 C CNN "Supply 1"
-F 7 "W25Q16JVSNIQ-ND" H 8050 4825 39  0001 C CNN "Supply 1 Part Number"
-	1    8050 4825
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	2500 5750 2675 5750
 Wire Wire Line
@@ -969,17 +954,6 @@ F 3 "https://lcsc.com/datasheet/" H 4800 1375 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L CCAP1206:100nF C29
-U 1 1 688EC5F1
-P 6700 4775
-F 0 "C29" H 6608 4729 50  0000 R CNN
-F 1 "100nF" H 6608 4820 50  0000 R CNN
-F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 6700 4775 50  0001 C CNN
-F 3 "https://lcsc.com/datasheet/" H 6700 4775 50  0001 C CNN
-	1    6700 4775
-	-1   0    0    1   
-$EndComp
-$Comp
 L CCAP1206:1uF C30
 U 1 1 688EEE98
 P 3375 5575
@@ -1062,4 +1036,32 @@ Wire Wire Line
 	8850 975  8850 1000
 Wire Wire Line
 	8850 1200 8850 1225
+$Comp
+L RetroBitLab:W25Q16JVSNIQ U10
+U 1 1 68B74D58
+P 8050 4825
+F 0 "U10" H 7705 5180 50  0000 C CNN
+F 1 "W25Q16JVSNIQ" H 8390 4450 50  0000 C CNN
+F 2 "Package_SO:SOIC-8_5.23x5.23mm_P1.27mm" H 8050 4825 50  0001 C CNN
+F 3 "http://www.winbond.com/resource-files/w25q32jv%20revg%2003272018%20plus.pdf" H 8050 4825 50  0001 C CNN
+F 4 "Winbond Electronics" H 8050 4825 39  0001 C CNN "Manufacturer"
+F 5 "W25Q16JVSNIQ" H 8050 4825 39  0001 C CNN "Man_PN"
+F 6 "DigiKey" H 8050 4825 39  0001 C CNN "Supply 1"
+F 7 "W25Q16JVSNIQ-ND" H 8050 4825 39  0001 C CNN "Supply 1 Part Number"
+F 8 "C2456211" H 8050 4825 50  0001 C CNN "LCSC"
+	1    8050 4825
+	1    0    0    -1  
+$EndComp
+$Comp
+L CCAP1206:100nF C?
+U 1 1 68B799A8
+P 6700 4775
+F 0 "C?" H 6792 4821 50  0000 L CNN
+F 1 "100nF" H 6792 4730 50  0000 L CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 6700 4775 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C2858001.pdf" H 6700 4775 50  0001 C CNN
+F 4 "C2858001" H 6700 4775 50  0001 C CNN "LCSC"
+	1    6700 4775
+	1    0    0    -1  
+$EndComp
 $EndSCHEMATC

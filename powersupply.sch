@@ -5,7 +5,7 @@ $Descr A4 11693 8268
 encoding utf-8
 Sheet 6 6
 Title ""
-Date "2025-07-28"
+Date "2025-09-02"
 Rev "1.0"
 Comp "RetroBit Lab"
 Comment1 "Gianluca Renzi"
@@ -125,29 +125,6 @@ Wire Wire Line
 Connection ~ 7750 5100
 Wire Wire Line
 	7750 5100 7925 5100
-$Comp
-L Interface_USB:CH340T U12
-U 1 1 68E19F52
-P 5700 2600
-F 0 "U12" H 5875 3450 50  0000 C CNN
-F 1 "CH340T" H 5900 1825 50  0000 C CNN
-F 2 "Package_SO:SSOP-20_5.3x7.2mm_P0.65mm" H 6600 1800 50  0001 C CNN
-F 3 "https://cdn.sparkfun.com/datasheets/Dev/Arduino/Other/CH340DS1.PDF" H 5450 3450 50  0001 C CNN
-	1    5700 2600
-	1    0    0    -1  
-$EndComp
-$Comp
-L Device:Crystal Y1
-U 1 1 68E1C397
-P 4325 2600
-F 0 "Y1" V 4279 2731 50  0000 L CNN
-F 1 "12MHz" V 4370 2731 50  0000 L CNN
-F 2 "" H 4325 2600 50  0001 C CNN
-F 3 "~" H 4325 2600 50  0001 C CNN
-F 4 "" V 4325 2600 50  0001 C CNN "LCSC"
-	1    4325 2600
-	0    1    1    0   
-$EndComp
 Wire Wire Line
 	5300 2500 4975 2500
 Wire Wire Line
@@ -224,31 +201,7 @@ Wire Wire Line
 	5600 1400 5825 1400
 Connection ~ 5600 1400
 Wire Wire Line
-	6100 1900 6400 1900
-Wire Wire Line
 	6100 2000 6125 2000
-$Comp
-L Diode:1N5819 D3
-U 1 1 68E2FD6C
-P 6550 1900
-F 0 "D3" H 6675 1950 50  0000 C CNN
-F 1 "1N5819" H 6475 2000 50  0000 C CNN
-F 2 "Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal" H 6550 1725 50  0001 C CNN
-F 3 "http://www.vishay.com/docs/88525/1n5817.pdf" H 6550 1900 50  0001 C CNN
-	1    6550 1900
-	1    0    0    -1  
-$EndComp
-$Comp
-L Diode:1N5819 D4
-U 1 1 68E3066B
-P 6550 2125
-F 0 "D4" H 6425 2075 50  0000 C CNN
-F 1 "1N5819" H 6550 2225 50  0000 C CNN
-F 2 "Diode_THT:D_DO-41_SOD81_P10.16mm_Horizontal" H 6550 1950 50  0001 C CNN
-F 3 "http://www.vishay.com/docs/88525/1n5817.pdf" H 6550 2125 50  0001 C CNN
-	1    6550 2125
-	-1   0    0    1   
-$EndComp
 Wire Wire Line
 	6775 1400 6775 1900
 Wire Wire Line
@@ -335,11 +288,7 @@ D-
 Text Label 5175 2200 0    39   ~ 0
 D+
 Wire Wire Line
-	6100 2700 6425 2700
-Wire Wire Line
 	6425 2700 6425 2850
-Wire Wire Line
-	6100 2600 6300 2600
 Text GLabel 7550 2325 2    39   BiDi ~ 0
 RST\EN
 Wire Wire Line
@@ -379,44 +328,7 @@ NoConn ~ 6150 2900
 NoConn ~ 6150 3000
 NoConn ~ 6150 3200
 Wire Wire Line
-	6100 2900 6150 2900
-Wire Wire Line
-	6100 3000 6150 3000
-Wire Wire Line
-	6100 3200 6150 3200
-Wire Wire Line
-	6100 2200 6150 2200
-Wire Wire Line
-	6100 2300 6150 2300
-Wire Wire Line
-	6100 2400 6150 2400
-Wire Wire Line
-	6100 2500 6150 2500
-Wire Wire Line
 	6400 2000 6400 2125
-$Comp
-L RetroBitLab:DX07S016JA1R1500 J4
-U 1 1 68EC4445
-P 2625 2500
-F 0 "J4" H 2625 3417 50  0000 C CNN
-F 1 "DX07S016JA1R1500" H 2625 3326 50  0000 C CNN
-F 2 "RetroBitLab:JAE_DX07S016JA1R1500" H 2175 3400 50  0001 L BNN
-F 3 "" H 2625 2500 50  0001 L BNN
-F 4 "JAE Electronics" H 1425 3350 50  0001 L BNN "MF"
-F 5 "3.31 mm" H 3675 2750 50  0001 L BNN "MAXIMUM_PACKAGE_HEIGHT"
-F 6 "None" H 1125 1250 50  0001 L BNN "Package"
-F 7 "None" H 1125 1150 50  0001 L BNN "Price"
-F 8 "https://www.snapeda.com/parts/DX07S016JA1R1500/JAE+Electronics/view-part/?ref=eda" H 1125 1550 50  0001 L BNN "Check_prices"
-F 9 "Manufacturer Recommendations" H 2125 1450 50  0001 L BNN "STANDARD"
-F 10 "1" H 3075 3500 50  0001 L BNN "PARTREV"
-F 11 "https://www.snapeda.com/parts/DX07S016JA1R1500/JAE+Electronics/view-part/?ref=snap" H 1125 1350 50  0001 L BNN "SnapEDA_Link"
-F 12 "DX07S016JA1R1500" H 2275 3500 50  0001 L BNN "MP"
-F 13 "\\n                        \\n                            USB-C (USB TYPE-C) USB 2.0 Receptacle Connector 24 (16+8 Dummy) Position Surface Mount, Right Angle; Through Hole\\n                        \\n" H -1375 3600 50  0001 L BNN "Description"
-F 14 "In Stock" H 1525 3250 50  0001 L BNN "Availability"
-F 15 "JAE Industry Ltd." H 3175 3300 50  0001 L BNN "MANUFACTURER"
-	1    2625 2500
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	2025 2050 1925 2050
 Wire Wire Line
@@ -435,7 +347,6 @@ Wire Wire Line
 	2025 2350 1600 2350
 Wire Wire Line
 	1600 2350 1600 2300
-Connection ~ 2025 2350
 Text GLabel 1600 2300 1    39   BiDi ~ 0
 5V_USB
 Wire Wire Line
@@ -547,28 +458,6 @@ F 1 "GND" H 1605 2552 50  0000 C CNN
 F 2 "" H 1600 2725 50  0001 C CNN
 F 3 "" H 1600 2725 50  0001 C CNN
 	1    1600 2725
-	1    0    0    -1  
-$EndComp
-$Comp
-L Connector:Jack-DC J5
-U 1 1 68FA1251
-P 1250 5300
-F 0 "J5" H 1307 5625 50  0000 C CNN
-F 1 "Jack-DC" H 1307 5534 50  0000 C CNN
-F 2 "" H 1300 5260 50  0001 C CNN
-F 3 "~" H 1300 5260 50  0001 C CNN
-	1    1250 5300
-	1    0    0    -1  
-$EndComp
-$Comp
-L Regulator_Linear:L7805 U15
-U 1 1 68FA2E0C
-P 2875 5200
-F 0 "U15" H 2875 5442 50  0000 C CNN
-F 1 "L7805" H 2875 5351 50  0000 C CNN
-F 2 "" H 2900 5050 50  0001 L CIN
-F 3 "http://www.st.com/content/ccc/resource/technical/document/datasheet/41/4f/b3/b0/12/d4/47/88/CD00000444.pdf/files/CD00000444.pdf/jcr:content/translations/en.CD00000444.pdf" H 2875 5150 50  0001 C CNN
-	1    2875 5200
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
@@ -1268,4 +1157,133 @@ Wire Notes Line
 	4440 2045 4440 1895
 Wire Notes Line
 	4440 1895 3435 1895
+$Comp
+L RetroBitLab:L7805 U15
+U 1 1 68B78FD9
+P 2800 5225
+F 0 "U15" H 2875 5491 50  0000 C CNN
+F 1 "L7805" H 2875 5400 50  0000 C CNN
+F 2 "Package_TO_SOT_SMD:TO-252-2" H 2800 5225 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C110908.pdf" H 2800 5225 50  0001 C CNN
+F 4 "C110908" H 2800 5225 50  0001 C CNN "LCSC"
+	1    2800 5225
+	1    0    0    -1  
+$EndComp
+$Comp
+L RetroBitLab:PJ-002AH-SMT-TR J5
+U 1 1 68B76068
+P 1350 5300
+F 0 "J5" H 1240 5020 50  0000 C CNN
+F 1 "PJ-002AH-SMT-TR" H 1400 5570 50  0000 C CNN
+F 2 "CUI_PJ-002AH-SMT-TR" H 1350 5300 50  0001 L BNN
+F 3 "https://www.lcsc.com/datasheet/C22434687.pdf" H 1350 5300 50  0001 L BNN
+F 4 "Same Sky" H 1350 5300 50  0001 L BNN "MF"
+F 5 "2.0 x 6.5 mm, 5.0 A, Horizontal, Surface Mount (SMT), Dc Power Jack Connector" H 1350 5300 50  0001 L BNN "Description"
+F 6 "None" H 1350 5300 50  0001 L BNN "Package"
+F 7 "None" H 1350 5300 50  0001 L BNN "Price"
+F 8 "https://www.snapeda.com/parts/PJ-002AH-SMT-TR/Same+Sky/view-part/?ref=eda" H 1350 5300 50  0001 L BNN "Check_prices"
+F 9 "Manufacturer recommendations" H 1350 5300 50  0001 L BNN "STANDARD"
+F 10 "https://www.snapeda.com/parts/PJ-002AH-SMT-TR/Same+Sky/view-part/?ref=snap" H 1350 5300 50  0001 L BNN "SnapEDA_Link"
+F 11 "PJ-002AH-SMT-TR" H 1350 5300 50  0001 L BNN "MP"
+F 12 "In Stock" H 1350 5300 50  0001 L BNN "Availability"
+F 13 "CUI INC" H 1350 5300 50  0001 L BNN "MANUFACTURER"
+F 14 "C22434687" H 1350 5300 50  0001 C CNN "LCSC"
+	1    1350 5300
+	1    0    0    -1  
+$EndComp
+NoConn ~ 1550 5300
+$Comp
+L RetroBitLab:12MHzC Y1
+U 1 1 68B9A98E
+P 4325 2600
+F 0 "Y1" V 4279 2731 50  0000 L CNN
+F 1 "12MHzC" V 4370 2731 50  0000 L CNN
+F 2 "Crystal:Crystal_SMD_HC49-SD_HandSoldering" H 4325 2600 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C18209142.pdf" H 4325 2600 50  0001 C CNN
+F 4 "C18209142" H 4325 2600 50  0001 C CNN "LCSC"
+	1    4325 2600
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	6100 1900 6400 1900
+Wire Wire Line
+	6100 3200 6150 3200
+Wire Wire Line
+	6100 3000 6150 3000
+Wire Wire Line
+	6100 2700 6425 2700
+Wire Wire Line
+	6100 2600 6300 2600
+Wire Wire Line
+	6100 2500 6150 2500
+Wire Wire Line
+	6100 2400 6150 2400
+Wire Wire Line
+	6100 2300 6150 2300
+Wire Wire Line
+	6100 2200 6150 2200
+Wire Wire Line
+	6100 2900 6150 2900
+$Comp
+L RetroBitLab:USBCH340T U12
+U 1 1 68BA8F79
+P 5700 2600
+F 0 "U12" H 5905 3460 50  0000 C CNN
+F 1 "USBCH340T" H 5975 1830 50  0000 C CNN
+F 2 "Package_SO:SSOP-20_5.3x7.2mm_P0.65mm" H 6600 1800 50  0001 C CNN
+F 3 "https://cdn.sparkfun.com/datasheets/Dev/Arduino/Other/CH340DS1.PDF" H 5450 3450 50  0001 C CNN
+F 4 "https://www.lcsc.com/datasheet/C8689.pdf" H 5700 2600 50  0001 C CNN "Datasheet2"
+F 5 "C8689" H 5700 2600 50  0001 C CNN "LCSC"
+	1    5700 2600
+	1    0    0    -1  
+$EndComp
+$Comp
+L RetroBitLab:DIOSCH20V D3
+U 1 1 68BD7758
+P 6550 1900
+F 0 "D3" H 6550 2117 50  0000 C CNN
+F 1 "DIOSCH20V" H 6550 2026 50  0000 C CNN
+F 2 "Diode_SMD:D_SMC_Handsoldering" H 6550 1900 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C236151.pdf" H 6550 1900 50  0001 C CNN
+F 4 "C236151" H 6550 1900 50  0001 C CNN "LCSC"
+	1    6550 1900
+	1    0    0    -1  
+$EndComp
+$Comp
+L RetroBitLab:DIOSCH20V D4
+U 1 1 68BD8220
+P 6550 2125
+F 0 "D4" H 6555 2030 50  0000 C CNN
+F 1 "DIOSCH20V" H 6530 2235 50  0000 C CNN
+F 2 "Diode_SMD:D_SMC_Handsoldering" H 6550 2125 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C236151.pdf" H 6550 2125 50  0001 C CNN
+F 4 "C236151" H 6550 2125 50  0001 C CNN "LCSC"
+	1    6550 2125
+	-1   0    0    1   
+$EndComp
+$Comp
+L RetroBitLab:DX07S016JA1R1500 J4
+U 1 1 68BF26BC
+P 2625 2500
+F 0 "J4" H 2625 3417 50  0000 C CNN
+F 1 "DX07S016JA1R1500" H 2625 3326 50  0000 C CNN
+F 2 "RetroBitLab:JAE_DX07S016JA1R1500" H 2175 3400 50  0001 L BNN
+F 3 "" H 2625 2500 50  0001 L BNN
+F 4 "JAE Electronics" H 1425 3350 50  0001 L BNN "MF"
+F 5 "3.31 mm" H 3675 2750 50  0001 L BNN "MAXIMUM_PACKAGE_HEIGHT"
+F 6 "None" H 1125 1250 50  0001 L BNN "Package"
+F 7 "None" H 1125 1150 50  0001 L BNN "Price"
+F 8 "https://www.snapeda.com/parts/DX07S016JA1R1500/JAE+Electronics/view-part/?ref=eda" H 1125 1550 50  0001 L BNN "Check_prices"
+F 9 "Manufacturer Recommendations" H 2125 1450 50  0001 L BNN "STANDARD"
+F 10 "1" H 3075 3500 50  0001 L BNN "PARTREV"
+F 11 "https://www.snapeda.com/parts/DX07S016JA1R1500/JAE+Electronics/view-part/?ref=snap" H 1125 1350 50  0001 L BNN "SnapEDA_Link"
+F 12 "DX07S016JA1R1500" H 2275 3500 50  0001 L BNN "MP"
+F 13 "\\n                        \\n                            USB-C (USB TYPE-C) USB 2.0 Receptacle Connector 24 (16+8 Dummy) Position Surface Mount, Right Angle; Through Hole\\n                        \\n" H -1375 3600 50  0001 L BNN "Description"
+F 14 "In Stock" H 1525 3250 50  0001 L BNN "Availability"
+F 15 "JAE Industry Ltd." H 3175 3300 50  0001 L BNN "MANUFACTURER"
+F 16 "C3197885" H 2625 2500 50  0001 C CNN "LCSC"
+	1    2625 2500
+	1    0    0    -1  
+$EndComp
+Connection ~ 2025 2350
 $EndSCHEMATC
