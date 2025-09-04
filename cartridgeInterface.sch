@@ -5,7 +5,7 @@ $Descr A4 11693 8268
 encoding utf-8
 Sheet 4 6
 Title ""
-Date "2025-09-03"
+Date "2025-09-04"
 Rev "1.0"
 Comp "RetroBit Lab"
 Comment1 "Gianluca Renzi"
@@ -43,26 +43,10 @@ Text GLabel 3025 2600 0    50   Output ~ 0
 ~MPD
 Text GLabel 3300 2700 0    50   Output ~ 0
 AUDIO
-Text GLabel 3300 2900 0    50   Output ~ 0
+Text GLabel 3300 2900 0    39   BiDi ~ 0
 5V
 Wire Wire Line
 	3300 2900 3350 2900
-$Comp
-L power:+5V #PWR068
-U 1 1 68937678
-P 3250 3025
-F 0 "#PWR068" H 3250 2875 50  0001 C CNN
-F 1 "+5V" V 3265 3153 50  0000 L CNN
-F 2 "" H 3250 3025 50  0001 C CNN
-F 3 "" H 3250 3025 50  0001 C CNN
-	1    3250 3025
-	0    -1   -1   0   
-$EndComp
-Wire Wire Line
-	3250 3025 3350 3025
-Wire Wire Line
-	3350 3025 3350 2900
-Connection ~ 3350 2900
 Wire Wire Line
 	3300 2700 3350 2700
 Wire Wire Line
@@ -153,7 +137,7 @@ Text GLabel 8425 2950 2    50   Output ~ 0
 D7
 Text GLabel 8425 2050 2    50   Output ~ 0
 GND
-Text GLabel 6625 3150 0    50   Output ~ 0
+Text GLabel 6625 3150 0    39   BiDi ~ 0
 5V
 Text GLabel 8650 3250 2    50   Output ~ 0
 R~W
@@ -161,28 +145,20 @@ Text GLabel 8425 3350 2    50   Output ~ 0
 PHI2
 Wire Wire Line
 	8425 3250 8650 3250
-NoConn ~ 3300 2500
 Text Notes 3150 1500 0    197  ~ 39
 ATARI 130XE ECI & CARTRIDGE INTERFACE
 Wire Wire Line
 	3300 2800 3350 2800
-NoConn ~ 3300 2800
-NoConn ~ 5250 2500
 Wire Wire Line
 	5150 2500 5250 2500
-NoConn ~ 6575 3050
-NoConn ~ 6575 1950
 Wire Wire Line
 	8475 1950 8425 1950
-NoConn ~ 8475 1950
 Wire Wire Line
 	6575 3250 6625 3250
-NoConn ~ 6575 3250
 Wire Wire Line
 	6575 3050 6625 3050
 Wire Wire Line
 	6575 1950 6625 1950
-NoConn ~ 5250 2300
 Wire Wire Line
 	5150 2300 5250 2300
 Text GLabel 6625 3350 0    39   BiDi ~ 0
@@ -242,4 +218,20 @@ F 4 "C6757641" H 4100 4000 50  0001 C CNN "LCSC"
 $EndComp
 Text Notes 3000 3825 0    118  Italic 24
 AUDIO MIXER INSIDE ATARI
+Text GLabel 3300 2500 0    50   Output ~ 0
+~D1XX
+Text GLabel 8475 1950 2    39   BiDi ~ 0
+RD4
+Text GLabel 6575 3250 0    39   BiDi ~ 0
+RD5
+Text GLabel 6575 1950 0    39   BiDi ~ 0
+~S4
+Text GLabel 6575 3050 0    39   BiDi ~ 0
+~S5
+Text GLabel 5250 2500 2    39   BiDi ~ 0
+~HALT
+Text GLabel 5250 2300 2    39   BiDi ~ 0
+RSRVD
+Text GLabel 3300 2800 0    39   BiDi ~ 0
+~REF
 $EndSCHEMATC

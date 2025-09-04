@@ -5,7 +5,7 @@ $Descr A4 11693 8268
 encoding utf-8
 Sheet 5 6
 Title ""
-Date "2025-09-03"
+Date "2025-09-04"
 Rev "1.0"
 Comp "RetroBit Lab"
 Comment1 "Gianluca Renzi"
@@ -13,94 +13,59 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
-Text Label 7375 4725 2    39   ~ 0
+Text Label 7550 4685 2    39   ~ 0
 FLASH_SSEL_N
 Wire Wire Line
-	7375 4725 7550 4725
-Text GLabel 7375 4925 0    39   Input ~ 0
+	7550 4685 7725 4685
+Text GLabel 7550 4885 0    39   Input ~ 0
 SPI_SCK
 Wire Wire Line
-	7375 4925 7550 4925
-Text GLabel 8700 4625 2    39   Input ~ 0
+	7550 4885 7725 4885
+Text GLabel 8875 4585 2    39   Input ~ 0
 SPI_MOSI
-Text GLabel 8700 4725 2    39   Input ~ 0
+Text GLabel 8875 4685 2    39   Input ~ 0
 SPI_MISO
 Wire Wire Line
-	8550 4625 8700 4625
+	8725 4585 8875 4585
 Wire Wire Line
-	8550 4725 8700 4725
+	8725 4685 8875 4685
 $Comp
 L power:GND #PWR090
 U 1 1 68DCC295
-P 8050 5225
-F 0 "#PWR090" H 8050 4975 50  0001 C CNN
-F 1 "GND" H 8055 5052 50  0000 C CNN
-F 2 "" H 8050 5225 50  0001 C CNN
-F 3 "" H 8050 5225 50  0001 C CNN
-	1    8050 5225
-	1    0    0    -1  
-$EndComp
-$Comp
-L power:+3.3V #PWR086
-U 1 1 68DCCB4E
-P 8050 4425
-F 0 "#PWR086" H 8050 4275 50  0001 C CNN
-F 1 "+3.3V" H 8050 4570 50  0000 C CNN
-F 2 "" H 8050 4425 50  0001 C CNN
-F 3 "" H 8050 4425 50  0001 C CNN
-	1    8050 4425
+P 8225 5185
+F 0 "#PWR090" H 8225 4935 50  0001 C CNN
+F 1 "GND" H 8230 5012 50  0000 C CNN
+F 2 "" H 8225 5185 50  0001 C CNN
+F 3 "" H 8225 5185 50  0001 C CNN
+	1    8225 5185
 	1    0    0    -1  
 $EndComp
 $Comp
 L power:GND #PWR089
 U 1 1 68DD51F9
-P 6700 4875
-F 0 "#PWR089" H 6700 4625 50  0001 C CNN
-F 1 "GND" H 6705 4702 50  0000 C CNN
-F 2 "" H 6700 4875 50  0001 C CNN
-F 3 "" H 6700 4875 50  0001 C CNN
-	1    6700 4875
-	1    0    0    -1  
-$EndComp
-$Comp
-L power:+3.3V #PWR087
-U 1 1 68DD5203
-P 6700 4675
-F 0 "#PWR087" H 6700 4525 50  0001 C CNN
-F 1 "+3.3V" H 6715 4848 50  0000 C CNN
-F 2 "" H 6700 4675 50  0001 C CNN
-F 3 "" H 6700 4675 50  0001 C CNN
-	1    6700 4675
+P 6680 4930
+F 0 "#PWR089" H 6680 4680 50  0001 C CNN
+F 1 "GND" H 6685 4757 50  0000 C CNN
+F 2 "" H 6680 4930 50  0001 C CNN
+F 3 "" H 6680 4930 50  0001 C CNN
+	1    6680 4930
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	8550 4925 9150 4925
+	8725 4885 9325 4885
 Wire Wire Line
-	8550 5025 8850 5025
+	8725 4985 9025 4985
 Wire Wire Line
-	8850 5025 8850 5225
+	9025 4985 9025 5185
 Wire Wire Line
-	8850 5225 9150 5225
+	9025 5185 9325 5185
 Wire Wire Line
-	9350 5225 9450 5225
+	9525 5185 9625 5185
 Wire Wire Line
-	9450 5225 9450 4925
+	9625 5185 9625 4885
 Wire Wire Line
-	9450 4925 9350 4925
-Wire Wire Line
-	9450 4925 9450 4825
-Connection ~ 9450 4925
-$Comp
-L power:+3.3V #PWR088
-U 1 1 68DE970D
-P 9450 4825
-F 0 "#PWR088" H 9450 4675 50  0001 C CNN
-F 1 "+3.3V" H 9465 4998 50  0000 C CNN
-F 2 "" H 9450 4825 50  0001 C CNN
-F 3 "" H 9450 4825 50  0001 C CNN
-	1    9450 4825
-	1    0    0    -1  
-$EndComp
+	9625 4885 9525 4885
+Connection ~ 9625 4885
 Wire Wire Line
 	7275 1200 7275 1000
 Wire Wire Line
@@ -122,20 +87,7 @@ Wire Wire Line
 Connection ~ 7525 1000
 Wire Wire Line
 	7525 1000 7775 1000
-Wire Wire Line
-	8275 1000 8275 850 
 Connection ~ 8275 1000
-$Comp
-L power:+3.3V #PWR070
-U 1 1 68DF4476
-P 8275 850
-F 0 "#PWR070" H 8275 700 50  0001 C CNN
-F 1 "+3.3V" H 8290 1023 50  0000 C CNN
-F 2 "" H 8275 850 50  0001 C CNN
-F 3 "" H 8275 850 50  0001 C CNN
-	1    8275 850 
-	1    0    0    -1  
-$EndComp
 $Comp
 L power:GND #PWR073
 U 1 1 68DFBF30
@@ -145,17 +97,6 @@ F 1 "GND" H 8855 1052 50  0000 C CNN
 F 2 "" H 8850 1225 50  0001 C CNN
 F 3 "" H 8850 1225 50  0001 C CNN
 	1    8850 1225
-	1    0    0    -1  
-$EndComp
-$Comp
-L power:+3.3V #PWR071
-U 1 1 68DFBF3A
-P 8850 975
-F 0 "#PWR071" H 8850 825 50  0001 C CNN
-F 1 "+3.3V" H 8865 1148 50  0000 C CNN
-F 2 "" H 8850 975 50  0001 C CNN
-F 3 "" H 8850 975 50  0001 C CNN
-	1    8850 975 
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
@@ -183,17 +124,6 @@ F 2 "" H 8025 3150 50  0001 C CNN
 F 3 "" H 8025 3150 50  0001 C CNN
 	1    8025 3150
 	1    0    0    -1  
-$EndComp
-$Comp
-L power:+3.3V #PWR081
-U 1 1 68E14357
-P 8625 2825
-F 0 "#PWR081" H 8625 2675 50  0001 C CNN
-F 1 "+3.3V" V 8640 2953 50  0000 L CNN
-F 2 "" H 8625 2825 50  0001 C CNN
-F 3 "" H 8625 2825 50  0001 C CNN
-	1    8625 2825
-	0    1    1    0   
 $EndComp
 Text Label 6050 2425 0    39   ~ 0
 SD_CS0
@@ -276,17 +206,6 @@ Wire Wire Line
 Wire Wire Line
 	6400 1775 6400 1675
 $Comp
-L power:+3.3V #PWR078
-U 1 1 68EAC0A7
-P 6400 1675
-F 0 "#PWR078" H 6400 1525 50  0001 C CNN
-F 1 "+3.3V" H 6415 1848 50  0000 C CNN
-F 2 "" H 6400 1675 50  0001 C CNN
-F 3 "" H 6400 1675 50  0001 C CNN
-	1    6400 1675
-	1    0    0    -1  
-$EndComp
-$Comp
 L power:GND #PWR076
 U 1 1 68EB2005
 P 4800 1475
@@ -295,17 +214,6 @@ F 1 "GND" H 4805 1302 50  0000 C CNN
 F 2 "" H 4800 1475 50  0001 C CNN
 F 3 "" H 4800 1475 50  0001 C CNN
 	1    4800 1475
-	1    0    0    -1  
-$EndComp
-$Comp
-L power:+3.3V #PWR074
-U 1 1 68EB200F
-P 4800 1275
-F 0 "#PWR074" H 4800 1125 50  0001 C CNN
-F 1 "+3.3V" H 4815 1448 50  0000 C CNN
-F 2 "" H 4800 1275 50  0001 C CNN
-F 3 "" H 4800 1275 50  0001 C CNN
-	1    4800 1275
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -340,26 +248,6 @@ Wire Wire Line
 	1250 5550 1400 5550
 Wire Wire Line
 	1250 5650 1400 5650
-Wire Wire Line
-	1400 6150 1325 6150
-Wire Wire Line
-	1400 6250 1325 6250
-Wire Wire Line
-	1325 6250 1325 6150
-Connection ~ 1325 6150
-Wire Wire Line
-	1325 6150 1225 6150
-$Comp
-L power:+3.3V #PWR093
-U 1 1 68ED7750
-P 1225 6150
-F 0 "#PWR093" H 1225 6000 50  0001 C CNN
-F 1 "+3.3V" H 1240 6323 50  0000 C CNN
-F 2 "" H 1225 6150 50  0001 C CNN
-F 3 "" H 1225 6150 50  0001 C CNN
-	1    1225 6150
-	1    0    0    -1  
-$EndComp
 $Comp
 L power:GND #PWR094
 U 1 1 68EDE8EA
@@ -389,12 +277,12 @@ Wire Wire Line
 Wire Wire Line
 	3175 6850 3300 6850
 Wire Wire Line
-	3300 6850 3300 6525
+	3300 6850 3300 6655
 Connection ~ 3175 6850
 Wire Wire Line
 	2500 6250 3300 6250
 Wire Wire Line
-	3300 6250 3300 6325
+	3300 6250 3300 6455
 Wire Wire Line
 	3300 6850 3625 6850
 Wire Wire Line
@@ -421,19 +309,6 @@ Wire Wire Line
 Connection ~ 3625 6050
 Wire Wire Line
 	3625 6050 4025 6050
-$Comp
-L power:+3.3V #PWR092
-U 1 1 68F37556
-P 3625 6000
-F 0 "#PWR092" H 3625 5850 50  0001 C CNN
-F 1 "+3.3V" H 3640 6173 50  0000 C CNN
-F 2 "" H 3625 6000 50  0001 C CNN
-F 3 "" H 3625 6000 50  0001 C CNN
-	1    3625 6000
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	3625 6000 3625 6050
 Wire Wire Line
 	2500 5750 2675 5750
 Wire Wire Line
@@ -522,17 +397,6 @@ F 3 "~" H 1350 2650 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L power:+3.3V #PWR075
-U 1 1 68D0D423
-P 2575 1450
-F 0 "#PWR075" H 2575 1300 50  0001 C CNN
-F 1 "+3.3V" H 2590 1623 50  0000 C CNN
-F 2 "" H 2575 1450 50  0001 C CNN
-F 3 "" H 2575 1450 50  0001 C CNN
-	1    2575 1450
-	1    0    0    -1  
-$EndComp
-$Comp
 L power:GND #PWR077
 U 1 1 68D0CBAF
 P 2575 1650
@@ -541,17 +405,6 @@ F 1 "GND" H 2580 1477 50  0000 C CNN
 F 2 "" H 2575 1650 50  0001 C CNN
 F 3 "" H 2575 1650 50  0001 C CNN
 	1    2575 1650
-	1    0    0    -1  
-$EndComp
-$Comp
-L power:+3.3V #PWR072
-U 1 1 68D043D7
-P 1850 1100
-F 0 "#PWR072" H 1850 950 50  0001 C CNN
-F 1 "+3.3V" H 1865 1273 50  0000 C CNN
-F 2 "" H 1850 1100 50  0001 C CNN
-F 3 "" H 1850 1100 50  0001 C CNN
-	1    1850 1100
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -636,59 +489,57 @@ F 4 "C33546020" H 8850 1100 50  0001 C CNN "LCSC"
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	8850 975  8850 1000
-Wire Wire Line
 	8850 1200 8850 1225
 $Comp
 L RetroBitLab:W25Q16JVSNIQ U10
 U 1 1 68B74D58
-P 8050 4825
-F 0 "U10" H 7705 5180 50  0000 C CNN
-F 1 "W25Q16JVSNIQ" H 8390 4450 50  0000 C CNN
-F 2 "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm" H 8050 4825 50  0001 C CNN
-F 3 "http://www.winbond.com/resource-files/w25q32jv%20revg%2003272018%20plus.pdf" H 8050 4825 50  0001 C CNN
-F 4 "Winbond Electronics" H 8050 4825 39  0001 C CNN "Manufacturer"
-F 5 "W25Q16JVSNIQ" H 8050 4825 39  0001 C CNN "Man_PN"
-F 6 "DigiKey" H 8050 4825 39  0001 C CNN "Supply 1"
-F 7 "W25Q16JVSNIQ-ND" H 8050 4825 39  0001 C CNN "Supply 1 Part Number"
-F 8 "C2456211" H 8050 4825 50  0001 C CNN "LCSC"
-	1    8050 4825
+P 8225 4785
+F 0 "U10" H 7880 5140 50  0000 C CNN
+F 1 "W25Q16JVSNIQ" H 8565 4410 50  0000 C CNN
+F 2 "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm" H 8225 4785 50  0001 C CNN
+F 3 "http://www.winbond.com/resource-files/w25q32jv%20revg%2003272018%20plus.pdf" H 8225 4785 50  0001 C CNN
+F 4 "Winbond Electronics" H 8225 4785 39  0001 C CNN "Manufacturer"
+F 5 "W25Q16JVSNIQ" H 8225 4785 39  0001 C CNN "Man_PN"
+F 6 "DigiKey" H 8225 4785 39  0001 C CNN "Supply 1"
+F 7 "W25Q16JVSNIQ-ND" H 8225 4785 39  0001 C CNN "Supply 1 Part Number"
+F 8 "C2456211" H 8225 4785 50  0001 C CNN "LCSC"
+	1    8225 4785
 	1    0    0    -1  
 $EndComp
 $Comp
 L CCAP1206:100nF C29
 U 1 1 68B799A8
-P 6700 4775
-F 0 "C29" H 6792 4821 50  0000 L CNN
-F 1 "100nF" H 6792 4730 50  0000 L CNN
-F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 6700 4775 50  0001 C CNN
-F 3 "https://www.lcsc.com/datasheet/C2858001.pdf" H 6700 4775 50  0001 C CNN
-F 4 "C2858001" H 6700 4775 50  0001 C CNN "LCSC"
-	1    6700 4775
+P 6680 4830
+F 0 "C29" H 6772 4876 50  0000 L CNN
+F 1 "100nF" H 6772 4785 50  0000 L CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 6680 4830 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C2858001.pdf" H 6680 4830 50  0001 C CNN
+F 4 "C2858001" H 6680 4830 50  0001 C CNN "LCSC"
+	1    6680 4830
 	1    0    0    -1  
 $EndComp
 $Comp
 L CRES1206:47K R43
 U 1 1 68B76F19
-P 9255 4925
-F 0 "R43" V 9120 4920 50  0000 C CNN
-F 1 "47K" V 9190 4915 50  0000 C CNN
-F 2 "Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder" H 9255 4925 50  0001 C CNN
-F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2411221126_UNI-ROYAL-1206W4F470JT5E_C17969.pdf" H 9255 4925 50  0001 C CNN
-F 4 "C25833" H 9255 4925 50  0001 C CNN "LCSC"
-	1    9255 4925
+P 9430 4885
+F 0 "R43" V 9295 4880 50  0000 C CNN
+F 1 "47K" V 9365 4875 50  0000 C CNN
+F 2 "Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder" H 9430 4885 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2411221126_UNI-ROYAL-1206W4F470JT5E_C17969.pdf" H 9430 4885 50  0001 C CNN
+F 4 "C25833" H 9430 4885 50  0001 C CNN "LCSC"
+	1    9430 4885
 	0    1    1    0   
 $EndComp
 $Comp
 L CRES1206:47K R44
 U 1 1 68B7750F
-P 9255 5225
-F 0 "R44" V 9105 5225 50  0000 C CNN
-F 1 "47K" V 9185 5220 50  0000 C CNN
-F 2 "Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder" H 9255 5225 50  0001 C CNN
-F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2411221126_UNI-ROYAL-1206W4F470JT5E_C17969.pdf" H 9255 5225 50  0001 C CNN
-F 4 "C25833" H 9255 5225 50  0001 C CNN "LCSC"
-	1    9255 5225
+P 9430 5185
+F 0 "R44" V 9280 5185 50  0000 C CNN
+F 1 "47K" V 9360 5180 50  0000 C CNN
+F 2 "Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder" H 9430 5185 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2411221126_UNI-ROYAL-1206W4F470JT5E_C17969.pdf" H 9430 5185 50  0001 C CNN
+F 4 "C25833" H 9430 5185 50  0001 C CNN "LCSC"
+	1    9430 5185
 	0    1    1    0   
 $EndComp
 $Comp
@@ -706,12 +557,12 @@ $EndComp
 $Comp
 L CCAP1206:1uF C33
 U 1 1 68B8A336
-P 3300 6425
-F 0 "C33" H 3392 6471 50  0000 L CNN
-F 1 "1uF" H 3392 6380 50  0000 L CNN
-F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 3300 6425 50  0001 C CNN
-F 3 "https://lcsc.com/datasheet/" H 3300 6425 50  0001 C CNN
-	1    3300 6425
+P 3300 6555
+F 0 "C33" H 3392 6601 50  0000 L CNN
+F 1 "1uF" H 3392 6510 50  0000 L CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 3300 6555 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/" H 3300 6555 50  0001 C CNN
+	1    3300 6555
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -877,8 +728,6 @@ F 4 "C5586" H 2150 3250 50  0001 C CNN "LCSC"
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	1850 1100 1850 1325
-Wire Wire Line
 	1850 2100 1850 1900
 Wire Wire Line
 	2775 2650 2775 2700
@@ -977,30 +826,6 @@ F 2 "Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder" H 8275 1295 50  0
 F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2411221126_UNI-ROYAL-1206W4F470JT5E_C17969.pdf" H 8275 1295 50  0001 C CNN
 F 4 "C25833" H 8275 1295 50  0001 C CNN "LCSC"
 	1    8275 1295
-	1    0    0    -1  
-$EndComp
-$Comp
-L RetroBitLab:CONN_DM3AT-SF-PEJM5 J3
-U 1 1 68B7F3C8
-P 9475 2150
-F 0 "J3" H 8925 2650 50  0000 C CNN
-F 1 "CONN_DM3AT-SF-PEJM5" H 9675 2650 50  0000 C CNN
-F 2 "RetroBitLab:HRS_DM3AT-SF-PEJM5" H 9475 2150 50  0001 L BNN
-F 3 "https://www.lcsc.com/datasheet/C114218.pdf" H 9475 2150 50  0001 L BNN
-F 4 "Hirose" H 9475 2150 50  0001 L BNN "MF"
-F 5 "1.83 mm" H 9475 2150 50  0001 L BNN "MAXIMUM_PACKAGE_HEIGHT"
-F 6 "None" H 9475 2150 50  0001 L BNN "Package"
-F 7 "None" H 9475 2150 50  0001 L BNN "Price"
-F 8 "https://www.snapeda.com/parts/DM3AT-SF-PEJM5/Hirose+Electric+Co+Ltd/view-part/?ref=eda" H 9475 2150 50  0001 L BNN "Check_prices"
-F 9 "Manufacturer Recommendations" H 9475 2150 50  0001 L BNN "STANDARD"
-F 10 "20200913" H 9475 2150 50  0001 L BNN "PARTREV"
-F 11 "https://www.snapeda.com/parts/DM3AT-SF-PEJM5/Hirose+Electric+Co+Ltd/view-part/?ref=snap" H 9475 2150 50  0001 L BNN "SnapEDA_Link"
-F 12 "DM3AT-SF-PEJM5" H 9475 2150 50  0001 L BNN "MP"
-F 13 "\\n                        \\n                            10 (8 + 2) Position Card Connector Secure Digital - microSD™ Surface Mount, Right Angle Gold\\n                        \\n" H 9475 2150 50  0001 L BNN "Description"
-F 14 "In Stock" H 9475 2150 50  0001 L BNN "Availability"
-F 15 "Hirose Electric Co Ltd" H 9475 2150 50  0001 L BNN "MANUFACTURER"
-F 16 "C114218" H 9475 2150 50  0001 C CNN "LCSC"
-	1    9475 2150
 	1    0    0    -1  
 $EndComp
 Text Label 8675 1925 2    39   ~ 0
@@ -1138,4 +963,97 @@ F 4 "C25833" H 8025 2745 50  0001 C CNN "LCSC"
 	1    8025 2745
 	1    0    0    -1  
 $EndComp
+Wire Wire Line
+	1400 6250 1035 6250
+Text GLabel 1035 6075 1    39   BiDi ~ 0
+3V3
+Wire Wire Line
+	1035 6075 1035 6150
+Wire Wire Line
+	1400 6150 1035 6150
+Connection ~ 1035 6150
+Wire Wire Line
+	1035 6150 1035 6250
+Text GLabel 1745 1030 0    50   BiDi ~ 0
+3V3
+Wire Wire Line
+	1745 1030 1850 1030
+Wire Wire Line
+	1850 1030 1850 1325
+Text GLabel 2450 1355 0    50   BiDi ~ 0
+3V3
+Wire Wire Line
+	2575 1450 2575 1355
+Wire Wire Line
+	2450 1355 2575 1355
+Text GLabel 6475 1675 2    50   BiDi ~ 0
+3V3
+Wire Wire Line
+	6475 1675 6400 1675
+Text GLabel 4800 1160 1    50   BiDi ~ 0
+3V3
+Wire Wire Line
+	4800 1275 4800 1160
+Text GLabel 8140 810  0    50   BiDi ~ 0
+3V3
+Text GLabel 8730 910  0    50   BiDi ~ 0
+3V3
+Wire Wire Line
+	8140 810  8275 810 
+Wire Wire Line
+	8275 810  8275 1000
+Wire Wire Line
+	8730 910  8850 910 
+Wire Wire Line
+	8850 910  8850 1000
+Text GLabel 8625 2825 2    50   BiDi ~ 0
+3V3
+$Comp
+L RetroBitLab:CONN_DM3AT-SF-PEJM5 J3
+U 1 1 68B7F3C8
+P 9475 2150
+F 0 "J3" H 8925 2650 50  0000 C CNN
+F 1 "CONN_DM3AT-SF-PEJM5" H 9675 2650 50  0000 C CNN
+F 2 "RetroBitLab:HRS_DM3AT-SF-PEJM5" H 9475 2150 50  0001 L BNN
+F 3 "https://www.lcsc.com/datasheet/C114218.pdf" H 9475 2150 50  0001 L BNN
+F 4 "Hirose" H 9475 2150 50  0001 L BNN "MF"
+F 5 "1.83 mm" H 9475 2150 50  0001 L BNN "MAXIMUM_PACKAGE_HEIGHT"
+F 6 "None" H 9475 2150 50  0001 L BNN "Package"
+F 7 "None" H 9475 2150 50  0001 L BNN "Price"
+F 8 "https://www.snapeda.com/parts/DM3AT-SF-PEJM5/Hirose+Electric+Co+Ltd/view-part/?ref=eda" H 9475 2150 50  0001 L BNN "Check_prices"
+F 9 "Manufacturer Recommendations" H 9475 2150 50  0001 L BNN "STANDARD"
+F 10 "20200913" H 9475 2150 50  0001 L BNN "PARTREV"
+F 11 "https://www.snapeda.com/parts/DM3AT-SF-PEJM5/Hirose+Electric+Co+Ltd/view-part/?ref=snap" H 9475 2150 50  0001 L BNN "SnapEDA_Link"
+F 12 "DM3AT-SF-PEJM5" H 9475 2150 50  0001 L BNN "MP"
+F 13 "\\n                        \\n                            10 (8 + 2) Position Card Connector Secure Digital - microSD™ Surface Mount, Right Angle Gold\\n                        \\n" H 9475 2150 50  0001 L BNN "Description"
+F 14 "In Stock" H 9475 2150 50  0001 L BNN "Availability"
+F 15 "Hirose Electric Co Ltd" H 9475 2150 50  0001 L BNN "MANUFACTURER"
+F 16 "C114218" H 9475 2150 50  0001 C CNN "LCSC"
+	1    9475 2150
+	1    0    0    -1  
+$EndComp
+Text GLabel 8180 4180 0    50   BiDi ~ 0
+3V3
+Wire Wire Line
+	8225 4385 8225 4180
+Wire Wire Line
+	8225 4180 8180 4180
+Text GLabel 6705 4520 2    50   BiDi ~ 0
+3V3
+Wire Wire Line
+	6705 4520 6680 4520
+Wire Wire Line
+	6680 4520 6680 4730
+Text GLabel 9585 4525 0    50   BiDi ~ 0
+3V3
+Wire Wire Line
+	9585 4525 9625 4525
+Wire Wire Line
+	9625 4525 9625 4885
+Text GLabel 3680 5860 2    50   BiDi ~ 0
+3V3
+Wire Wire Line
+	3625 5860 3680 5860
+Wire Wire Line
+	3625 5860 3625 6050
 $EndSCHEMATC
