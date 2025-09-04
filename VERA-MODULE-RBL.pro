@@ -1,4 +1,4 @@
-update=Wed 03 Sep 2025 10:59:36 AM CEST
+update=Thu 04 Sep 2025 11:12:14 AM CEST
 version=1
 last_client=kicad
 [general]
@@ -39,6 +39,16 @@ MinMicroViaDiameter=0.2
 MinMicroViaDrill=0.09999999999999999
 MinHoleToHole=0.25
 TrackWidth1=0.25
+TrackWidth2=0.2
+TrackWidth3=0.256
+TrackWidth4=0.3
+TrackWidth5=0.4
+TrackWidth6=0.5
+TrackWidth7=0.75
+TrackWidth8=1
+TrackWidth9=1.25
+TrackWidth10=1.5
+TrackWidth11=2
 ViaDiameter1=0.8
 ViaDrill1=0.4
 dPairWidth1=0.2
@@ -64,7 +74,7 @@ OthersTextSizeH=1
 OthersTextSizeThickness=0.15
 OthersTextItalic=0
 OthersTextUpright=1
-SolderMaskClearance=0
+SolderMaskClearance=0.09999999999999999
 SolderMaskMinWidth=0
 SolderPasteClearance=0
 SolderPasteRatio=-0
@@ -74,11 +84,11 @@ Type=0
 Enabled=1
 [pcbnew/Layer.In1.Cu]
 Name=POWER
-Type=1
+Type=2
 Enabled=1
 [pcbnew/Layer.In2.Cu]
 Name=GND
-Type=1
+Type=2
 Enabled=1
 [pcbnew/Layer.In3.Cu]
 Name=In3.Cu
