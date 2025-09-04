@@ -1,7 +1,7 @@
 (export (version D)
   (design
     (source /home/gianluca/Progetti-CVS/ATARI/Vera-Module-RBL-XE/VERA-MODULE-RBL.sch)
-    (date "Thu 04 Sep 2025 11:06:59 AM CEST")
+    (date "Thu 04 Sep 2025 04:41:04 PM CEST")
     (tool "Eeschema 5.1.9+dfsg1-1+deb11u1")
     (sheet (number 1) (name /) (tstamps /)
       (title_block
@@ -3458,7 +3458,7 @@
       (node (ref ECI1) (pin 5))
       (node (ref R36) (pin 1))
       (node (ref R35) (pin 1)))
-    (net (code 164) (name ~REF)
+    (net (code 164) (name "Net-(ECI1-Pad6)")
       (node (ref ECI1) (pin 6)))
     (net (code 165) (name AUDIOL)
       (node (ref C31) (pin 1))

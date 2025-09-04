@@ -232,6 +232,5 @@ Text GLabel 5250 2500 2    39   BiDi ~ 0
 ~HALT
 Text GLabel 5250 2300 2    39   BiDi ~ 0
 RSRVD
-Text GLabel 3300 2800 0    39   BiDi ~ 0
-~REF
+NoConn ~ 3300 2800
 $EndSCHEMATC
