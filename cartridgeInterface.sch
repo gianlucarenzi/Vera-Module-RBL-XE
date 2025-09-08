@@ -1,11 +1,11 @@
 EESchema Schematic File Version 4
 EELAYER 30 0
 EELAYER END
-$Descr A4 11693 8268
+$Descr A3 16535 11693
 encoding utf-8
 Sheet 4 6
 Title ""
-Date "2025-09-04"
+Date "2025-09-08"
 Rev "1.0"
 Comp "RetroBit Lab"
 Comment1 "Gianluca Renzi"
@@ -16,221 +16,1311 @@ $EndDescr
 $Comp
 L RetroBitLab:ECIBUS ECI1
 U 1 1 68934ECE
-P 4250 2550
-F 0 "ECI1" H 4250 3065 50  0000 C CNN
-F 1 "ECIBUS" H 4250 2974 50  0000 C CNN
-F 2 "RetroBitLab:ATARI-XE-ECI-SLOT" H 4250 1700 50  0001 C CNN
-F 3 "" H 4250 1700 50  0000 C CNN
-	1    4250 2550
+P 6630 2870
+F 0 "ECI1" H 6630 3385 50  0000 C CNN
+F 1 "ECIBUS" H 6630 3294 50  0000 C CNN
+F 2 "RetroBitLab:ATARI-XE-ECI-SLOT" H 6630 2020 50  0001 C CNN
+F 3 "" H 6630 2020 50  0000 C CNN
+	1    6630 2870
 	1    0    0    -1  
 $EndComp
 $Comp
 L RetroBitLab:ATARI-CARTRIDGE CART1
 U 1 1 68935683
-P 7525 2600
-F 0 "CART1" H 7525 3515 50  0000 C CNN
-F 1 "ATARI-CARTRIDGE" H 7525 3424 50  0000 C CNN
-F 2 "RetroBitLab:ATARI-LEFT-CARTRIDGE" H 7525 1750 50  0001 C CNN
-F 3 "" H 7525 1750 50  0000 C CNN
-	1    7525 2600
+P 9905 2920
+F 0 "CART1" H 9905 3835 50  0000 C CNN
+F 1 "ATARI-CARTRIDGE" H 9905 3744 50  0000 C CNN
+F 2 "RetroBitLab:ATARI-LEFT-CARTRIDGE" H 9905 2070 50  0001 C CNN
+F 3 "" H 9905 2070 50  0000 C CNN
+	1    9905 2920
 	1    0    0    -1  
 $EndComp
-Text GLabel 3275 2300 0    50   Output ~ 0
+Text GLabel 5655 2620 0    50   Output ~ 0
 ~EXSEL
-Text GLabel 3000 2400 0    50   Output ~ 0
+Text GLabel 5380 2720 0    50   Output ~ 0
 ~RST
-Text GLabel 3025 2600 0    50   Output ~ 0
+Text GLabel 5405 2920 0    50   Output ~ 0
 ~MPD
-Text GLabel 3300 2700 0    50   Output ~ 0
+Text GLabel 5680 3020 0    50   Output ~ 0
 AUDIO
-Text GLabel 3300 2900 0    39   BiDi ~ 0
+Text GLabel 5680 3220 0    39   BiDi ~ 0
 5V
 Wire Wire Line
-	3300 2900 3350 2900
+	5680 3220 5730 3220
 Wire Wire Line
-	3300 2700 3350 2700
+	5680 3020 5730 3020
 Wire Wire Line
-	3025 2600 3350 2600
+	5405 2920 5730 2920
 Wire Wire Line
-	3300 2500 3350 2500
+	5680 2820 5730 2820
 Wire Wire Line
-	3350 2400 3000 2400
+	5730 2720 5380 2720
 Wire Wire Line
-	3275 2300 3350 2300
-Text GLabel 5500 2400 2    50   Output ~ 0
+	5655 2620 5730 2620
+Text GLabel 7880 2720 2    50   Output ~ 0
 ~IRQ
-Text GLabel 5500 2600 2    50   Output ~ 0
+Text GLabel 7880 2920 2    50   Output ~ 0
 A13
-Text GLabel 5500 2700 2    50   Output ~ 0
+Text GLabel 7880 3020 2    50   Output ~ 0
 A14
-Text GLabel 5500 2800 2    50   Output ~ 0
+Text GLabel 7880 3120 2    50   Output ~ 0
 A15
-Text GLabel 5200 2900 2    50   Output ~ 0
+Text GLabel 7580 3220 2    50   Output ~ 0
 GND
 $Comp
 L power:GND #PWR069
 U 1 1 6893A321
-P 5300 3025
-F 0 "#PWR069" H 5300 2775 50  0001 C CNN
-F 1 "GND" H 5305 2852 50  0000 C CNN
-F 2 "" H 5300 3025 50  0001 C CNN
-F 3 "" H 5300 3025 50  0001 C CNN
-	1    5300 3025
+P 7680 3345
+F 0 "#PWR069" H 7680 3095 50  0001 C CNN
+F 1 "GND" H 7685 3172 50  0000 C CNN
+F 2 "" H 7680 3345 50  0001 C CNN
+F 3 "" H 7680 3345 50  0001 C CNN
+	1    7680 3345
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	5150 2900 5150 3025
+	7530 3220 7530 3345
 Wire Wire Line
-	5150 3025 5300 3025
+	7530 3345 7680 3345
 Wire Wire Line
-	5150 2900 5200 2900
-Connection ~ 5150 2900
+	7530 3220 7580 3220
+Connection ~ 7530 3220
 Wire Wire Line
-	5150 2800 5500 2800
+	7530 3120 7880 3120
 Wire Wire Line
-	5150 2700 5500 2700
+	7530 3020 7880 3020
 Wire Wire Line
-	5150 2600 5500 2600
+	7530 2920 7880 2920
 Wire Wire Line
-	5150 2400 5500 2400
-Text GLabel 6625 2350 0    50   Output ~ 0
+	7530 2720 7880 2720
+Text GLabel 9005 2670 0    50   Output ~ 0
 A0
-Text GLabel 6625 2250 0    50   Output ~ 0
+Text GLabel 9005 2570 0    50   Output ~ 0
 A1
-Text GLabel 6625 2150 0    50   Output ~ 0
+Text GLabel 9005 2470 0    50   Output ~ 0
 A2
-Text GLabel 6625 2050 0    50   Output ~ 0
+Text GLabel 9005 2370 0    50   Output ~ 0
 A3
-Text GLabel 8425 2150 2    50   Output ~ 0
+Text GLabel 10805 2470 2    50   Output ~ 0
 A4
-Text GLabel 8425 2250 2    50   Output ~ 0
+Text GLabel 10805 2570 2    50   Output ~ 0
 A5
-Text GLabel 8425 2350 2    50   Output ~ 0
+Text GLabel 10805 2670 2    50   Output ~ 0
 A6
-Text GLabel 8425 2450 2    50   Output ~ 0
+Text GLabel 10805 2770 2    50   Output ~ 0
 A7
-Text GLabel 8425 2550 2    50   Output ~ 0
+Text GLabel 10805 2870 2    50   Output ~ 0
 A8
-Text GLabel 8425 2650 2    50   Output ~ 0
+Text GLabel 10805 2970 2    50   Output ~ 0
 A9
-Text GLabel 8425 3150 2    50   Output ~ 0
+Text GLabel 10805 3470 2    50   Output ~ 0
 A10
-Text GLabel 8425 3050 2    50   Output ~ 0
+Text GLabel 10805 3370 2    50   Output ~ 0
 A11
-Text GLabel 8425 2750 2    50   Output ~ 0
+Text GLabel 10805 3070 2    50   Output ~ 0
 A12
-Text GLabel 6625 2850 0    50   Output ~ 0
+Text GLabel 9005 3170 0    50   Output ~ 0
 D0
-Text GLabel 6625 2750 0    50   Output ~ 0
+Text GLabel 9005 3070 0    50   Output ~ 0
 D1
-Text GLabel 6625 2650 0    50   Output ~ 0
+Text GLabel 9005 2970 0    50   Output ~ 0
 D2
-Text GLabel 8425 2850 2    50   Output ~ 0
+Text GLabel 10805 3170 2    50   Output ~ 0
 D3
-Text GLabel 6625 2450 0    50   Output ~ 0
+Text GLabel 9005 2770 0    50   Output ~ 0
 D4
-Text GLabel 6625 2550 0    50   Output ~ 0
+Text GLabel 9005 2870 0    50   Output ~ 0
 D5
-Text GLabel 6625 2950 0    50   Output ~ 0
+Text GLabel 9005 3270 0    50   Output ~ 0
 D6
-Text GLabel 8425 2950 2    50   Output ~ 0
+Text GLabel 10805 3270 2    50   Output ~ 0
 D7
-Text GLabel 8425 2050 2    50   Output ~ 0
+Text GLabel 10805 2370 2    50   Output ~ 0
 GND
-Text GLabel 6625 3150 0    39   BiDi ~ 0
+Text GLabel 9005 3470 0    39   BiDi ~ 0
 5V
-Text GLabel 8650 3250 2    50   Output ~ 0
+Text GLabel 11030 3570 2    50   Output ~ 0
 R~W
-Text GLabel 8425 3350 2    50   Output ~ 0
+Text GLabel 10805 3670 2    50   Output ~ 0
 PHI2
 Wire Wire Line
-	8425 3250 8650 3250
-Text Notes 3150 1500 0    197  ~ 39
+	10805 3570 11030 3570
+Text Notes 5265 1490 0    197  ~ 39
 ATARI 130XE ECI & CARTRIDGE INTERFACE
 Wire Wire Line
-	3300 2800 3350 2800
+	5680 3120 5730 3120
 Wire Wire Line
-	5150 2500 5250 2500
+	7530 2820 7630 2820
 Wire Wire Line
-	8475 1950 8425 1950
+	10855 2270 10805 2270
 Wire Wire Line
-	6575 3250 6625 3250
+	8955 3570 9005 3570
 Wire Wire Line
-	6575 3050 6625 3050
+	8955 3370 9005 3370
 Wire Wire Line
-	6575 1950 6625 1950
+	8955 2270 9005 2270
 Wire Wire Line
-	5150 2300 5250 2300
-Text GLabel 6625 3350 0    39   BiDi ~ 0
+	7530 2620 7630 2620
+Text GLabel 9005 3670 0    39   BiDi ~ 0
 ~CCTL
-Text GLabel 3650 4000 0    39   Output ~ 0
+Text GLabel 6030 4320 0    39   Output ~ 0
 AUDIOL
-Text GLabel 3650 4100 0    39   Output ~ 0
+Text GLabel 6030 4420 0    39   Output ~ 0
 AUDIOR
 Wire Wire Line
-	4400 4000 4400 4050
+	6780 4320 6780 4370
 Wire Wire Line
-	4400 4050 4525 4050
-Connection ~ 4400 4050
+	6780 4370 6905 4370
+Connection ~ 6780 4370
 Wire Wire Line
-	4400 4050 4400 4100
-Text GLabel 4525 4050 2    50   Output ~ 0
+	6780 4370 6780 4420
+Text GLabel 6905 4370 2    50   Output ~ 0
 AUDIO
 Wire Notes Line
-	5525 3575 5525 4350
+	7905 3895 7905 4670
 Wire Notes Line
-	5525 4350 2900 4350
+	7905 4670 5280 4670
 Wire Notes Line
-	2900 4350 2900 3575
+	5280 4670 5280 3895
 Wire Notes Line
-	2900 3575 5525 3575
+	5280 3895 7905 3895
 Wire Wire Line
-	4195 4000 4400 4000
+	6575 4320 6780 4320
 Wire Wire Line
-	4195 4100 4400 4100
+	6575 4420 6780 4420
 Wire Wire Line
-	3650 4100 3995 4100
+	6030 4420 6375 4420
 Wire Wire Line
-	3995 4000 3650 4000
+	6375 4320 6030 4320
 $Comp
 L CRES1206:2K7 R36
 U 1 1 68E450FE
-P 4100 4100
-F 0 "R36" V 4175 3975 50  0000 C CNN
-F 1 "2K7" V 4175 4175 50  0000 C CNN
-F 2 "Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder" H 4100 4100 50  0001 C CNN
-F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2506161120_YAGEO-RC1206FR-072KL_C133543.pdf" H 4100 4100 50  0001 C CNN
-F 4 "C6757641" H 4100 4100 50  0001 C CNN "LCSC"
-	1    4100 4100
+P 6480 4420
+F 0 "R36" V 6555 4295 50  0000 C CNN
+F 1 "2K7" V 6555 4495 50  0000 C CNN
+F 2 "Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder" H 6480 4420 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2506161120_YAGEO-RC1206FR-072KL_C133543.pdf" H 6480 4420 50  0001 C CNN
+F 4 "C6757641" H 6480 4420 50  0001 C CNN "LCSC"
+	1    6480 4420
 	0    1    1    0   
 $EndComp
 $Comp
 L CRES1206:2K7 R35
 U 1 1 68E443AE
-P 4100 4000
-F 0 "R35" V 4025 3900 50  0000 C CNN
-F 1 "2K7" V 4025 4075 50  0000 C CNN
-F 2 "Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder" H 4100 4000 50  0001 C CNN
-F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2506161120_YAGEO-RC1206FR-072KL_C133543.pdf" H 4100 4000 50  0001 C CNN
-F 4 "C6757641" H 4100 4000 50  0001 C CNN "LCSC"
-	1    4100 4000
+P 6480 4320
+F 0 "R35" V 6405 4220 50  0000 C CNN
+F 1 "2K7" V 6405 4395 50  0000 C CNN
+F 2 "Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder" H 6480 4320 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2506161120_YAGEO-RC1206FR-072KL_C133543.pdf" H 6480 4320 50  0001 C CNN
+F 4 "C6757641" H 6480 4320 50  0001 C CNN "LCSC"
+	1    6480 4320
 	0    1    1    0   
 $EndComp
-Text Notes 3000 3825 0    118  Italic 24
+Text Notes 5380 4145 0    118  Italic 24
 AUDIO MIXER INSIDE ATARI
-Text GLabel 3300 2500 0    50   Output ~ 0
+Text GLabel 5680 2820 0    50   Output ~ 0
 ~D1XX
-Text GLabel 8475 1950 2    39   BiDi ~ 0
+Text GLabel 10855 2270 2    39   BiDi ~ 0
 RD4
-Text GLabel 6575 3250 0    39   BiDi ~ 0
+Text GLabel 8955 3570 0    39   BiDi ~ 0
 RD5
-Text GLabel 6575 1950 0    39   BiDi ~ 0
+Text GLabel 8955 2270 0    39   BiDi ~ 0
 ~S4
-Text GLabel 6575 3050 0    39   BiDi ~ 0
+Text GLabel 8955 3370 0    39   BiDi ~ 0
 ~S5
-Text GLabel 5250 2500 2    39   BiDi ~ 0
+Text GLabel 7630 2820 2    39   BiDi ~ 0
 ~HALT
-Text GLabel 5250 2300 2    39   BiDi ~ 0
+Text GLabel 7630 2620 2    39   BiDi ~ 0
 RSRVD
-NoConn ~ 3300 2800
+NoConn ~ 5680 3120
+Text GLabel 3265 8865 3    33   BiDi ~ 0
+~WE
+Text GLabel 3365 8865 3    33   BiDi ~ 0
+~RE
+Wire Wire Line
+	3265 8865 3265 8690
+Wire Wire Line
+	3365 8690 3365 8865
+Text GLabel 7750 8800 3    33   BiDi ~ 0
+~IRQ
+$Comp
+L power:GND #PWR?
+U 1 1 68D60B3F
+P 11830 8265
+AR Path="/68821B60/68D60B3F" Ref="#PWR?"  Part="1" 
+AR Path="/68821C2E/68D60B3F" Ref="#PWR0105"  Part="1" 
+F 0 "#PWR0105" H 11830 8015 50  0001 C CNN
+F 1 "GND" H 11835 8092 50  0000 C CNN
+F 2 "" H 11830 8265 50  0001 C CNN
+F 3 "" H 11830 8265 50  0001 C CNN
+	1    11830 8265
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	13280 8165 13230 8165
+Wire Wire Line
+	13480 7390 13455 7390
+Wire Wire Line
+	13255 7390 13230 7390
+$Comp
+L power:GND #PWR?
+U 1 1 68D60B4E
+P 13230 7390
+AR Path="/68821B60/68D60B4E" Ref="#PWR?"  Part="1" 
+AR Path="/68821C2E/68D60B4E" Ref="#PWR0107"  Part="1" 
+F 0 "#PWR0107" H 13230 7140 50  0001 C CNN
+F 1 "GND" H 13235 7217 50  0000 C CNN
+F 2 "" H 13230 7390 50  0001 C CNN
+F 3 "" H 13230 7390 50  0001 C CNN
+	1    13230 7390
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	13430 9115 13405 9115
+Wire Wire Line
+	13205 9115 13180 9115
+$Comp
+L power:GND #PWR?
+U 1 1 68D60B5C
+P 13180 9115
+AR Path="/68821B60/68D60B5C" Ref="#PWR?"  Part="1" 
+AR Path="/68821C2E/68D60B5C" Ref="#PWR0113"  Part="1" 
+F 0 "#PWR0113" H 13180 8865 50  0001 C CNN
+F 1 "GND" H 13185 8942 50  0000 C CNN
+F 2 "" H 13180 9115 50  0001 C CNN
+F 3 "" H 13180 9115 50  0001 C CNN
+	1    13180 9115
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	13280 8365 13230 8365
+Text Notes 6640 6920 2    79   ~ 16
+All 8-Bit signals must be shifted from 5V to 3.3V and vice versa
+Text GLabel 10450 8820 3    39   BiDi ~ 0
+A4
+Wire Wire Line
+	10450 8645 10450 8820
+Wire Wire Line
+	11325 7420 11300 7420
+Wire Wire Line
+	11100 7420 11075 7420
+$Comp
+L power:GND #PWR?
+U 1 1 68D60B7A
+P 11075 7420
+AR Path="/68821B60/68D60B7A" Ref="#PWR?"  Part="1" 
+AR Path="/68821C2E/68D60B7A" Ref="#PWR0122"  Part="1" 
+F 0 "#PWR0122" H 11075 7170 50  0001 C CNN
+F 1 "GND" H 11080 7247 50  0000 C CNN
+F 2 "" H 11075 7420 50  0001 C CNN
+F 3 "" H 11075 7420 50  0001 C CNN
+	1    11075 7420
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	11125 9020 11100 9020
+Wire Wire Line
+	10900 9020 10875 9020
+$Comp
+L power:GND #PWR?
+U 1 1 68D60B82
+P 10875 9020
+AR Path="/68821B60/68D60B82" Ref="#PWR?"  Part="1" 
+AR Path="/68821C2E/68D60B82" Ref="#PWR0123"  Part="1" 
+F 0 "#PWR0123" H 10875 8770 50  0001 C CNN
+F 1 "GND" H 10880 8847 50  0000 C CNN
+F 2 "" H 10875 9020 50  0001 C CNN
+F 3 "" H 10875 9020 50  0001 C CNN
+	1    10875 9020
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	9050 7465 9025 7465
+Wire Wire Line
+	8825 7465 8800 7465
+$Comp
+L power:GND #PWR?
+U 1 1 68D60B96
+P 8800 7465
+AR Path="/68821B60/68D60B96" Ref="#PWR?"  Part="1" 
+AR Path="/68821C2E/68D60B96" Ref="#PWR0126"  Part="1" 
+F 0 "#PWR0126" H 8800 7215 50  0001 C CNN
+F 1 "GND" H 8800 7315 50  0000 C CNN
+F 2 "" H 8800 7465 50  0001 C CNN
+F 3 "" H 8800 7465 50  0001 C CNN
+	1    8800 7465
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	8975 9140 8950 9140
+Wire Wire Line
+	8750 9140 8725 9140
+$Comp
+L power:GND #PWR?
+U 1 1 68D60B9E
+P 8725 9140
+AR Path="/68821B60/68D60B9E" Ref="#PWR?"  Part="1" 
+AR Path="/68821C2E/68D60B9E" Ref="#PWR0127"  Part="1" 
+F 0 "#PWR0127" H 8725 8890 50  0001 C CNN
+F 1 "GND" H 8730 8967 50  0000 C CNN
+F 2 "" H 8725 9140 50  0001 C CNN
+F 3 "" H 8725 9140 50  0001 C CNN
+	1    8725 9140
+	0    1    1    0   
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 68D60BC2
+P 7450 8290
+AR Path="/68821B60/68D60BC2" Ref="#PWR?"  Part="1" 
+AR Path="/68821C2E/68D60BC2" Ref="#PWR0133"  Part="1" 
+F 0 "#PWR0133" H 7450 8040 50  0001 C CNN
+F 1 "GND" H 7455 8117 50  0000 C CNN
+F 2 "" H 7450 8290 50  0001 C CNN
+F 3 "" H 7450 8290 50  0001 C CNN
+	1    7450 8290
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	10925 7695 10650 7695
+Wire Wire Line
+	10650 7695 10650 7845
+Wire Wire Line
+	10550 7745 10550 7845
+Wire Wire Line
+	10450 7745 10450 7845
+Wire Wire Line
+	10350 7745 10350 7845
+Wire Wire Line
+	10250 7745 10250 7845
+Wire Wire Line
+	10150 7745 10150 7845
+Wire Wire Line
+	10050 7745 10050 7845
+Wire Wire Line
+	9950 7745 9950 7845
+Wire Wire Line
+	9850 7745 9850 7845
+Text GLabel 5630 8835 3    39   BiDi ~ 0
+D0
+Text GLabel 5530 8835 3    39   BiDi ~ 0
+D1
+Text GLabel 8450 8790 3    39   BiDi ~ 0
+D3
+Text GLabel 5730 8835 3    39   BiDi ~ 0
+D6
+Text GLabel 8350 8790 3    39   BiDi ~ 0
+D7
+Wire Wire Line
+	5630 8735 5630 8835
+Wire Wire Line
+	5530 8835 5530 8735
+Wire Wire Line
+	8450 8790 8450 8690
+Wire Wire Line
+	5730 8735 5730 8835
+Wire Wire Line
+	8350 8790 8350 8690
+Text GLabel 6230 7810 1    31   Input ~ 0
+~FPGA_RESET
+Text GLabel 6230 8845 3    39   Input ~ 0
+~RST
+Wire Wire Line
+	6130 8735 6130 8835
+Text GLabel 3465 8885 3    39   Input ~ 0
+~MPD
+Wire Wire Line
+	8150 7890 8150 7765
+Text GLabel 10350 8815 3    48   Input ~ 0
+A5
+Text GLabel 10250 8815 3    48   Input ~ 0
+A6
+Text GLabel 10150 8815 3    48   Input ~ 0
+A7
+Text GLabel 10050 8815 3    48   Input ~ 0
+A8
+Wire Wire Line
+	10350 8645 10350 8815
+Wire Wire Line
+	10250 8815 10250 8645
+Wire Wire Line
+	10150 8815 10150 8645
+Wire Wire Line
+	10050 8815 10050 8645
+Wire Wire Line
+	8050 7765 8050 7890
+Wire Wire Line
+	7950 7890 7950 7765
+Wire Wire Line
+	7850 7765 7850 7890
+Wire Wire Line
+	7750 7890 7750 7765
+Text GLabel 7950 7765 1    39   Input ~ 0
+mPHI2
+Text GLabel 10350 7745 1    50   Input ~ 0
+mA5
+Text GLabel 10250 7745 1    50   Input ~ 0
+mA6
+Text GLabel 10150 7745 1    50   Input ~ 0
+mA7
+Text GLabel 10050 7745 1    50   Input ~ 0
+mA8
+Text GLabel 3465 7765 1    39   Input ~ 0
+~mMPD
+Wire Wire Line
+	8350 7765 8350 7890
+Wire Wire Line
+	8250 7890 8250 7765
+Text GLabel 5630 7810 1    39   Input ~ 0
+mD0
+Text GLabel 5530 7805 1    39   Input ~ 0
+mD1
+Text GLabel 8450 7765 1    39   Input ~ 0
+mD3
+Text GLabel 5730 7810 1    39   Input ~ 0
+mD6
+Text GLabel 8350 7765 1    39   Input ~ 0
+mD7
+Text GLabel 3365 7765 1    31   Input ~ 0
+~mRE
+Text GLabel 3265 7765 1    31   Input ~ 0
+~mWE
+Text GLabel 7750 7765 1    31   Input ~ 0
+~mVIRQ
+Text GLabel 10450 7745 1    39   Input ~ 0
+mA4
+Text GLabel 6130 7810 1    39   Input ~ 0
+~mEXSEL
+Text GLabel 6130 8835 3    39   Input ~ 0
+~EXSEL
+$Comp
+L CCAP1206:1uF C?
+U 1 1 68D60C01
+P 13355 7390
+AR Path="/68821B60/68D60C01" Ref="C?"  Part="1" 
+AR Path="/68821C2E/68D60C01" Ref="C1"  Part="1" 
+F 0 "C1" H 13263 7344 50  0000 R CNN
+F 1 "1uF" H 13263 7435 50  0000 R CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 13355 7390 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C126610.pdf" H 13355 7390 50  0001 C CNN
+F 4 "C126610" H 13355 7390 50  0001 C CNN "LCSC"
+	1    13355 7390
+	0    -1   -1   0   
+$EndComp
+$Comp
+L CCAP1206:1uF C?
+U 1 1 68D60C08
+P 13305 9115
+AR Path="/68821B60/68D60C08" Ref="C?"  Part="1" 
+AR Path="/68821C2E/68D60C08" Ref="C55"  Part="1" 
+F 0 "C55" H 13213 9069 50  0000 R CNN
+F 1 "1uF" H 13213 9160 50  0000 R CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 13305 9115 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C126610.pdf" H 13305 9115 50  0001 C CNN
+F 4 "C126610" H 13305 9115 50  0001 C CNN "LCSC"
+	1    13305 9115
+	0    -1   -1   0   
+$EndComp
+$Comp
+L CCAP1206:1uF C?
+U 1 1 68D60C0F
+P 11200 7420
+AR Path="/68821B60/68D60C0F" Ref="C?"  Part="1" 
+AR Path="/68821C2E/68D60C0F" Ref="C2"  Part="1" 
+F 0 "C2" H 11108 7374 50  0000 R CNN
+F 1 "1uF" H 11108 7465 50  0000 R CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 11200 7420 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C126610.pdf" H 11200 7420 50  0001 C CNN
+F 4 "C126610" H 11200 7420 50  0001 C CNN "LCSC"
+	1    11200 7420
+	0    -1   -1   0   
+$EndComp
+$Comp
+L CCAP1206:1uF C?
+U 1 1 68D60C16
+P 11000 9020
+AR Path="/68821B60/68D60C16" Ref="C?"  Part="1" 
+AR Path="/68821C2E/68D60C16" Ref="C12"  Part="1" 
+F 0 "C12" H 10908 8974 50  0000 R CNN
+F 1 "1uF" H 10908 9065 50  0000 R CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 11000 9020 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C126610.pdf" H 11000 9020 50  0001 C CNN
+F 4 "C126610" H 11000 9020 50  0001 C CNN "LCSC"
+	1    11000 9020
+	0    -1   -1   0   
+$EndComp
+$Comp
+L CCAP1206:1uF C?
+U 1 1 68D60C1D
+P 8925 7465
+AR Path="/68821B60/68D60C1D" Ref="C?"  Part="1" 
+AR Path="/68821C2E/68D60C1D" Ref="C10"  Part="1" 
+F 0 "C10" H 8833 7419 50  0000 R CNN
+F 1 "1uF" H 8833 7510 50  0000 R CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 8925 7465 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C126610.pdf" H 8925 7465 50  0001 C CNN
+F 4 "C126610" H 8925 7465 50  0001 C CNN "LCSC"
+	1    8925 7465
+	0    -1   -1   0   
+$EndComp
+$Comp
+L CCAP1206:1uF C?
+U 1 1 68D60C24
+P 8850 9140
+AR Path="/68821B60/68D60C24" Ref="C?"  Part="1" 
+AR Path="/68821C2E/68D60C24" Ref="C57"  Part="1" 
+F 0 "C57" H 8758 9094 50  0000 R CNN
+F 1 "1uF" H 8758 9185 50  0000 R CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 8850 9140 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C126610.pdf" H 8850 9140 50  0001 C CNN
+F 4 "C126610" H 8850 9140 50  0001 C CNN "LCSC"
+	1    8850 9140
+	0    -1   -1   0   
+$EndComp
+Text GLabel 10650 7545 1    39   Input ~ 0
+TXB_EN
+Wire Wire Line
+	11325 7695 11125 7695
+Text GLabel 12930 7565 1    39   Input ~ 0
+TXB_EN
+Wire Wire Line
+	13480 7715 13405 7715
+Text GLabel 8550 7590 1    39   Input ~ 0
+TXB_EN
+Wire Wire Line
+	13205 7715 12930 7715
+Wire Wire Line
+	12930 7715 12930 7565
+Wire Wire Line
+	12930 7715 12930 7865
+Connection ~ 12930 7715
+Wire Wire Line
+	10650 7545 10650 7695
+Connection ~ 10650 7695
+$Comp
+L CRES1206:10K R?
+U 1 1 68D60C48
+P 13310 7715
+AR Path="/68821B60/68D60C48" Ref="R?"  Part="1" 
+AR Path="/68821C2E/68D60C48" Ref="R6"  Part="1" 
+F 0 "R6" H 13369 7756 50  0000 L CNN
+F 1 "10K" H 13369 7665 50  0000 L CNN
+F 2 "Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder" H 13310 7715 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2411221126_UNI-ROYAL-1206W4F1002T5E_C17902.pdf" H 13310 7715 50  0001 C CNN
+F 4 "C17902" H 13310 7715 50  0001 C CNN "LCSC"
+	1    13310 7715
+	0    1    1    0   
+$EndComp
+$Comp
+L CRES1206:10K R?
+U 1 1 68D60C4F
+P 11030 7695
+AR Path="/68821B60/68D60C4F" Ref="R?"  Part="1" 
+AR Path="/68821C2E/68D60C4F" Ref="R2"  Part="1" 
+F 0 "R2" H 11089 7736 50  0000 L CNN
+F 1 "10K" H 11089 7645 50  0000 L CNN
+F 2 "Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder" H 11030 7695 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2411221126_UNI-ROYAL-1206W4F1002T5E_C17902.pdf" H 11030 7695 50  0001 C CNN
+F 4 "C17902" H 11030 7695 50  0001 C CNN "LCSC"
+	1    11030 7695
+	0    1    1    0   
+$EndComp
+$Comp
+L CRES1206:10K R?
+U 1 1 68D60C56
+P 8850 7740
+AR Path="/68821B60/68D60C56" Ref="R?"  Part="1" 
+AR Path="/68821C2E/68D60C56" Ref="R64"  Part="1" 
+F 0 "R64" H 8909 7781 50  0000 L CNN
+F 1 "10K" H 8909 7690 50  0000 L CNN
+F 2 "Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder" H 8850 7740 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2411221126_UNI-ROYAL-1206W4F1002T5E_C17902.pdf" H 8850 7740 50  0001 C CNN
+F 4 "C17902" H 8850 7740 50  0001 C CNN "LCSC"
+	1    8850 7740
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	8550 7590 8550 7740
+Wire Wire Line
+	9050 7740 8945 7740
+Wire Wire Line
+	8745 7740 8550 7740
+Connection ~ 8550 7740
+Wire Wire Line
+	8550 7740 8550 7890
+$Comp
+L RetroBitLab:TXS0108EPW U?
+U 1 1 68D60C62
+P 12530 8265
+AR Path="/68821B60/68D60C62" Ref="U?"  Part="1" 
+AR Path="/68821C2E/68D60C62" Ref="U3"  Part="1" 
+F 0 "U3" H 12765 8935 50  0000 C CNN
+F 1 "TXS0108EPW" H 12855 7590 50  0000 C CNN
+F 2 "Package_SO:TSSOP-20_4.4x6.5mm_P0.65mm" H 12530 7515 50  0001 C CNN
+F 3 "www.ti.com/lit/ds/symlink/txs0108e.pdf" H 12530 8165 50  0001 C CNN
+F 4 "C17206" H 12530 8265 50  0001 C CNN "LCSC"
+	1    12530 8265
+	0    1    1    0   
+$EndComp
+$Comp
+L RetroBitLab:TXS0108EPW U?
+U 1 1 68D60C69
+P 10250 8245
+AR Path="/68821B60/68D60C69" Ref="U?"  Part="1" 
+AR Path="/68821C2E/68D60C69" Ref="U1"  Part="1" 
+F 0 "U1" H 10455 8910 50  0000 C CNN
+F 1 "TXS0108EPW" H 10510 7585 50  0000 C CNN
+F 2 "Package_SO:TSSOP-20_4.4x6.5mm_P0.65mm" H 10250 7495 50  0001 C CNN
+F 3 "www.ti.com/lit/ds/symlink/txs0108e.pdf" H 10250 8145 50  0001 C CNN
+F 4 "C17206" H 10250 8245 50  0001 C CNN "LCSC"
+	1    10250 8245
+	0    1    1    0   
+$EndComp
+$Comp
+L RetroBitLab:TXS0108EPW U?
+U 1 1 68D60C70
+P 8150 8290
+AR Path="/68821B60/68D60C70" Ref="U?"  Part="1" 
+AR Path="/68821C2E/68D60C70" Ref="U6"  Part="1" 
+F 0 "U6" H 8365 8955 50  0000 C CNN
+F 1 "TXS0108EPW" H 8415 7620 50  0000 C CNN
+F 2 "Package_SO:TSSOP-20_4.4x6.5mm_P0.65mm" H 8150 7540 50  0001 C CNN
+F 3 "www.ti.com/lit/ds/symlink/txs0108e.pdf" H 8150 8190 50  0001 C CNN
+F 4 "C17206" H 8150 8290 50  0001 C CNN "LCSC"
+	1    8150 8290
+	0    1    1    0   
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 68D60C76
+P 9550 8245
+AR Path="/68821B60/68D60C76" Ref="#PWR?"  Part="1" 
+AR Path="/68821C2E/68D60C76" Ref="#PWR0137"  Part="1" 
+F 0 "#PWR0137" H 9550 7995 50  0001 C CNN
+F 1 "GND" H 9555 8072 50  0000 C CNN
+F 2 "" H 9550 8245 50  0001 C CNN
+F 3 "" H 9550 8245 50  0001 C CNN
+	1    9550 8245
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	6830 7510 6805 7510
+Wire Wire Line
+	6605 7510 6580 7510
+$Comp
+L power:GND #PWR?
+U 1 1 68D60C84
+P 6580 7510
+AR Path="/68821B60/68D60C84" Ref="#PWR?"  Part="1" 
+AR Path="/68821C2E/68D60C84" Ref="#PWR0139"  Part="1" 
+F 0 "#PWR0139" H 6580 7260 50  0001 C CNN
+F 1 "GND" H 6580 7360 50  0000 C CNN
+F 2 "" H 6580 7510 50  0001 C CNN
+F 3 "" H 6580 7510 50  0001 C CNN
+	1    6580 7510
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	6755 9185 6730 9185
+Wire Wire Line
+	6530 9185 6505 9185
+$Comp
+L power:GND #PWR?
+U 1 1 68D60C8C
+P 6505 9185
+AR Path="/68821B60/68D60C8C" Ref="#PWR?"  Part="1" 
+AR Path="/68821C2E/68D60C8C" Ref="#PWR0140"  Part="1" 
+F 0 "#PWR0140" H 6505 8935 50  0001 C CNN
+F 1 "GND" H 6510 9012 50  0000 C CNN
+F 2 "" H 6505 9185 50  0001 C CNN
+F 3 "" H 6505 9185 50  0001 C CNN
+	1    6505 9185
+	0    1    1    0   
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 68D60CA4
+P 5230 8335
+AR Path="/68821B60/68D60CA4" Ref="#PWR?"  Part="1" 
+AR Path="/68821C2E/68D60CA4" Ref="#PWR0144"  Part="1" 
+F 0 "#PWR0144" H 5230 8085 50  0001 C CNN
+F 1 "GND" H 5235 8162 50  0000 C CNN
+F 2 "" H 5230 8335 50  0001 C CNN
+F 3 "" H 5230 8335 50  0001 C CNN
+	1    5230 8335
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	5530 7805 5530 7935
+Wire Wire Line
+	9950 8645 9950 8835
+Wire Wire Line
+	8150 8690 8150 8790
+Wire Wire Line
+	8250 8790 8250 8690
+Wire Wire Line
+	9850 8645 9850 8800
+Wire Wire Line
+	5830 7935 5830 7810
+Wire Wire Line
+	5930 7810 5930 7935
+Wire Wire Line
+	6030 7935 6030 7810
+Wire Wire Line
+	6130 7810 6130 7935
+Wire Wire Line
+	6230 7935 6230 7810
+Wire Wire Line
+	5630 7810 5630 7935
+Wire Wire Line
+	5730 7935 5730 7810
+$Comp
+L CCAP1206:1uF C?
+U 1 1 68D60CB7
+P 6705 7510
+AR Path="/68821B60/68D60CB7" Ref="C?"  Part="1" 
+AR Path="/68821C2E/68D60CB7" Ref="C11"  Part="1" 
+F 0 "C11" H 6613 7464 50  0000 R CNN
+F 1 "1uF" H 6613 7555 50  0000 R CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 6705 7510 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C126610.pdf" H 6705 7510 50  0001 C CNN
+F 4 "C126610" H 6705 7510 50  0001 C CNN "LCSC"
+	1    6705 7510
+	0    -1   -1   0   
+$EndComp
+$Comp
+L CCAP1206:1uF C?
+U 1 1 68D60CBE
+P 6630 9185
+AR Path="/68821B60/68D60CBE" Ref="C?"  Part="1" 
+AR Path="/68821C2E/68D60CBE" Ref="C58"  Part="1" 
+F 0 "C58" H 6538 9139 50  0000 R CNN
+F 1 "1uF" H 6538 9230 50  0000 R CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 6630 9185 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C126610.pdf" H 6630 9185 50  0001 C CNN
+F 4 "C126610" H 6630 9185 50  0001 C CNN "LCSC"
+	1    6630 9185
+	0    -1   -1   0   
+$EndComp
+Text GLabel 6330 7635 1    39   Input ~ 0
+TXB_EN
+$Comp
+L CRES1206:10K R?
+U 1 1 68D60CCC
+P 6630 7785
+AR Path="/68821B60/68D60CCC" Ref="R?"  Part="1" 
+AR Path="/68821C2E/68D60CCC" Ref="R66"  Part="1" 
+F 0 "R66" H 6689 7826 50  0000 L CNN
+F 1 "10K" H 6689 7735 50  0000 L CNN
+F 2 "Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder" H 6630 7785 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2411221126_UNI-ROYAL-1206W4F1002T5E_C17902.pdf" H 6630 7785 50  0001 C CNN
+F 4 "C17902" H 6630 7785 50  0001 C CNN "LCSC"
+	1    6630 7785
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	6330 7635 6330 7785
+Wire Wire Line
+	6830 7785 6725 7785
+Wire Wire Line
+	6525 7785 6330 7785
+Connection ~ 6330 7785
+Wire Wire Line
+	6330 7785 6330 7935
+$Comp
+L RetroBitLab:TXS0108EPW U?
+U 1 1 68D60CD8
+P 5930 8335
+AR Path="/68821B60/68D60CD8" Ref="U?"  Part="1" 
+AR Path="/68821C2E/68D60CD8" Ref="U16"  Part="1" 
+F 0 "U16" H 6145 9000 50  0000 C CNN
+F 1 "TXS0108EPW" H 6195 7665 50  0000 C CNN
+F 2 "Package_SO:TSSOP-20_4.4x6.5mm_P0.65mm" H 5930 7585 50  0001 C CNN
+F 3 "www.ti.com/lit/ds/symlink/txs0108e.pdf" H 5930 8235 50  0001 C CNN
+F 4 "C17206" H 5930 8335 50  0001 C CNN "LCSC"
+	1    5930 8335
+	0    1    1    0   
+$EndComp
+Text GLabel 9950 7745 1    39   Input ~ 0
+mA9
+Text GLabel 8150 7765 1    39   Input ~ 0
+mA10
+Text GLabel 8250 7765 1    39   Input ~ 0
+mA11
+Text GLabel 9850 7745 1    39   Input ~ 0
+mA12
+Text GLabel 3865 7765 1    39   Input ~ 0
+mA13
+Text GLabel 3765 7765 1    39   Input ~ 0
+mA14
+Text GLabel 3665 7765 1    39   Input ~ 0
+mA15
+Text GLabel 9950 8835 3    39   Input ~ 0
+A9
+Text GLabel 8150 8790 3    39   Input ~ 0
+A10
+Text GLabel 8250 8790 3    39   Input ~ 0
+A11
+Text GLabel 9850 8800 3    39   Input ~ 0
+A12
+Text GLabel 3865 8880 3    39   Input ~ 0
+A13
+Text GLabel 3765 8885 3    39   Input ~ 0
+A14
+Text GLabel 3665 8885 3    39   Input ~ 0
+A15
+Wire Wire Line
+	4565 7465 4540 7465
+Wire Wire Line
+	4340 7465 4315 7465
+$Comp
+L power:GND #PWR?
+U 1 1 68D60CF4
+P 4315 7465
+AR Path="/68821B60/68D60CF4" Ref="#PWR?"  Part="1" 
+AR Path="/68821C2E/68D60CF4" Ref="#PWR0147"  Part="1" 
+F 0 "#PWR0147" H 4315 7215 50  0001 C CNN
+F 1 "GND" H 4315 7315 50  0000 C CNN
+F 2 "" H 4315 7465 50  0001 C CNN
+F 3 "" H 4315 7465 50  0001 C CNN
+	1    4315 7465
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	4490 9140 4465 9140
+Wire Wire Line
+	4265 9140 4240 9140
+$Comp
+L power:GND #PWR?
+U 1 1 68D60CFC
+P 4240 9140
+AR Path="/68821B60/68D60CFC" Ref="#PWR?"  Part="1" 
+AR Path="/68821C2E/68D60CFC" Ref="#PWR0148"  Part="1" 
+F 0 "#PWR0148" H 4240 8890 50  0001 C CNN
+F 1 "GND" H 4245 8967 50  0000 C CNN
+F 2 "" H 4240 9140 50  0001 C CNN
+F 3 "" H 4240 9140 50  0001 C CNN
+	1    4240 9140
+	0    1    1    0   
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 68D60D14
+P 2965 8290
+AR Path="/68821B60/68D60D14" Ref="#PWR?"  Part="1" 
+AR Path="/68821C2E/68D60D14" Ref="#PWR0152"  Part="1" 
+F 0 "#PWR0152" H 2965 8040 50  0001 C CNN
+F 1 "GND" H 2970 8117 50  0000 C CNN
+F 2 "" H 2965 8290 50  0001 C CNN
+F 3 "" H 2965 8290 50  0001 C CNN
+	1    2965 8290
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	3965 7760 3965 7890
+Wire Wire Line
+	3665 7890 3665 7765
+Wire Wire Line
+	3565 7765 3565 7890
+Wire Wire Line
+	3465 7890 3465 7765
+Wire Wire Line
+	3365 7765 3365 7890
+Wire Wire Line
+	3265 7890 3265 7765
+Wire Wire Line
+	3865 7765 3865 7890
+Wire Wire Line
+	3765 7890 3765 7765
+$Comp
+L CCAP1206:1uF C?
+U 1 1 68D60D23
+P 4440 7465
+AR Path="/68821B60/68D60D23" Ref="C?"  Part="1" 
+AR Path="/68821C2E/68D60D23" Ref="C9"  Part="1" 
+F 0 "C9" H 4348 7419 50  0000 R CNN
+F 1 "1uF" H 4348 7510 50  0000 R CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 4440 7465 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C126610.pdf" H 4440 7465 50  0001 C CNN
+F 4 "C126610" H 4440 7465 50  0001 C CNN "LCSC"
+	1    4440 7465
+	0    -1   -1   0   
+$EndComp
+$Comp
+L CCAP1206:1uF C?
+U 1 1 68D60D2A
+P 4365 9140
+AR Path="/68821B60/68D60D2A" Ref="C?"  Part="1" 
+AR Path="/68821C2E/68D60D2A" Ref="C56"  Part="1" 
+F 0 "C56" H 4273 9094 50  0000 R CNN
+F 1 "1uF" H 4273 9185 50  0000 R CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 4365 9140 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C126610.pdf" H 4365 9140 50  0001 C CNN
+F 4 "C126610" H 4365 9140 50  0001 C CNN "LCSC"
+	1    4365 9140
+	0    -1   -1   0   
+$EndComp
+Text GLabel 4065 7590 1    39   Input ~ 0
+TXB_EN
+$Comp
+L CRES1206:10K R?
+U 1 1 68D60D38
+P 4365 7740
+AR Path="/68821B60/68D60D38" Ref="R?"  Part="1" 
+AR Path="/68821C2E/68D60D38" Ref="R7"  Part="1" 
+F 0 "R7" H 4424 7781 50  0000 L CNN
+F 1 "10K" H 4424 7690 50  0000 L CNN
+F 2 "Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder" H 4365 7740 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2411221126_UNI-ROYAL-1206W4F1002T5E_C17902.pdf" H 4365 7740 50  0001 C CNN
+F 4 "C17902" H 4365 7740 50  0001 C CNN "LCSC"
+	1    4365 7740
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	4065 7590 4065 7740
+Wire Wire Line
+	4565 7740 4460 7740
+Wire Wire Line
+	4260 7740 4065 7740
+Connection ~ 4065 7740
+Wire Wire Line
+	4065 7740 4065 7890
+$Comp
+L RetroBitLab:TXS0108EPW U?
+U 1 1 68D60D44
+P 3665 8290
+AR Path="/68821B60/68D60D44" Ref="U?"  Part="1" 
+AR Path="/68821C2E/68D60D44" Ref="U4"  Part="1" 
+F 0 "U4" H 3880 8955 50  0000 C CNN
+F 1 "TXS0108EPW" H 3930 7620 50  0000 C CNN
+F 2 "Package_SO:TSSOP-20_4.4x6.5mm_P0.65mm" H 3665 7540 50  0001 C CNN
+F 3 "www.ti.com/lit/ds/symlink/txs0108e.pdf" H 3665 8190 50  0001 C CNN
+F 4 "C17206" H 3665 8290 50  0001 C CNN "LCSC"
+	1    3665 8290
+	0    1    1    0   
+$EndComp
+Text GLabel 10550 8820 3    39   BiDi ~ 0
+RD4
+Text GLabel 5930 8835 3    39   BiDi ~ 0
+RD5
+Text GLabel 5830 8835 3    39   BiDi ~ 0
+~S5
+Text GLabel 3965 8885 3    33   BiDi ~ 0
+~HALT
+Text GLabel 7850 8790 3    39   BiDi ~ 0
+RSRVD
+Wire Wire Line
+	10550 8645 10550 8820
+Wire Wire Line
+	5830 8735 5830 8835
+Wire Wire Line
+	5930 8735 5930 8835
+Text GLabel 6030 8830 3    39   BiDi ~ 0
+~CCTL
+Wire Wire Line
+	6030 8735 6030 8830
+Wire Wire Line
+	7850 8690 7850 8790
+Wire Wire Line
+	6230 8735 6230 8845
+Text GLabel 3565 8885 3    39   Input ~ 0
+~D1XX
+Wire Wire Line
+	7750 8690 7750 8800
+Wire Wire Line
+	8050 8780 8050 8690
+Text GLabel 8050 8780 3    33   BiDi ~ 0
+R~W
+Text GLabel 7950 8785 3    39   Input ~ 0
+PHI2
+Wire Wire Line
+	7950 8690 7950 8785
+Wire Wire Line
+	3665 8690 3665 8885
+Wire Wire Line
+	3765 8690 3765 8885
+Wire Wire Line
+	3565 8690 3565 8885
+Wire Wire Line
+	3465 8690 3465 8885
+Wire Wire Line
+	3965 8690 3965 8885
+Wire Wire Line
+	3865 8690 3865 8880
+Text Notes 12835 9220 2    118  ~ 24
+BOTTOM
+Text Notes 6080 9390 2    118  ~ 24
+BOTTOM
+Text Notes 10515 9285 2    118  ~ 24
+TOP
+Text Notes 8385 9275 2    118  ~ 24
+TOP
+Text Notes 3935 9320 2    118  ~ 24
+Mixed
+Wire Wire Line
+	8450 7765 8450 7890
+Text GLabel 8050 7765 1    39   BiDi Italic 0
+mR~W
+Text GLabel 7850 7765 1    39   Input ~ 0
+mRSRVD
+Text GLabel 5830 7810 1    39   Input ~ 0
+~mS5
+Text GLabel 5930 7810 1    39   BiDi ~ 0
+mRD5
+Text GLabel 6030 7810 1    39   BiDi ~ 0
+~mCCTL
+Text GLabel 3965 7760 1    39   Input ~ 0
+~mHALT
+Text GLabel 3565 7765 1    31   Input ~ 0
+~mD1XX
+Wire Notes Line
+	2370 9735 13870 9735
+Text GLabel 7435 7025 0    39   BiDi ~ 0
+mRSRVD
+Text GLabel 7380 7125 0    39   BiDi ~ 0
+~mHALT
+Text GLabel 7375 7225 0    39   BiDi ~ 0
+mRD5
+Text GLabel 7430 6810 0    39   BiDi ~ 0
+~mS5
+Text GLabel 7430 6925 0    39   BiDi ~ 0
+~mS4
+Text GLabel 10550 7745 1    39   Input ~ 0
+mRD4
+Text GLabel 7375 7310 0    39   BiDi ~ 0
+mRD4
+$Comp
+L Connector:TestPoint ~mS?
+U 1 1 68D60D77
+P 7700 6605
+AR Path="/68821B60/68D60D77" Ref="~mS?"  Part="1" 
+AR Path="/68821C2E/68D60D77" Ref="~mS5"  Part="1" 
+F 0 "~mS5" H 7635 6815 39  0000 L CNN
+F 1 "TestPoint" H 7758 6632 50  0001 L CNN
+F 2 "TestPoint:TestPoint_Pad_D2.0mm" H 7900 6605 50  0001 C CNN
+F 3 "~" H 7900 6605 50  0001 C CNN
+	1    7700 6605
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	7660 6810 7700 6605
+Wire Wire Line
+	7430 6810 7660 6810
+Wire Wire Line
+	7745 6925 7845 6525
+Wire Wire Line
+	7430 6925 7745 6925
+Wire Wire Line
+	7835 7025 7990 6610
+Wire Wire Line
+	7435 7025 7835 7025
+Wire Wire Line
+	7925 7125 8190 6520
+Wire Wire Line
+	7380 7125 7925 7125
+Wire Wire Line
+	8010 7225 8320 6595
+Wire Wire Line
+	7375 7225 8010 7225
+Wire Wire Line
+	8095 7310 8470 6510
+Wire Wire Line
+	7375 7310 8095 7310
+$Comp
+L Connector:TestPoint ~mS?
+U 1 1 68D60D89
+P 7845 6525
+AR Path="/68821B60/68D60D89" Ref="~mS?"  Part="1" 
+AR Path="/68821C2E/68D60D89" Ref="~mS4"  Part="1" 
+F 0 "~mS4" H 7780 6735 39  0000 L CNN
+F 1 "TestPoint" H 7903 6552 50  0001 L CNN
+F 2 "TestPoint:TestPoint_Pad_D2.0mm" H 8045 6525 50  0001 C CNN
+F 3 "~" H 8045 6525 50  0001 C CNN
+	1    7845 6525
+	1    0    0    -1  
+$EndComp
+$Comp
+L Connector:TestPoint ~mRSVD?
+U 1 1 68D60D8F
+P 7990 6610
+AR Path="/68821B60/68D60D8F" Ref="~mRSVD?"  Part="1" 
+AR Path="/68821C2E/68D60D8F" Ref="~mRSVD1"  Part="1" 
+F 0 "~mRSVD1" H 7900 6820 39  0000 L CNN
+F 1 "TestPoint" H 8048 6637 50  0001 L CNN
+F 2 "TestPoint:TestPoint_Pad_D2.0mm" H 8190 6610 50  0001 C CNN
+F 3 "~" H 8190 6610 50  0001 C CNN
+	1    7990 6610
+	1    0    0    -1  
+$EndComp
+$Comp
+L Connector:TestPoint ~mHALT?
+U 1 1 68D60D95
+P 8190 6520
+AR Path="/68821B60/68D60D95" Ref="~mHALT?"  Part="1" 
+AR Path="/68821C2E/68D60D95" Ref="~mHALT1"  Part="1" 
+F 0 "~mHALT1" H 8115 6730 39  0000 L CNN
+F 1 "TestPoint" H 8248 6547 50  0001 L CNN
+F 2 "TestPoint:TestPoint_Pad_D2.0mm" H 8390 6520 50  0001 C CNN
+F 3 "~" H 8390 6520 50  0001 C CNN
+	1    8190 6520
+	1    0    0    -1  
+$EndComp
+$Comp
+L Connector:TestPoint mRD?
+U 1 1 68D60D9B
+P 8320 6595
+AR Path="/68821B60/68D60D9B" Ref="mRD?"  Part="1" 
+AR Path="/68821C2E/68D60D9B" Ref="mRD5"  Part="1" 
+F 0 "mRD5" H 8255 6805 39  0000 L CNN
+F 1 "TestPoint" H 8378 6622 50  0001 L CNN
+F 2 "TestPoint:TestPoint_Pad_D2.0mm" H 8520 6595 50  0001 C CNN
+F 3 "~" H 8520 6595 50  0001 C CNN
+	1    8320 6595
+	1    0    0    -1  
+$EndComp
+$Comp
+L Connector:TestPoint mRD?
+U 1 1 68D60DA1
+P 8470 6510
+AR Path="/68821B60/68D60DA1" Ref="mRD?"  Part="1" 
+AR Path="/68821C2E/68D60DA1" Ref="mRD4"  Part="1" 
+F 0 "mRD4" H 8405 6720 39  0000 L CNN
+F 1 "TestPoint" H 8528 6537 50  0001 L CNN
+F 2 "TestPoint:TestPoint_Pad_D2.0mm" H 8670 6510 50  0001 C CNN
+F 3 "~" H 8670 6510 50  0001 C CNN
+	1    8470 6510
+	1    0    0    -1  
+$EndComp
+Wire Notes Line
+	13870 6205 2370 6205
+Wire Notes Line
+	2370 6205 2370 9735
+Wire Notes Line
+	13870 6205 13870 9735
+Text Notes 8430 6945 0    79   Italic 16
+UNCONNECTED IN THIS PROJECT
+Wire Wire Line
+	12130 8665 12130 8840
+Text GLabel 12130 8840 3    39   BiDi ~ 0
+~S4
+Wire Wire Line
+	12730 8835 12730 8665
+Wire Wire Line
+	12630 8665 12630 8835
+Wire Wire Line
+	12830 8665 12830 8835
+Text GLabel 12730 8835 3    39   BiDi ~ 0
+D5
+Text GLabel 12630 8835 3    39   BiDi ~ 0
+D4
+Text GLabel 12830 8835 3    39   BiDi ~ 0
+D2
+Wire Wire Line
+	12530 8840 12530 8665
+Wire Wire Line
+	12430 8840 12430 8665
+Wire Wire Line
+	12330 8840 12330 8665
+Wire Wire Line
+	12230 8840 12230 8665
+Text GLabel 12530 8840 3    39   BiDi ~ 0
+A0
+Text GLabel 12230 8840 3    39   BiDi ~ 0
+A3
+Text GLabel 12330 8840 3    39   BiDi ~ 0
+A2
+Text GLabel 12430 8840 3    39   BiDi ~ 0
+A1
+Text GLabel 12130 7715 1    39   BiDi ~ 0
+~mS4
+Text GLabel 12230 7715 1    39   Input ~ 0
+mA3
+Text GLabel 12330 7715 1    39   Input ~ 0
+mA2
+Text GLabel 12430 7715 1    39   Input ~ 0
+mA1
+Text GLabel 12530 7715 1    39   Input ~ 0
+mA0
+Text GLabel 12730 7715 1    39   Input ~ 0
+mD5
+Text GLabel 12630 7715 1    39   Input ~ 0
+mD4
+Text GLabel 12830 7715 1    39   Input ~ 0
+mD2
+Wire Wire Line
+	12830 7715 12830 7865
+Wire Wire Line
+	12730 7715 12730 7865
+Wire Wire Line
+	12630 7715 12630 7865
+Wire Wire Line
+	12530 7715 12530 7865
+Wire Wire Line
+	12430 7715 12430 7865
+Wire Wire Line
+	12330 7865 12330 7715
+Wire Wire Line
+	12230 7865 12230 7715
+Wire Wire Line
+	12130 7865 12130 7715
+Text Notes 5930 5820 0    197  ~ 39
+BUS LOGIC LEVEL SHIFTERS
+Wire Notes Line
+	4390 4985 11630 4985
+Wire Notes Line
+	11630 4985 11630 1845
+Wire Notes Line
+	11630 1845 4390 1845
+Wire Notes Line
+	4390 1845 4390 4985
+Text GLabel 13480 7390 2    50   BiDi ~ 0
+3V3
+Text GLabel 13480 7715 2    50   BiDi ~ 0
+3V3
+Text GLabel 13280 8165 2    50   BiDi ~ 0
+3V3
+Text GLabel 13280 8365 2    50   BiDi ~ 0
+5V
+Text GLabel 13430 9115 2    50   BiDi ~ 0
+5V
+Text GLabel 11125 9020 2    50   BiDi ~ 0
+5V
+Text GLabel 10950 8345 2    50   BiDi ~ 0
+5V
+Text GLabel 10950 8145 2    50   BiDi ~ 0
+3V3
+Text GLabel 11325 7695 2    50   BiDi ~ 0
+3V3
+Text GLabel 11325 7420 2    50   BiDi ~ 0
+3V3
+Text GLabel 8975 9140 2    50   BiDi ~ 0
+5V
+Text GLabel 8850 8390 2    50   BiDi ~ 0
+5V
+Text GLabel 8850 8190 2    50   BiDi ~ 0
+3V3
+Text GLabel 9050 7740 2    50   BiDi ~ 0
+3V3
+Text GLabel 9050 7465 2    50   BiDi ~ 0
+3V3
+Text GLabel 6755 9185 2    50   BiDi ~ 0
+5V
+Text GLabel 6630 8435 2    50   BiDi ~ 0
+5V
+Text GLabel 6630 8235 2    50   BiDi ~ 0
+3V3
+Text GLabel 6830 7785 2    50   BiDi ~ 0
+3V3
+Text GLabel 6830 7510 2    50   BiDi ~ 0
+3V3
+Text GLabel 4365 8390 2    50   BiDi ~ 0
+5V
+Text GLabel 4490 9140 2    50   BiDi ~ 0
+5V
+Text GLabel 4365 8190 2    50   BiDi ~ 0
+3V3
+Text GLabel 4565 7740 2    50   BiDi ~ 0
+3V3
+Text GLabel 4565 7465 2    50   BiDi ~ 0
+3V3
 $EndSCHEMATC
