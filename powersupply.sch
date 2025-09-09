@@ -736,8 +736,8 @@ P 8520 2970
 F 0 "R54" V 8440 2970 50  0000 C CNN
 F 1 "220R" V 8600 2970 50  0000 C CNN
 F 2 "Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder" H 8520 2970 50  0001 C CNN
-F 3 "https://www.lcsc.com/datasheet/C510130.pdf" H 8520 2970 50  0001 C CNN
-F 4 "C510130" H 8520 2970 50  0001 C CNN "LCSC"
+F 3 "https://www.lcsc.com/datasheet/C137353.pdf" H 8520 2970 50  0001 C CNN
+F 4 "C137353" H 8520 2970 50  0001 C CNN "LCSC"
 	1    8520 2970
 	0    1    1    0   
 $EndComp
@@ -913,7 +913,7 @@ F 0 "R51" H 4549 2431 50  0000 L CNN
 F 1 "5K1" H 4549 2340 50  0000 L CNN
 F 2 "Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder" H 4490 2390 50  0001 C CNN
 F 3 "https://www.lcsc.com/datasheet/C20166753.pdf" H 4490 2390 50  0001 C CNN
-F 4 "C20166753" H 4490 2390 50  0001 C CNN "LCSC"
+F 4 "C163372" H 4490 2390 50  0001 C CNN "LCSC"
 	1    4490 2390
 	1    0    0    -1  
 $EndComp
@@ -925,7 +925,7 @@ F 0 "R50" V 2609 1915 50  0000 C CNN
 F 1 "5K1" V 2700 1915 50  0000 C CNN
 F 2 "Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder" H 2805 1920 50  0001 C CNN
 F 3 "https://www.lcsc.com/datasheet/C20166753.pdf" H 2805 1920 50  0001 C CNN
-F 4 "C20166753" H 2805 1920 50  0001 C CNN "LCSC"
+F 4 "C163372" H 2805 1920 50  0001 C CNN "LCSC"
 	1    2805 1920
 	0    1    1    0   
 $EndComp
@@ -965,7 +965,7 @@ U 1 1 68B76068
 P 1350 5300
 F 0 "J5" H 1240 5020 50  0000 C CNN
 F 1 "PJ-002AH-SMT-TR" H 1400 5570 50  0000 C CNN
-F 2 "RetroBitLab:CUI_PJ-002AH-SMT-TR" H 1350 5300 50  0001 L BNN
+F 2 "CUI_PJ-002AH-SMT-TR" H 1350 5300 50  0001 L BNN
 F 3 "https://www.lcsc.com/datasheet/C22434687.pdf" H 1350 5300 50  0001 L BNN
 F 4 "Same Sky" H 1350 5300 50  0001 L BNN "MF"
 F 5 "2.0 x 6.5 mm, 5.0 A, Horizontal, Surface Mount (SMT), Dc Power Jack Connector" H 1350 5300 50  0001 L BNN "Description"
@@ -1118,8 +1118,8 @@ P 2325 6895
 F 0 "R58" H 2140 6905 50  0000 L CNN
 F 1 "330R" H 2365 6780 50  0000 L CNN
 F 2 "Resistor_SMD:R_0603_1608Metric_Pad0.98x0.95mm_HandSolder" H 2325 6895 50  0001 C CNN
-F 3 "https://www.lcsc.com/datasheet/C441918.pdf" H 2325 6895 50  0001 C CNN
-F 4 "C441918" H 2325 6895 50  0001 C CNN "LCSC"
+F 3 "https://www.lcsc.com/datasheet/C105881.pdf" H 2325 6895 50  0001 C CNN
+F 4 "C105881" H 2325 6895 50  0001 C CNN "LCSC"
 	1    2325 6895
 	1    0    0    -1  
 $EndComp

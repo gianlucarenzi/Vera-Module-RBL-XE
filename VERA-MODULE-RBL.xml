@@ -2,7 +2,7 @@
 <export version="D">
   <design>
     <source>/home/gianluca/Progetti-CVS/ATARI/Vera-Module-RBL-XE/VERA-MODULE-RBL.sch</source>
-    <date>Tue 09 Sep 2025 04:54:25 PM CEST</date>
+    <date>Tue 09 Sep 2025 05:09:31 PM CEST</date>
     <tool>Eeschema 5.1.9+dfsg1-1+deb11u1</tool>
     <sheet number="1" name="/" tstamps="/">
       <title_block>
@@ -1759,11 +1759,11 @@
     <comp ref="R54">
       <value>220R</value>
       <footprint>Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder</footprint>
-      <datasheet>https://www.lcsc.com/datasheet/C510130.pdf</datasheet>
+      <datasheet>https://www.lcsc.com/datasheet/C137353.pdf</datasheet>
       <fields>
-        <field name="LCSC">C510130</field>
+        <field name="LCSC">C137353</field>
       </fields>
-      <libsource lib="CRES1206" part="220R" description="250mW Thick Film Resistor 500V ±100ppm/℃ ±1% 220Ω 1206 Chip Resistor - Surface Mount ROHS"/>
+      <libsource lib="CRES1206" part="220R" description="250mW Thick Film Resistor 200V ±100ppm/℃ ±1% 220Ω 1206 Chip Resistor - Surface Mount ROHS"/>
       <sheetpath names="/PowerSupply/" tstamps="/688FC286/"/>
       <tstamp>68BDE5E1</tstamp>
     </comp>
@@ -1870,9 +1870,9 @@
       <footprint>Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder</footprint>
       <datasheet>https://www.lcsc.com/datasheet/C20166753.pdf</datasheet>
       <fields>
-        <field name="LCSC">C20166753</field>
+        <field name="LCSC">C163372</field>
       </fields>
-      <libsource lib="CRES1206" part="5K1" description="500mW Thick Film Resistor ±100ppm/℃ ±1% 5.1kΩ 1206 Chip Resistor - Surface Mount ROHS"/>
+      <libsource lib="CRES1206" part="5K1" description="250mW Thick Film Resistor 200V ±100ppm/℃ ±1% 5.1kΩ 1206 Chip Resistor - Surface Mount ROHS"/>
       <sheetpath names="/PowerSupply/" tstamps="/688FC286/"/>
       <tstamp>68CAC2CE</tstamp>
     </comp>
@@ -1881,9 +1881,9 @@
       <footprint>Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder</footprint>
       <datasheet>https://www.lcsc.com/datasheet/C20166753.pdf</datasheet>
       <fields>
-        <field name="LCSC">C20166753</field>
+        <field name="LCSC">C163372</field>
       </fields>
-      <libsource lib="CRES1206" part="5K1" description="500mW Thick Film Resistor ±100ppm/℃ ±1% 5.1kΩ 1206 Chip Resistor - Surface Mount ROHS"/>
+      <libsource lib="CRES1206" part="5K1" description="250mW Thick Film Resistor 200V ±100ppm/℃ ±1% 5.1kΩ 1206 Chip Resistor - Surface Mount ROHS"/>
       <sheetpath names="/PowerSupply/" tstamps="/688FC286/"/>
       <tstamp>68CAEA03</tstamp>
     </comp>
@@ -1900,7 +1900,7 @@
     </comp>
     <comp ref="J5">
       <value>PJ-002AH-SMT-TR</value>
-      <footprint>RetroBitLab:CUI_PJ-002AH-SMT-TR</footprint>
+      <footprint>CUI_PJ-002AH-SMT-TR</footprint>
       <datasheet>https://www.lcsc.com/datasheet/C22434687.pdf</datasheet>
       <fields>
         <field name="Availability">In Stock</field>
@@ -2022,11 +2022,11 @@
     <comp ref="R58">
       <value>330R</value>
       <footprint>Resistor_SMD:R_0603_1608Metric_Pad0.98x0.95mm_HandSolder</footprint>
-      <datasheet>https://www.lcsc.com/datasheet/C441918.pdf</datasheet>
+      <datasheet>https://www.lcsc.com/datasheet/C105881.pdf</datasheet>
       <fields>
-        <field name="LCSC">C441918</field>
+        <field name="LCSC">C105881</field>
       </fields>
-      <libsource lib="CRES0603" part="330R" description="250mW Thick Film Resistor 150V ±100ppm/℃ ±1% 330Ω 0603 Chip Resistor - Surface Mount ROHS"/>
+      <libsource lib="CRES0603" part="330R" description="100mW Thick Film Resistor 75V ±100ppm/℃ ±1% 330Ω 0603 Chip Resistor - Surface Mount ROHS"/>
       <sheetpath names="/PowerSupply/" tstamps="/688FC286/"/>
       <tstamp>68E0F749</tstamp>
     </comp>
@@ -2212,13 +2212,13 @@
       </pins>
     </libpart>
     <libpart lib="CRES0603" part="330R">
-      <description>250mW Thick Film Resistor 150V ±100ppm/℃ ±1% 330Ω 0603 Chip Resistor - Surface Mount ROHS</description>
-      <docs>https://www.lcsc.com/datasheet/C441918.pdf</docs>
+      <description>100mW Thick Film Resistor 75V ±100ppm/℃ ±1% 330Ω 0603 Chip Resistor - Surface Mount ROHS</description>
+      <docs>https://www.lcsc.com/datasheet/C105881.pdf</docs>
       <fields>
         <field name="Reference">R</field>
         <field name="Value">330R</field>
         <field name="Footprint">Resistor_SMD:R_0603_1608Metric_Pad0.98x0.95mm_HandSolder</field>
-        <field name="LCSC">C441918</field>
+        <field name="LCSC">C105881</field>
       </fields>
       <pins>
         <pin num="1" name="~" type="passive"/>
@@ -2285,13 +2285,13 @@
       </pins>
     </libpart>
     <libpart lib="CRES1206" part="220R">
-      <description>250mW Thick Film Resistor 500V ±100ppm/℃ ±1% 220Ω 1206 Chip Resistor - Surface Mount ROHS</description>
-      <docs>https://www.lcsc.com/datasheet/C510130.pdf</docs>
+      <description>250mW Thick Film Resistor 200V ±100ppm/℃ ±1% 220Ω 1206 Chip Resistor - Surface Mount ROHS</description>
+      <docs>https://www.lcsc.com/datasheet/C137353.pdf</docs>
       <fields>
         <field name="Reference">R</field>
         <field name="Value">220R</field>
         <field name="Footprint">Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder</field>
-        <field name="LCSC">C510130</field>
+        <field name="LCSC">C137353</field>
       </fields>
       <pins>
         <pin num="1" name="~" type="passive"/>
@@ -2467,13 +2467,13 @@
       </pins>
     </libpart>
     <libpart lib="CRES1206" part="5K1">
-      <description>500mW Thick Film Resistor ±100ppm/℃ ±1% 5.1kΩ 1206 Chip Resistor - Surface Mount ROHS</description>
+      <description>250mW Thick Film Resistor 200V ±100ppm/℃ ±1% 5.1kΩ 1206 Chip Resistor - Surface Mount ROHS</description>
       <docs>https://www.lcsc.com/datasheet/C20166753.pdf</docs>
       <fields>
         <field name="Reference">R</field>
         <field name="Value">5K1</field>
         <field name="Footprint">Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder</field>
-        <field name="LCSC">C20166753</field>
+        <field name="LCSC">C163372</field>
       </fields>
       <pins>
         <pin num="1" name="~" type="passive"/>
