@@ -53,4 +53,81 @@ F1 "powersupply.sch" 79
 $EndSheet
 Text Notes 8575 4950 0    197  ~ 39
 POWER SUPPLY
+$Comp
+L Mechanical:Fiducial FID3
+U 1 1 68BFDCEA
+P 1460 6860
+F 0 "FID3" H 1545 6906 50  0000 L CNN
+F 1 "Fiducial" H 1545 6815 50  0000 L CNN
+F 2 "Fiducial:Fiducial_0.5mm_Mask1mm" H 1460 6860 50  0001 C CNN
+F 3 "~" H 1460 6860 50  0001 C CNN
+	1    1460 6860
+	1    0    0    -1  
+$EndComp
+$Comp
+L Mechanical:Fiducial FID4
+U 1 1 68BFDF14
+P 1940 6860
+F 0 "FID4" H 2025 6906 50  0000 L CNN
+F 1 "Fiducial" H 2025 6815 50  0000 L CNN
+F 2 "Fiducial:Fiducial_0.5mm_Mask1mm" H 1940 6860 50  0001 C CNN
+F 3 "~" H 1940 6860 50  0001 C CNN
+	1    1940 6860
+	1    0    0    -1  
+$EndComp
+$Comp
+L Mechanical:Fiducial FID2
+U 1 1 68BFE1CD
+P 2715 6865
+F 0 "FID2" H 2800 6911 50  0000 L CNN
+F 1 "Fiducial" H 2800 6820 50  0000 L CNN
+F 2 "Fiducial:Fiducial_0.5mm_Mask1mm" H 2715 6865 50  0001 C CNN
+F 3 "~" H 2715 6865 50  0001 C CNN
+	1    2715 6865
+	1    0    0    -1  
+$EndComp
+$Comp
+L Mechanical:Fiducial FID1
+U 1 1 68BFE3AF
+P 3220 6860
+F 0 "FID1" H 3305 6906 50  0000 L CNN
+F 1 "Fiducial" H 3305 6815 50  0000 L CNN
+F 2 "Fiducial:Fiducial_0.5mm_Mask1mm" H 3220 6860 50  0001 C CNN
+F 3 "~" H 3220 6860 50  0001 C CNN
+	1    3220 6860
+	1    0    0    -1  
+$EndComp
+Wire Notes Line
+	1240 6550 1240 7130
+Wire Notes Line
+	1240 7130 2380 7130
+Wire Notes Line
+	2380 7130 2380 6480
+Wire Notes Line
+	2380 6480 1240 6480
+Wire Notes Line
+	1240 6480 1240 6545
+Wire Notes Line
+	2570 6485 2570 7135
+Wire Notes Line
+	2570 7135 3665 7135
+Wire Notes Line
+	3665 7135 3665 6485
+Wire Notes Line
+	3665 6485 2570 6485
+Text Notes 1335 6610 0    59   ~ 12
+FIDUCIAL TOP
+Text Notes 2620 6615 0    59   ~ 12
+FIDUCIAL BOTTOM
+$Comp
+L RetroBitLab:LOGO LOGO1
+U 1 1 68C1A132
+P 3985 6755
+F 0 "LOGO1" H 4010 6808 59  0000 L CNN
+F 1 "VERA X16 LOGO" H 4010 6703 59  0000 L CNN
+F 2 "RetroBitLab:x16logo" H 3985 6755 59  0001 C CNN
+F 3 "" H 3985 6755 59  0001 C CNN
+	1    3985 6755
+	1    0    0    -1  
+$EndComp
 $EndSCHEMATC
