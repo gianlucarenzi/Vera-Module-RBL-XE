@@ -2,14 +2,14 @@
 <export version="D">
   <design>
     <source>/home/gianluca/Progetti-CVS/ATARI/Vera-Module-RBL-XE/VERA-MODULE-RBL.sch</source>
-    <date>Tue 09 Sep 2025 04:12:28 PM CEST</date>
+    <date>Tue 09 Sep 2025 04:54:25 PM CEST</date>
     <tool>Eeschema 5.1.9+dfsg1-1+deb11u1</tool>
     <sheet number="1" name="/" tstamps="/">
       <title_block>
         <title>VERA FPGA Audio &amp; Video Board</title>
         <company>RetroBit Lab</company>
         <rev>1.0</rev>
-        <date>2025-09-08</date>
+        <date>2025-09-09</date>
         <source>VERA-MODULE-RBL.sch</source>
         <comment number="1" value="Gianluca Renzi"/>
         <comment number="2" value=""/>
@@ -19,10 +19,10 @@
     </sheet>
     <sheet number="2" name="/VeraModule/" tstamps="/68821B60/">
       <title_block>
-        <title/>
+        <title>VERA MODULE AND EXTERNAL VIDEO CONNECTOR</title>
         <company>RetroBit Lab</company>
         <rev>1.0</rev>
-        <date>2025-09-08</date>
+        <date>2025-09-09</date>
         <source>vera-fpga.sch</source>
         <comment number="1" value="Gianluca Renzi"/>
         <comment number="2" value=""/>
@@ -32,10 +32,10 @@
     </sheet>
     <sheet number="3" name="/BusDecoder/" tstamps="/68821BC9/">
       <title_block>
-        <title/>
+        <title>BUS DECODER</title>
         <company>RetroBit Lab</company>
         <rev>1.0</rev>
-        <date>2025-09-08</date>
+        <date>2025-09-09</date>
         <source>busdecoder.sch</source>
         <comment number="1" value="Gianluca Renzi"/>
         <comment number="2" value=""/>
@@ -45,10 +45,10 @@
     </sheet>
     <sheet number="4" name="/CartridgeInterface/" tstamps="/68821C2E/">
       <title_block>
-        <title/>
+        <title>CARTRIDGE INTEFACE AND BUS LEVEL SHIFTERS</title>
         <company>RetroBit Lab</company>
         <rev>1.0</rev>
-        <date>2025-09-08</date>
+        <date>2025-09-09</date>
         <source>cartridgeInterface.sch</source>
         <comment number="1" value="Gianluca Renzi"/>
         <comment number="2" value=""/>
@@ -58,10 +58,10 @@
     </sheet>
     <sheet number="5" name="/Vera FPGA flash/" tstamps="/68CF41D8/">
       <title_block>
-        <title/>
+        <title>uSD Card and FLASH for FPGA</title>
         <company>RetroBit Lab</company>
         <rev>1.0</rev>
-        <date>2025-09-08</date>
+        <date>2025-09-09</date>
         <source>vera-fpga-flash.sch</source>
         <comment number="1" value="Gianluca Renzi"/>
         <comment number="2" value=""/>
@@ -71,10 +71,10 @@
     </sheet>
     <sheet number="6" name="/PowerSupply/" tstamps="/688FC286/">
       <title_block>
-        <title>VERA-XE VGA BOARD</title>
+        <title>POWERSUPPLY and USB</title>
         <company>RetroBit Lab</company>
         <rev>1.0</rev>
-        <date>2025-09-08</date>
+        <date>2025-09-09</date>
         <source>powersupply.sch</source>
         <comment number="1" value="Gianluca Renzi"/>
         <comment number="2" value=""/>
@@ -607,6 +607,7 @@
       <datasheet>https://www.lcsc.com/datasheet/C193707.pdf</datasheet>
       <fields>
         <field name="C193707">C193707</field>
+        <field name="LCSC">C193707</field>
       </fields>
       <libsource lib="RetroBitLab" part="ESP32-PICO-D4" description="150Mbps 2.412GHz~2.484GHz 2.4GHz -97dBm QFN-48-EP(7x7) RF Transceiver ICs ROHS"/>
       <sheetpath names="/BusDecoder/" tstamps="/68821BC9/"/>
@@ -1461,9 +1462,9 @@
     <comp ref="U8">
       <value>74CBTLV3126PW,118</value>
       <footprint>Package_SO:TSSOP-14_4.4x5mm_P0.65mm</footprint>
-      <datasheet>https://assets.nexperia.com/documents/data-sheet/74CBTLV3126.pdf</datasheet>
+      <datasheet>https://www.lcsc.com/datasheet/C543078.pdf</datasheet>
       <fields>
-        <field name="LCSC">C478017</field>
+        <field name="LCSC">C543078</field>
         <field name="Man_PN">74CBTLV3126PW,118</field>
         <field name="Manufacturer">Nexperia</field>
         <field name="Supply 1">Mouser</field>
@@ -1899,7 +1900,7 @@
     </comp>
     <comp ref="J5">
       <value>PJ-002AH-SMT-TR</value>
-      <footprint>CUI_PJ-002AH-SMT-TR</footprint>
+      <footprint>RetroBitLab:CUI_PJ-002AH-SMT-TR</footprint>
       <datasheet>https://www.lcsc.com/datasheet/C22434687.pdf</datasheet>
       <fields>
         <field name="Availability">In Stock</field>
@@ -2584,7 +2585,7 @@
     </libpart>
     <libpart lib="RetroBitLab" part="74CBTLV3126PW,118">
       <description>2.3V~3.6V TSSOP-14 Signal Switches, Multiplexers, Decoders ROHS</description>
-      <docs>https://assets.nexperia.com/documents/data-sheet/74CBTLV3126.pdf</docs>
+      <docs>https://www.lcsc.com/datasheet/C543078.pdf</docs>
       <fields>
         <field name="Reference">U</field>
         <field name="Value">74CBTLV3126PW,118</field>
@@ -2593,7 +2594,7 @@
         <field name="Man_PN">74CBTLV3126PW,118</field>
         <field name="Supply 1">Mouser</field>
         <field name="Supply Part Number">771-74CBTLV3126PW118 </field>
-        <field name="LCSC">C478017</field>
+        <field name="LCSC">C543078</field>
       </fields>
       <pins>
         <pin num="1" name="1OE" type="input"/>
@@ -2888,7 +2889,7 @@
         <field name="Reference">U</field>
         <field name="Value">ESP32-PICO-D4</field>
         <field name="Footprint">RetroBitLab:ESP32-PICO-D4</field>
-        <field name="C193707">C193707</field>
+        <field name="LCSC">C193707</field>
       </fields>
       <pins>
         <pin num="1" name="VDDA" type="power_in"/>

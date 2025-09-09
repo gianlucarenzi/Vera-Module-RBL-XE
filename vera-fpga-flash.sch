@@ -4,8 +4,8 @@ EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
 Sheet 5 6
-Title ""
-Date "2025-09-08"
+Title "uSD Card and FLASH for FPGA"
+Date "2025-09-09"
 Rev "1.0"
 Comp "RetroBit Lab"
 Comment1 "Gianluca Renzi"
@@ -764,12 +764,12 @@ P 6025 1325
 F 0 "U8" H 6025 1816 39  0000 C CNN
 F 1 "74CBTLV3126PW,118" H 6025 1741 39  0000 C CNN
 F 2 "Package_SO:TSSOP-14_4.4x5mm_P0.65mm" H 5925 1575 39  0001 C CNN
-F 3 "https://assets.nexperia.com/documents/data-sheet/74CBTLV3126.pdf" H 5925 1575 39  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C543078.pdf" H 5925 1575 39  0001 C CNN
 F 4 "Nexperia" H 6025 1325 39  0001 C CNN "Manufacturer"
 F 5 "74CBTLV3126PW,118" H 6025 1325 39  0001 C CNN "Man_PN"
 F 6 "Mouser" H 6025 1325 39  0001 C CNN "Supply 1"
 F 7 "771-74CBTLV3126PW118 " H 6025 1325 39  0001 C CNN "Supply Part Number"
-F 8 "C478017" H 6025 1325 50  0001 C CNN "LCSC"
+F 8 "C543078" H 6025 1325 50  0001 C CNN "LCSC"
 	1    6025 1325
 	1    0    0    -1  
 $EndComp

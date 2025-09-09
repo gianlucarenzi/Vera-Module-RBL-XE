@@ -4,8 +4,8 @@ EELAYER END
 $Descr A3 16535 11693
 encoding utf-8
 Sheet 4 6
-Title ""
-Date "2025-09-08"
+Title "CARTRIDGE INTEFACE AND BUS LEVEL SHIFTERS"
+Date "2025-09-09"
 Rev "1.0"
 Comp "RetroBit Lab"
 Comment1 "Gianluca Renzi"

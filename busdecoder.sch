@@ -4,8 +4,8 @@ EELAYER END
 $Descr A3 16535 11693
 encoding utf-8
 Sheet 3 6
-Title ""
-Date "2025-09-08"
+Title "BUS DECODER"
+Date "2025-09-09"
 Rev "1.0"
 Comp "RetroBit Lab"
 Comment1 "Gianluca Renzi"
@@ -47,6 +47,7 @@ F 1 "ESP32-PICO-D4" H 8485 4939 50  0000 C CNN
 F 2 "RetroBitLab:ESP32-PICO-D4" H 8485 2165 50  0001 C CNN
 F 3 "https://www.lcsc.com/datasheet/C193707.pdf" H 9585 3665 50  0001 C CNN
 F 4 "C193707" H 8485 3665 50  0001 C CNN "C193707"
+F 5 "C193707" H 0   0   50  0001 C CNN "LCSC"
 	1    8485 3665
 	1    0    0    -1  
 $EndComp
