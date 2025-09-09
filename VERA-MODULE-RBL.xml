@@ -2,7 +2,7 @@
 <export version="D">
   <design>
     <source>/home/gianluca/Progetti-CVS/ATARI/Vera-Module-RBL-XE/VERA-MODULE-RBL.sch</source>
-    <date>Mon 08 Sep 2025 03:11:15 PM CEST</date>
+    <date>Tue 09 Sep 2025 09:21:41 AM CEST</date>
     <tool>Eeschema 5.1.9+dfsg1-1+deb11u1</tool>
     <sheet number="1" name="/" tstamps="/">
       <title_block>
@@ -19,7 +19,7 @@
     </sheet>
     <sheet number="2" name="/VeraModule/" tstamps="/68821B60/">
       <title_block>
-        <title/>
+        <title>VERA FPGA Audio &amp; Video Board</title>
         <company>RetroBit Lab</company>
         <rev>1.0</rev>
         <date>2025-09-08</date>
@@ -32,7 +32,7 @@
     </sheet>
     <sheet number="3" name="/BusDecoder/" tstamps="/68821BC9/">
       <title_block>
-        <title/>
+        <title>VERA FPGA Audio &amp; Video Board</title>
         <company>RetroBit Lab</company>
         <rev>1.0</rev>
         <date>2025-09-08</date>
@@ -45,7 +45,7 @@
     </sheet>
     <sheet number="4" name="/CartridgeInterface/" tstamps="/68821C2E/">
       <title_block>
-        <title/>
+        <title>VERA FPGA Audio &amp; Video Board</title>
         <company>RetroBit Lab</company>
         <rev>1.0</rev>
         <date>2025-09-08</date>
@@ -58,7 +58,7 @@
     </sheet>
     <sheet number="5" name="/Vera FPGA flash/" tstamps="/68CF41D8/">
       <title_block>
-        <title/>
+        <title>VERA FPGA Audio &amp; Video Board</title>
         <company>RetroBit Lab</company>
         <rev>1.0</rev>
         <date>2025-09-08</date>
@@ -71,7 +71,7 @@
     </sheet>
     <sheet number="6" name="/PowerSupply/" tstamps="/688FC286/">
       <title_block>
-        <title>VERA-XE VGA BOARD</title>
+        <title>VERA FPGA Audio &amp; Video Board</title>
         <company>RetroBit Lab</company>
         <rev>1.0</rev>
         <date>2025-09-08</date>
@@ -84,6 +84,45 @@
     </sheet>
   </design>
   <components>
+    <comp ref="FID3">
+      <value>Fiducial</value>
+      <footprint>Fiducial:Fiducial_0.5mm_Mask1mm</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Mechanical" part="Fiducial" description="Fiducial Marker"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>68BFDCEA</tstamp>
+    </comp>
+    <comp ref="FID4">
+      <value>Fiducial</value>
+      <footprint>Fiducial:Fiducial_0.5mm_Mask1mm</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Mechanical" part="Fiducial" description="Fiducial Marker"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>68BFDF14</tstamp>
+    </comp>
+    <comp ref="FID2">
+      <value>Fiducial</value>
+      <footprint>Fiducial:Fiducial_0.5mm_Mask1mm</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Mechanical" part="Fiducial" description="Fiducial Marker"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>68BFE1CD</tstamp>
+    </comp>
+    <comp ref="FID1">
+      <value>Fiducial</value>
+      <footprint>Fiducial:Fiducial_0.5mm_Mask1mm</footprint>
+      <datasheet>~</datasheet>
+      <libsource lib="Mechanical" part="Fiducial" description="Fiducial Marker"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>68BFE3AF</tstamp>
+    </comp>
+    <comp ref="LOGO1">
+      <value>VERA X16 LOGO</value>
+      <footprint>RetroBitLab:x16logo</footprint>
+      <libsource lib="RetroBitLab" part="LOGO" description="Any valid LOGO Images can be placed here"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>68C1A132</tstamp>
+    </comp>
     <comp ref="R5">
       <value>10K</value>
       <footprint>Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder</footprint>
@@ -2500,6 +2539,17 @@
         <pin num="2" name="B" type="passive"/>
       </pins>
     </libpart>
+    <libpart lib="Mechanical" part="Fiducial">
+      <description>Fiducial Marker</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>Fiducial*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">FID</field>
+        <field name="Value">Fiducial</field>
+      </fields>
+    </libpart>
     <libpart lib="RetroBitLab" part="12MHzC">
       <description>12MHz 22pF ±20ppm ±20ppm HC-49S-SMD Crystals ROHS</description>
       <docs>https://www.lcsc.com/datasheet/C18209142.pdf</docs>
@@ -3052,6 +3102,13 @@
         <pin num="3" name="OUT" type="power_out"/>
       </pins>
     </libpart>
+    <libpart lib="RetroBitLab" part="LOGO">
+      <description>Any valid LOGO Images can be placed here</description>
+      <fields>
+        <field name="Reference">L</field>
+        <field name="Value">LOGO</field>
+      </fields>
+    </libpart>
     <libpart lib="RetroBitLab" part="MAX40200AUK">
       <description>Ideal Diode, Ultra-Low Voltage Drop, 1.5-5.5V, 1A, SOT-23-5</description>
       <docs>https://datasheets.maximintegrated.com/en/ds/MAX40200.pdf</docs>
@@ -3395,6 +3452,9 @@
     </library>
     <library logical="Jumper">
       <uri>/usr/share/kicad/library/Jumper.lib</uri>
+    </library>
+    <library logical="Mechanical">
+      <uri>/usr/share/kicad/library/Mechanical.lib</uri>
     </library>
     <library logical="RetroBitLab">
       <uri>/home/gianluca/Progetti/RetroBitLab-Library/AmigaComponents.lib</uri>
