@@ -775,8 +775,8 @@ P 8440 1795
 F 0 "C4" V 8669 1795 50  0000 C CNN
 F 1 "1uF" V 8578 1795 50  0000 C CNN
 F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 8440 1795 50  0001 C CNN
-F 3 "https://www.lcsc.com/datasheet/C126610.pdf" H 8440 1795 50  0001 C CNN
-F 4 "C126610" H 8440 1795 50  0001 C CNN "LCSC"
+F 3 "https://www.lcsc.com/datasheet/C377070.pdf" H 8440 1795 50  0001 C CNN
+F 4 "C377070" H 8440 1795 50  0001 C CNN "LCSC"
 	1    8440 1795
 	0    -1   -1   0   
 $EndComp
@@ -787,8 +787,8 @@ P 10740 1795
 F 0 "C5" V 10969 1795 50  0000 C CNN
 F 1 "1uF" V 10878 1795 50  0000 C CNN
 F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 10740 1795 50  0001 C CNN
-F 3 "https://www.lcsc.com/datasheet/C126610.pdf" H 10740 1795 50  0001 C CNN
-F 4 "C126610" H 10740 1795 50  0001 C CNN "LCSC"
+F 3 "https://www.lcsc.com/datasheet/C377070.pdf" H 10740 1795 50  0001 C CNN
+F 4 "C377070" H 10740 1795 50  0001 C CNN "LCSC"
 	1    10740 1795
 	0    -1   -1   0   
 $EndComp
@@ -799,8 +799,8 @@ P 7940 4640
 F 0 "C6" V 8169 4640 50  0000 C CNN
 F 1 "1uF" V 8078 4640 50  0000 C CNN
 F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 7940 4640 50  0001 C CNN
-F 3 "https://www.lcsc.com/datasheet/C126610.pdf" H 7940 4640 50  0001 C CNN
-F 4 "C126610" H 7940 4640 50  0001 C CNN "LCSC"
+F 3 "https://www.lcsc.com/datasheet/C377070.pdf" H 7940 4640 50  0001 C CNN
+F 4 "C377070" H 7940 4640 50  0001 C CNN "LCSC"
 	1    7940 4640
 	0    -1   -1   0   
 $EndComp
@@ -811,8 +811,8 @@ P 9565 4915
 F 0 "C7" H 9657 4961 50  0000 L CNN
 F 1 "1uF" H 9657 4870 50  0000 L CNN
 F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 9565 4915 50  0001 C CNN
-F 3 "https://www.lcsc.com/datasheet/C126610.pdf" H 9565 4915 50  0001 C CNN
-F 4 "C126610" H 9565 4915 50  0001 C CNN "LCSC"
+F 3 "https://www.lcsc.com/datasheet/C377070.pdf" H 9565 4915 50  0001 C CNN
+F 4 "C377070" H 9565 4915 50  0001 C CNN "LCSC"
 	1    9565 4915
 	1    0    0    -1  
 $EndComp
@@ -823,8 +823,8 @@ P 9890 4915
 F 0 "C8" H 9982 4961 50  0000 L CNN
 F 1 "1uF" H 9982 4870 50  0000 L CNN
 F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 9890 4915 50  0001 C CNN
-F 3 "https://www.lcsc.com/datasheet/C126610.pdf" H 9890 4915 50  0001 C CNN
-F 4 "C126610" H 9890 4915 50  0001 C CNN "LCSC"
+F 3 "https://www.lcsc.com/datasheet/C377070.pdf" H 9890 4915 50  0001 C CNN
+F 4 "C377070" H 9890 4915 50  0001 C CNN "LCSC"
 	1    9890 4915
 	1    0    0    -1  
 $EndComp
@@ -1121,23 +1121,6 @@ $EndComp
 Wire Wire Line
 	7115 9400 7115 9875
 $Comp
-L RetroBitLab:ICD15S13E4GX00LF J2
-U 1 1 68C556BF
-P 7790 8950
-F 0 "J2" H 7790 9931 50  0000 C CNN
-F 1 "ICD15S13E4GX00LF" H 8240 8290 50  0000 C CNN
-F 2 "RetroBitLab:CONN_DB15_F_AMPHENOL_ICD15S13E4GX00LF" H 7790 8950 50  0001 L BNN
-F 3 "https://cdn.amphenol-cs.com/media/wysiwyg/files/documentation/datasheet/inputoutput/io_dsub_brochure.pdf" H 7790 8950 50  0001 L BNN
-F 4 "G" H 7790 8950 50  0001 L BNN "PARTREV"
-F 5 "Manufacturer Recommendations" H 7790 8950 50  0001 L BNN "STANDARD"
-F 6 "12.96mm" H 7790 8950 50  0001 L BNN "MAXIMUM_PACKAGE_HEIGHT"
-F 7 "Amphenol" H 7790 8950 50  0001 L BNN "MANUFACTURER"
-F 8 "609-5181-ND" H 7790 8950 50  0001 C CNN "Supply 1 Part Number"
-F 9 "DigiKey" H 7790 8950 50  0001 C CNN "Supply 1"
-	1    7790 8950
-	1    0    0    -1  
-$EndComp
-$Comp
 L CCAP1206:100nF C53
 U 1 1 68CACC73
 P 8000 8150
@@ -1250,8 +1233,8 @@ P 8815 4765
 F 0 "C59" V 9044 4765 50  0000 C CNN
 F 1 "1uF" V 8953 4765 50  0000 C CNN
 F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 8815 4765 50  0001 C CNN
-F 3 "https://www.lcsc.com/datasheet/C126610.pdf" H 8815 4765 50  0001 C CNN
-F 4 "C126610" H 8815 4765 50  0001 C CNN "LCSC"
+F 3 "https://www.lcsc.com/datasheet/C377070.pdf" H 8815 4765 50  0001 C CNN
+F 4 "C377070" H 8815 4765 50  0001 C CNN "LCSC"
 	1    8815 4765
 	0    -1   -1   0   
 $EndComp
@@ -1347,8 +1330,8 @@ P 10190 4915
 F 0 "C60" H 10282 4961 50  0000 L CNN
 F 1 "1uF" H 10282 4870 50  0000 L CNN
 F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 10190 4915 50  0001 C CNN
-F 3 "https://www.lcsc.com/datasheet/C126610.pdf" H 10190 4915 50  0001 C CNN
-F 4 "C126610" H 10190 4915 50  0001 C CNN "LCSC"
+F 3 "https://www.lcsc.com/datasheet/C377070.pdf" H 10190 4915 50  0001 C CNN
+F 4 "C377070" H 10190 4915 50  0001 C CNN "LCSC"
 	1    10190 4915
 	1    0    0    -1  
 $EndComp
@@ -1375,8 +1358,8 @@ P 10605 5250
 F 0 "C3" H 10785 5185 50  0000 R CNN
 F 1 "1uF" H 10815 5285 50  0000 R CNN
 F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 10605 5250 50  0001 C CNN
-F 3 "https://www.lcsc.com/datasheet/C126610.pdf" H 10605 5250 50  0001 C CNN
-F 4 "C126610" H 10605 5250 50  0001 C CNN "LCSC"
+F 3 "https://www.lcsc.com/datasheet/C377070.pdf" H 10605 5250 50  0001 C CNN
+F 4 "C377070" H 10605 5250 50  0001 C CNN "LCSC"
 	1    10605 5250
 	-1   0    0    1   
 $EndComp
@@ -1425,4 +1408,16 @@ Text GLabel 7490 9100 0    50   BiDi ~ 0
 5V
 Text GLabel 14555 7975 2    50   BiDi ~ 0
 3V3
+$Comp
+L RetroBitLab:XDDB-1518-0932 J2
+U 1 1 68C6C65D
+P 7790 8950
+F 0 "J2" H 7570 9675 50  0000 C CNN
+F 1 "XDDB-1518-0932" H 8565 8515 50  0000 C CNN
+F 2 "RetroBitLab:CONN_DB15_F_AMPHENOL_ICD15S13E4GX00LF" H 7790 8950 50  0001 L BNN
+F 3 "https://www.lcsc.com/datasheet/C7498158.pdf" H 7790 8950 50  0001 L BNN
+F 4 "C7498158" H 7790 8950 50  0001 C CNN "LCSC"
+	1    7790 8950
+	1    0    0    -1  
+$EndComp
 $EndSCHEMATC

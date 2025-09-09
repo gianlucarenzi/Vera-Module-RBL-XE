@@ -502,8 +502,8 @@ AR Path="/68821C2E/68D60C01" Ref="C1"  Part="1"
 F 0 "C1" H 13263 7344 50  0000 R CNN
 F 1 "1uF" H 13263 7435 50  0000 R CNN
 F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 13355 7390 50  0001 C CNN
-F 3 "https://www.lcsc.com/datasheet/C126610.pdf" H 13355 7390 50  0001 C CNN
-F 4 "C126610" H 13355 7390 50  0001 C CNN "LCSC"
+F 3 "https://www.lcsc.com/datasheet/C377070.pdf" H 13355 7390 50  0001 C CNN
+F 4 "C377070" H 13355 7390 50  0001 C CNN "LCSC"
 	1    13355 7390
 	0    -1   -1   0   
 $EndComp
@@ -516,8 +516,8 @@ AR Path="/68821C2E/68D60C08" Ref="C55"  Part="1"
 F 0 "C55" H 13213 9069 50  0000 R CNN
 F 1 "1uF" H 13213 9160 50  0000 R CNN
 F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 13305 9115 50  0001 C CNN
-F 3 "https://www.lcsc.com/datasheet/C126610.pdf" H 13305 9115 50  0001 C CNN
-F 4 "C126610" H 13305 9115 50  0001 C CNN "LCSC"
+F 3 "https://www.lcsc.com/datasheet/C377070.pdf" H 13305 9115 50  0001 C CNN
+F 4 "C377070" H 13305 9115 50  0001 C CNN "LCSC"
 	1    13305 9115
 	0    -1   -1   0   
 $EndComp
@@ -530,8 +530,8 @@ AR Path="/68821C2E/68D60C0F" Ref="C2"  Part="1"
 F 0 "C2" H 11108 7374 50  0000 R CNN
 F 1 "1uF" H 11108 7465 50  0000 R CNN
 F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 11200 7420 50  0001 C CNN
-F 3 "https://www.lcsc.com/datasheet/C126610.pdf" H 11200 7420 50  0001 C CNN
-F 4 "C126610" H 11200 7420 50  0001 C CNN "LCSC"
+F 3 "https://www.lcsc.com/datasheet/C377070.pdf" H 11200 7420 50  0001 C CNN
+F 4 "C377070" H 11200 7420 50  0001 C CNN "LCSC"
 	1    11200 7420
 	0    -1   -1   0   
 $EndComp
@@ -544,8 +544,8 @@ AR Path="/68821C2E/68D60C16" Ref="C12"  Part="1"
 F 0 "C12" H 10908 8974 50  0000 R CNN
 F 1 "1uF" H 10908 9065 50  0000 R CNN
 F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 11000 9020 50  0001 C CNN
-F 3 "https://www.lcsc.com/datasheet/C126610.pdf" H 11000 9020 50  0001 C CNN
-F 4 "C126610" H 11000 9020 50  0001 C CNN "LCSC"
+F 3 "https://www.lcsc.com/datasheet/C377070.pdf" H 11000 9020 50  0001 C CNN
+F 4 "C377070" H 11000 9020 50  0001 C CNN "LCSC"
 	1    11000 9020
 	0    -1   -1   0   
 $EndComp
@@ -558,8 +558,8 @@ AR Path="/68821C2E/68D60C1D" Ref="C10"  Part="1"
 F 0 "C10" H 8833 7419 50  0000 R CNN
 F 1 "1uF" H 8833 7510 50  0000 R CNN
 F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 8925 7465 50  0001 C CNN
-F 3 "https://www.lcsc.com/datasheet/C126610.pdf" H 8925 7465 50  0001 C CNN
-F 4 "C126610" H 8925 7465 50  0001 C CNN "LCSC"
+F 3 "https://www.lcsc.com/datasheet/C377070.pdf" H 8925 7465 50  0001 C CNN
+F 4 "C377070" H 8925 7465 50  0001 C CNN "LCSC"
 	1    8925 7465
 	0    -1   -1   0   
 $EndComp
@@ -572,8 +572,8 @@ AR Path="/68821C2E/68D60C24" Ref="C57"  Part="1"
 F 0 "C57" H 8758 9094 50  0000 R CNN
 F 1 "1uF" H 8758 9185 50  0000 R CNN
 F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 8850 9140 50  0001 C CNN
-F 3 "https://www.lcsc.com/datasheet/C126610.pdf" H 8850 9140 50  0001 C CNN
-F 4 "C126610" H 8850 9140 50  0001 C CNN "LCSC"
+F 3 "https://www.lcsc.com/datasheet/C377070.pdf" H 8850 9140 50  0001 C CNN
+F 4 "C377070" H 8850 9140 50  0001 C CNN "LCSC"
 	1    8850 9140
 	0    -1   -1   0   
 $EndComp
@@ -783,8 +783,8 @@ AR Path="/68821C2E/68D60CB7" Ref="C11"  Part="1"
 F 0 "C11" H 6613 7464 50  0000 R CNN
 F 1 "1uF" H 6613 7555 50  0000 R CNN
 F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 6705 7510 50  0001 C CNN
-F 3 "https://www.lcsc.com/datasheet/C126610.pdf" H 6705 7510 50  0001 C CNN
-F 4 "C126610" H 6705 7510 50  0001 C CNN "LCSC"
+F 3 "https://www.lcsc.com/datasheet/C377070.pdf" H 6705 7510 50  0001 C CNN
+F 4 "C377070" H 6705 7510 50  0001 C CNN "LCSC"
 	1    6705 7510
 	0    -1   -1   0   
 $EndComp
@@ -797,8 +797,8 @@ AR Path="/68821C2E/68D60CBE" Ref="C58"  Part="1"
 F 0 "C58" H 6538 9139 50  0000 R CNN
 F 1 "1uF" H 6538 9230 50  0000 R CNN
 F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 6630 9185 50  0001 C CNN
-F 3 "https://www.lcsc.com/datasheet/C126610.pdf" H 6630 9185 50  0001 C CNN
-F 4 "C126610" H 6630 9185 50  0001 C CNN "LCSC"
+F 3 "https://www.lcsc.com/datasheet/C377070.pdf" H 6630 9185 50  0001 C CNN
+F 4 "C377070" H 6630 9185 50  0001 C CNN "LCSC"
 	1    6630 9185
 	0    -1   -1   0   
 $EndComp
@@ -941,8 +941,8 @@ AR Path="/68821C2E/68D60D23" Ref="C9"  Part="1"
 F 0 "C9" H 4348 7419 50  0000 R CNN
 F 1 "1uF" H 4348 7510 50  0000 R CNN
 F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 4440 7465 50  0001 C CNN
-F 3 "https://www.lcsc.com/datasheet/C126610.pdf" H 4440 7465 50  0001 C CNN
-F 4 "C126610" H 4440 7465 50  0001 C CNN "LCSC"
+F 3 "https://www.lcsc.com/datasheet/C377070.pdf" H 4440 7465 50  0001 C CNN
+F 4 "C377070" H 4440 7465 50  0001 C CNN "LCSC"
 	1    4440 7465
 	0    -1   -1   0   
 $EndComp
@@ -955,8 +955,8 @@ AR Path="/68821C2E/68D60D2A" Ref="C56"  Part="1"
 F 0 "C56" H 4273 9094 50  0000 R CNN
 F 1 "1uF" H 4273 9185 50  0000 R CNN
 F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 4365 9140 50  0001 C CNN
-F 3 "https://www.lcsc.com/datasheet/C126610.pdf" H 4365 9140 50  0001 C CNN
-F 4 "C126610" H 4365 9140 50  0001 C CNN "LCSC"
+F 3 "https://www.lcsc.com/datasheet/C377070.pdf" H 4365 9140 50  0001 C CNN
+F 4 "C377070" H 4365 9140 50  0001 C CNN "LCSC"
 	1    4365 9140
 	0    -1   -1   0   
 $EndComp

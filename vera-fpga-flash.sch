@@ -465,7 +465,8 @@ P 4800 1375
 F 0 "C27" H 4892 1421 50  0000 L CNN
 F 1 "100nF" H 4892 1330 50  0000 L CNN
 F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 4800 1375 50  0001 C CNN
-F 3 "https://lcsc.com/datasheet/" H 4800 1375 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C2858001.pdf" H 4800 1375 50  0001 C CNN
+F 4 "C2858001" H 0   0   50  0001 C CNN "LCSC"
 	1    4800 1375
 	1    0    0    -1  
 $EndComp
@@ -561,7 +562,8 @@ P 3300 6555
 F 0 "C33" H 3392 6601 50  0000 L CNN
 F 1 "1uF" H 3392 6510 50  0000 L CNN
 F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 3300 6555 50  0001 C CNN
-F 3 "https://lcsc.com/datasheet/" H 3300 6555 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C377070.pdf" H 3300 6555 50  0001 C CNN
+F 4 "C377070" H 0   0   50  0001 C CNN "LCSC"
 	1    3300 6555
 	1    0    0    -1  
 $EndComp
@@ -596,7 +598,8 @@ P 2900 5800
 F 0 "C32" H 2992 5846 50  0000 L CNN
 F 1 "1uF" H 2992 5755 50  0000 L CNN
 F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 2900 5800 50  0001 C CNN
-F 3 "https://lcsc.com/datasheet/" H 2900 5800 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C377070.pdf" H 2900 5800 50  0001 C CNN
+F 4 "C377070" H 0   0   50  0001 C CNN "LCSC"
 	1    2900 5800
 	1    0    0    -1  
 $EndComp
@@ -609,7 +612,8 @@ P 3375 5575
 F 0 "C30" H 3467 5621 50  0000 L CNN
 F 1 "1uF" H 3467 5530 50  0000 L CNN
 F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 3375 5575 50  0001 C CNN
-F 3 "https://lcsc.com/datasheet/" H 3375 5575 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C377070.pdf" H 3375 5575 50  0001 C CNN
+F 4 "C377070" H 0   0   50  0001 C CNN "LCSC"
 	1    3375 5575
 	1    0    0    -1  
 $EndComp
@@ -620,7 +624,8 @@ P 3875 5575
 F 0 "C31" H 3967 5621 50  0000 L CNN
 F 1 "1uF" H 3967 5530 50  0000 L CNN
 F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 3875 5575 50  0001 C CNN
-F 3 "https://lcsc.com/datasheet/" H 3875 5575 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C377070.pdf" H 3875 5575 50  0001 C CNN
+F 4 "C377070" H 0   0   50  0001 C CNN "LCSC"
 	1    3875 5575
 	1    0    0    -1  
 $EndComp
