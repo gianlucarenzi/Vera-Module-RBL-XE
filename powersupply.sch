@@ -5,7 +5,7 @@ $Descr A4 11693 8268
 encoding utf-8
 Sheet 6 6
 Title "POWERSUPPLY and USB"
-Date "2025-09-09"
+Date "2025-09-10"
 Rev "1.0"
 Comp "RetroBit Lab"
 Comment1 "Gianluca Renzi"
@@ -98,18 +98,16 @@ Connection ~ 5315 2920
 $Comp
 L power:GND #PWR?
 U 1 1 68E1EF59
-P 4890 2695
+P 4890 2670
 AR Path="/68821B60/68E1EF59" Ref="#PWR?"  Part="1" 
 AR Path="/688FC286/68E1EF59" Ref="#PWR099"  Part="1" 
-F 0 "#PWR099" H 4890 2445 50  0001 C CNN
-F 1 "GND" H 4895 2522 50  0000 C CNN
-F 2 "" H 4890 2695 50  0001 C CNN
-F 3 "" H 4890 2695 50  0001 C CNN
-	1    4890 2695
+F 0 "#PWR099" H 4890 2420 50  0001 C CNN
+F 1 "GND" H 4895 2497 50  0000 C CNN
+F 2 "" H 4890 2670 50  0001 C CNN
+F 3 "" H 4890 2670 50  0001 C CNN
+	1    4890 2670
 	0    1    1    0   
 $EndComp
-Wire Wire Line
-	4890 2695 4890 2445
 $Comp
 L power:GND #PWR?
 U 1 1 68E23C94
@@ -351,9 +349,6 @@ Wire Wire Line
 Wire Wire Line
 	4490 2495 4490 2570
 Connection ~ 4490 2570
-Connection ~ 4890 2695
-Wire Wire Line
-	4890 2695 4890 2920
 Wire Wire Line
 	5190 2445 5315 2445
 Wire Wire Line
@@ -629,30 +624,6 @@ F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2110151630_XKB-Connection-DSHP02T
 F 4 "C319052" H 9340 2420 50  0001 C CNN "LCSC"
 	1    9340 2420
 	1    0    0    -1  
-$EndComp
-$Comp
-L CCAP1206:22pF C41
-U 1 1 68B821D5
-P 5090 2920
-F 0 "C41" V 4965 2920 50  0000 C CNN
-F 1 "22pF" V 5190 2920 50  0000 C CNN
-F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 5090 2920 50  0001 C CNN
-F 3 "https://lcsc.com/datasheet/" H 5090 2920 50  0001 C CNN
-F 4 "C173236" H 5090 2920 50  0001 C CNN "LCSC"
-	1    5090 2920
-	0    1    1    0   
-$EndComp
-$Comp
-L CCAP1206:22pF C39
-U 1 1 68B8E191
-P 5090 2445
-F 0 "C39" V 4965 2445 50  0000 C CNN
-F 1 "22pF" V 5190 2445 50  0000 C CNN
-F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 5090 2445 50  0001 C CNN
-F 3 "https://lcsc.com/datasheet/" H 5090 2445 50  0001 C CNN
-F 4 "C173236" H 5090 2445 50  0001 C CNN "LCSC"
-	1    5090 2445
-	0    1    1    0   
 $EndComp
 $Comp
 L CCAP1206:22uF C37
@@ -965,7 +936,7 @@ U 1 1 68B76068
 P 1350 5300
 F 0 "J5" H 1240 5020 50  0000 C CNN
 F 1 "PJ-002AH-SMT-TR" H 1400 5570 50  0000 C CNN
-F 2 "CUI_PJ-002AH-SMT-TR" H 1350 5300 50  0001 L BNN
+F 2 "RetroBitLab:CUI_PJ-002AH-SMT-TR" H 1350 5300 50  0001 L BNN
 F 3 "https://www.lcsc.com/datasheet/C22434687.pdf" H 1350 5300 50  0001 L BNN
 F 4 "Same Sky" H 1350 5300 50  0001 L BNN "MF"
 F 5 "2.0 x 6.5 mm, 5.0 A, Horizontal, Surface Mount (SMT), Dc Power Jack Connector" H 1350 5300 50  0001 L BNN "Description"
@@ -986,11 +957,11 @@ $Comp
 L RetroBitLab:12MHzC Y1
 U 1 1 68B9A98E
 P 5315 2670
-F 0 "Y1" V 5269 2801 50  0000 L CNN
-F 1 "12MHzC" V 5360 2801 50  0000 L CNN
-F 2 "Crystal:Crystal_SMD_HC49-SD_HandSoldering" H 5315 2670 50  0001 C CNN
-F 3 "https://www.lcsc.com/datasheet/C18209142.pdf" H 5315 2670 50  0001 C CNN
-F 4 "C18209142" H 5315 2670 50  0001 C CNN "LCSC"
+F 0 "Y1" V 5165 2700 50  0000 L CNN
+F 1 "12MHzC" V 5460 2725 50  0000 L CNN
+F 2 "Crystal:Crystal_SMD_EuroQuartz_MT-4Pin_3.2x2.5mm" H 5315 2670 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C9002.pdf" H 5315 2670 50  0001 C CNN
+F 4 "C9002" H 5315 2670 50  0001 C CNN "LCSC"
 	1    5315 2670
 	0    1    1    0   
 $EndComp
@@ -1085,18 +1056,6 @@ F 2 "LED_SMD:LED_1206_3216Metric_Pad1.42x1.75mm_HandSolder" H 1925 6600 118 0001
 F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2504101957_XINGLIGHT-XL-3216SURC_C965822.pdf" H 1925 6600 118 0001 C CNN
 F 4 "C965822" H 1925 6600 118 0001 C CNN "LCSC"
 	1    1925 6600
-	0    -1   -1   0   
-$EndComp
-$Comp
-L CLED1206:GREEN LD4
-U 1 1 68DFF4E1
-P 2325 6600
-F 0 "LD4" V 2350 6530 49  0000 R CNN
-F 1 "GREEN" V 2260 6530 49  0000 R CNN
-F 2 "LED_SMD:LED_1206_3216Metric_Pad1.42x1.75mm_HandSolder" H 2325 6600 118 0001 C CNN
-F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2412111154_Kingbright-KPTD-3216CGCK-01_C27394172.pdf" H 2325 6600 118 0001 C CNN
-F 4 "C27394172" H 2325 6600 118 0001 C CNN "LCSC"
-	1    2325 6600
 	0    -1   -1   0   
 $EndComp
 $Comp
@@ -1321,4 +1280,64 @@ Wire Wire Line
 Wire Wire Line
 	1205 2420 1205 2315
 Connection ~ 1345 2420
+$Comp
+L CCAP1206:20pF C39
+U 1 1 68C66AAA
+P 5090 2445
+F 0 "C39" V 5210 2440 50  0000 C CNN
+F 1 "20pF" V 4970 2460 50  0000 C CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 5090 2445 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C5137576.pdf" H 5090 2445 50  0001 C CNN
+F 4 "C5137576" H 5090 2445 50  0001 C CNN "LCSC"
+	1    5090 2445
+	0    -1   -1   0   
+$EndComp
+$Comp
+L CCAP1206:20pF C41
+U 1 1 68C6C2D4
+P 5090 2920
+F 0 "C41" V 5210 2915 50  0000 C CNN
+F 1 "20pF" V 4970 2935 50  0000 C CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 5090 2920 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C5137576.pdf" H 5090 2920 50  0001 C CNN
+F 4 "C5137576" H 5090 2920 50  0001 C CNN "LCSC"
+	1    5090 2920
+	0    -1   -1   0   
+$EndComp
+$Comp
+L CLED0805:GREEN LD4
+U 1 1 68CF5676
+P 2325 6610
+F 0 "LD4" V 2361 6540 50  0000 R CNN
+F 1 "GREEN" V 2270 6540 50  0000 R CNN
+F 2 "LED_SMD:LED_0805_2012Metric_Pad1.15x1.40mm_HandSolder" H 2325 6610 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C84260.pdf" H 2325 6610 50  0001 C CNN
+F 4 "C84260" H 2325 6610 50  0001 C CNN "LCSC"
+	1    2325 6610
+	0    -1   -1   0   
+$EndComp
+Wire Wire Line
+	4890 2445 4890 2670
+Wire Wire Line
+	5115 2670 4890 2670
+Connection ~ 4890 2670
+Wire Wire Line
+	4890 2670 4890 2920
+Wire Wire Line
+	5515 2670 5690 2670
+Wire Wire Line
+	5690 2670 5690 2620
+$Comp
+L power:GND #PWR?
+U 1 1 68D3993D
+P 5690 2620
+AR Path="/68821B60/68D3993D" Ref="#PWR?"  Part="1" 
+AR Path="/688FC286/68D3993D" Ref="#PWR0106"  Part="1" 
+F 0 "#PWR0106" H 5690 2370 50  0001 C CNN
+F 1 "GND" H 5590 2625 50  0000 C CNN
+F 2 "" H 5690 2620 50  0001 C CNN
+F 3 "" H 5690 2620 50  0001 C CNN
+	1    5690 2620
+	-1   0    0    1   
+$EndComp
 $EndSCHEMATC

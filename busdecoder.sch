@@ -5,7 +5,7 @@ $Descr A3 16535 11693
 encoding utf-8
 Sheet 3 6
 Title "BUS DECODER"
-Date "2025-09-09"
+Date "2025-09-10"
 Rev "1.0"
 Comp "RetroBit Lab"
 Comment1 "Gianluca Renzi"
@@ -579,18 +579,6 @@ Wire Wire Line
 	2875 7505 2875 7650
 Wire Wire Line
 	2875 7305 2875 7200
-$Comp
-L RetroBitLab:FB1206100R100MHZ4A L1
-U 1 1 688E470E
-P 3785 2765
-F 0 "L1" H 3785 2865 39  0000 C CNN
-F 1 "FB1206100R100MHZ4A" H 3810 2715 39  0000 C CNN
-F 2 "Inductor_SMD:L_1206_3216Metric_Pad1.42x1.75mm_HandSolder" H 3890 2980 39  0001 C CNN
-F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2412191519_TDK-MPZ2012S101AT000_C15957.pdf" H 3710 2800 118 0001 C CNN
-F 4 "C41384139" H 3795 2630 39  0001 C CNN "LCSC"
-	1    3785 2765
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	3910 2765 4310 2765
 Wire Wire Line
@@ -1180,4 +1168,16 @@ Wire Wire Line
 	3510 9350 3440 9350
 Wire Wire Line
 	3440 9350 3440 9825
+$Comp
+L RetroBitLab:FB0805100R100MHZ4A L1
+U 1 1 68D0440D
+P 3785 2765
+F 0 "L1" H 3795 2875 39  0000 C CNN
+F 1 "FB0805100R100MHZ4A" H 3790 2725 39  0000 C CNN
+F 2 "Inductor_SMD:L_0805_2012Metric_Pad1.15x1.40mm_HandSolder" H 3860 2915 39  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C15957.pdf" H 3835 2755 118 0001 C CNN
+F 4 "C15957" H 3785 2615 39  0001 C CNN "LCSC"
+	1    3785 2765
+	1    0    0    -1  
+$EndComp
 $EndSCHEMATC
