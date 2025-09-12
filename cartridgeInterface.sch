@@ -5,7 +5,7 @@ $Descr A3 16535 11693
 encoding utf-8
 Sheet 4 6
 Title "CARTRIDGE INTEFACE AND BUS LEVEL SHIFTERS"
-Date "2025-09-10"
+Date "2025-09-12"
 Rev "1.0"
 Comp "RetroBit Lab"
 Comment1 "Gianluca Renzi"
@@ -765,8 +765,6 @@ Wire Wire Line
 Wire Wire Line
 	5930 7810 5930 7935
 Wire Wire Line
-	6030 7935 6030 7810
-Wire Wire Line
 	6130 7810 6130 7935
 Wire Wire Line
 	6230 7935 6230 7810
@@ -1067,8 +1065,6 @@ Text GLabel 5830 7810 1    39   Input ~ 0
 ~mS5
 Text GLabel 5930 7810 1    39   BiDi ~ 0
 mRD5
-Text GLabel 6030 7810 1    39   BiDi ~ 0
-~mCCTL
 Text GLabel 3965 7760 1    39   Input ~ 0
 ~mHALT
 Text GLabel 3565 7765 1    31   Input ~ 0
@@ -1323,4 +1319,8 @@ Text GLabel 4565 7740 2    50   BiDi ~ 0
 3V3
 Text GLabel 4565 7465 2    50   BiDi ~ 0
 3V3
+Wire Wire Line
+	6030 7935 6030 7810
+Text GLabel 6030 7810 1    39   BiDi ~ 0
+~mCCTL
 $EndSCHEMATC
