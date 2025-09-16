@@ -5,7 +5,7 @@ $Descr A4 11693 8268
 encoding utf-8
 Sheet 6 6
 Title "POWERSUPPLY and USB"
-Date "2025-09-12"
+Date "2025-09-16"
 Rev "1.0"
 Comp "RetroBit Lab"
 Comment1 "Gianluca Renzi"
@@ -719,8 +719,8 @@ P 8140 3220
 F 0 "Q4" H 8330 3266 50  0000 L CNN
 F 1 "BC817,SOT-23" H 8330 3175 50  0000 L CNN
 F 2 "Package_TO_SOT_SMD:SOT-23" H 8340 3145 50  0001 L CIN
-F 3 "https://www.lcsc.com/datasheet/C39828.pdf" H 8140 3220 50  0001 L CNN
-F 4 "C39828" H 8490 3045 50  0001 C CNN "LCSC"
+F 3 "https://www.lcsc.com/datasheet/C20069154.pdf" H 8140 3220 50  0001 L CNN
+F 4 "C20069154" H 8490 3045 50  0001 C CNN "LCSC"
 	1    8140 3220
 	1    0    0    -1  
 $EndComp
@@ -731,8 +731,8 @@ P 8160 2670
 F 0 "Q3" H 8350 2716 50  0000 L CNN
 F 1 "BC817,SOT-23" H 8350 2625 50  0000 L CNN
 F 2 "Package_TO_SOT_SMD:SOT-23" H 8360 2595 50  0001 L CIN
-F 3 "https://www.lcsc.com/datasheet/C39828.pdf" H 8160 2670 50  0001 L CNN
-F 4 "C39828" H 8510 2495 50  0001 C CNN "LCSC"
+F 3 "https://www.lcsc.com/datasheet/C20069154.pdf" H 8160 2670 50  0001 L CNN
+F 4 "C20069154" H 8510 2495 50  0001 C CNN "LCSC"
 	1    8160 2670
 	1    0    0    -1  
 $EndComp

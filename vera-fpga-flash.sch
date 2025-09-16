@@ -5,7 +5,7 @@ $Descr A4 11693 8268
 encoding utf-8
 Sheet 5 6
 Title "uSD Card and FLASH for FPGA"
-Date "2025-09-12"
+Date "2025-09-16"
 Rev "1.0"
 Comp "RetroBit Lab"
 Comment1 "Gianluca Renzi"
@@ -399,12 +399,12 @@ $EndComp
 $Comp
 L power:GND #PWR077
 U 1 1 68D0CBAF
-P 2575 1650
-F 0 "#PWR077" H 2575 1400 50  0001 C CNN
-F 1 "GND" H 2580 1477 50  0000 C CNN
-F 2 "" H 2575 1650 50  0001 C CNN
-F 3 "" H 2575 1650 50  0001 C CNN
-	1    2575 1650
+P 1230 1615
+F 0 "#PWR077" H 1230 1365 50  0001 C CNN
+F 1 "GND" H 1235 1442 50  0000 C CNN
+F 2 "" H 1230 1615 50  0001 C CNN
+F 3 "" H 1230 1615 50  0001 C CNN
+	1    1230 1615
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -935,13 +935,13 @@ Wire Wire Line
 $Comp
 L CCAP1206:100nF C28
 U 1 1 68E21651
-P 2575 1550
-F 0 "C28" H 2667 1596 50  0000 L CNN
-F 1 "100nF" H 2667 1505 50  0000 L CNN
-F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 2575 1550 50  0001 C CNN
-F 3 "https://www.lcsc.com/datasheet/C2858001.pdf" H 2575 1550 50  0001 C CNN
-F 4 "C2858001" H 2575 1550 50  0001 C CNN "LCSC"
-	1    2575 1550
+P 1230 1515
+F 0 "C28" H 1322 1561 50  0000 L CNN
+F 1 "100nF" H 1322 1470 50  0000 L CNN
+F 2 "Capacitor_SMD:C_1206_3216Metric_Pad1.33x1.80mm_HandSolder" H 1230 1515 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C2858001.pdf" H 1230 1515 50  0001 C CNN
+F 4 "C2858001" H 1230 1515 50  0001 C CNN "LCSC"
+	1    1230 1515
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
@@ -985,12 +985,12 @@ Wire Wire Line
 	1745 1030 1850 1030
 Wire Wire Line
 	1850 1030 1850 1325
-Text GLabel 2450 1355 0    50   BiDi ~ 0
+Text GLabel 1105 1320 0    50   BiDi ~ 0
 3V3
 Wire Wire Line
-	2575 1450 2575 1355
+	1230 1415 1230 1320
 Wire Wire Line
-	2450 1355 2575 1355
+	1105 1320 1230 1320
 Text GLabel 6475 1675 2    50   BiDi ~ 0
 3V3
 Wire Wire Line
@@ -1061,4 +1061,139 @@ Wire Wire Line
 	3625 5860 3680 5860
 Wire Wire Line
 	3625 5860 3625 6050
+Text GLabel 3770 1145 0    50   BiDi ~ 0
+5V
+Wire Wire Line
+	3770 1145 3805 1145
+Wire Wire Line
+	3805 1145 3805 1305
+Wire Wire Line
+	3805 1305 3835 1305
+$Comp
+L CRES0805:10K R34
+U 1 1 68CC70E1
+P 3335 1130
+F 0 "R34" H 3394 1171 50  0000 L CNN
+F 1 "10K" H 3394 1080 50  0000 L CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" H 3335 1130 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2506161110_YAGEO-RC0805FR-0710KL_C84376.pdf" H 3335 1130 50  0001 C CNN
+F 4 "C84376" H 3335 1130 50  0001 C CNN "LCSC"
+	1    3335 1130
+	1    0    0    -1  
+$EndComp
+$Comp
+L CRES0805:10K R33
+U 1 1 68CC8C9E
+P 3075 1120
+F 0 "R33" H 3134 1161 50  0000 L CNN
+F 1 "10K" H 3134 1070 50  0000 L CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" H 3075 1120 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2506161110_YAGEO-RC0805FR-0710KL_C84376.pdf" H 3075 1120 50  0001 C CNN
+F 4 "C84376" H 3075 1120 50  0001 C CNN "LCSC"
+	1    3075 1120
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3335 1405 3335 1235
+Wire Wire Line
+	3075 1225 3075 1505
+Wire Wire Line
+	3075 1505 3835 1505
+Text GLabel 2945 2005 0    39   Input ~ 0
+SPI_SSEL_N
+$Comp
+L CRES0805:10K R62
+U 1 1 68D09CD8
+P 3080 1795
+F 0 "R62" H 3139 1836 50  0000 L CNN
+F 1 "10K" H 3139 1745 50  0000 L CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" H 3080 1795 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2506161110_YAGEO-RC0805FR-0710KL_C84376.pdf" H 3080 1795 50  0001 C CNN
+F 4 "C84376" H 3080 1795 50  0001 C CNN "LCSC"
+	1    3080 1795
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3080 1900 3080 2005
+Wire Wire Line
+	3080 2005 2945 2005
+Text GLabel 2955 1405 0    39   Input ~ 0
+FPGA_CDONE
+Text GLabel 3000 850  0    50   BiDi ~ 0
+3V3
+Wire Wire Line
+	3000 850  3075 850 
+Wire Wire Line
+	3075 850  3075 1025
+Wire Wire Line
+	3075 850  3335 850 
+Wire Wire Line
+	3335 850  3335 1035
+Connection ~ 3075 850 
+Wire Wire Line
+	3335 1405 2955 1405
+Connection ~ 3335 1405
+Text GLabel 2955 1505 0    39   Input ~ 0
+~FPGA_RESET
+Wire Wire Line
+	2955 1505 3075 1505
+Wire Wire Line
+	3075 1505 3075 1500
+Connection ~ 3075 1505
+Text GLabel 3765 1605 0    39   Input ~ 0
+SPI_MISO
+Text GLabel 3770 1705 0    39   Input ~ 0
+SPI_MOSI
+Text GLabel 3770 1805 0    39   Input ~ 0
+SPI_SCK
+Wire Wire Line
+	3835 1705 3770 1705
+Wire Wire Line
+	3080 2005 3375 2005
+Wire Wire Line
+	3375 2005 3375 1905
+Wire Wire Line
+	3375 1905 3835 1905
+Connection ~ 3080 2005
+Text GLabel 2925 1650 0    50   BiDi ~ 0
+3V3
+Wire Wire Line
+	2925 1650 3080 1650
+Wire Wire Line
+	3080 1650 3080 1700
+$Comp
+L power:GND #PWR02
+U 1 1 68DC48B2
+P 3770 2205
+F 0 "#PWR02" H 3770 1955 50  0001 C CNN
+F 1 "GND" H 3775 2032 50  0000 C CNN
+F 2 "" H 3770 2205 50  0001 C CNN
+F 3 "" H 3770 2205 50  0001 C CNN
+	1    3770 2205
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3770 2205 3770 2005
+Text Notes 2675 740  0    50   ~ 0
+iceprog programmer USB FTDI / SPI
+$Comp
+L RetroBitLab:CONN_SMD_01x08_Staggered_2.54mm J6
+U 1 1 68DF3625
+P 4035 1605
+F 0 "J6" H 4047 2030 50  0000 C CNN
+F 1 "CONN_SMD_01x08_Staggered_2.54mm" H 4085 1105 50  0001 C CNN
+F 2 "Connector_PinSocket_2.54mm:PinSocket_1x08_P2.54mm_Vertical_SMD_Pin1Left" H 3760 1030 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C42380985.pdf" H 4035 1605 50  0001 C CNN
+F 4 "C42380985" H 4085 955 50  0001 C CNN "LCSC"
+	1    4035 1605
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3335 1405 4260 1405
+Wire Wire Line
+	3765 1605 4260 1605
+Wire Wire Line
+	3770 1805 4260 1805
+Wire Wire Line
+	3770 2005 4260 2005
 $EndSCHEMATC

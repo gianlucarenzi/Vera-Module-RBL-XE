@@ -5,7 +5,7 @@ $Descr A3 16535 11693
 encoding utf-8
 Sheet 2 6
 Title "VERA MODULE AND EXTERNAL VIDEO CONNECTOR"
-Date "2025-09-12"
+Date "2025-09-16"
 Rev "1.0"
 Comp "RetroBit Lab"
 Comment1 "Gianluca Renzi"
@@ -1100,7 +1100,7 @@ U 1 1 68BF2FA7
 P 2680 3915
 F 0 "J1" H 2730 4340 50  0000 C CNN
 F 1 "CONN_SMD_02x08_Odd_Even_2.54mm" H 2730 3415 50  0001 C CNN
-F 2 "Connector_PinHeader_2.54mm:PinHeader_2x08_P2.54mm_Vertical_SMD" H 2680 3915 50  0001 C CNN
+F 2 "RetroBitLab:PinSocket_2x08_P2.54mm_Vertical_SMD" H 2680 3915 50  0001 C CNN
 F 3 "https://www.lcsc.com/datasheet/C3975153.pdf" H 2680 3915 50  0001 C CNN
 F 4 "C3975153" H 2680 3915 50  0001 C CNN "LCSC"
 	1    2680 3915
