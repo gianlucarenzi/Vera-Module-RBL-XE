@@ -1048,154 +1048,10 @@ Wire Wire Line
 	3430 5705 3485 5705
 Wire Wire Line
 	3430 5705 3430 5895
-Text GLabel 9890 4255 0    50   BiDi ~ 0
-5V
-Wire Wire Line
-	9890 4255 9925 4255
-Wire Wire Line
-	9925 4255 9925 4415
-Wire Wire Line
-	9925 4415 9955 4415
-$Comp
-L CRES0805:10K R34
-U 1 1 68CC70E1
-P 10490 4310
-F 0 "R34" H 10549 4351 50  0000 L CNN
-F 1 "10K" H 10549 4260 50  0000 L CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" H 10490 4310 50  0001 C CNN
-F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2506161110_YAGEO-RC0805FR-0710KL_C84376.pdf" H 10490 4310 50  0001 C CNN
-F 4 "C84376" H 10490 4310 50  0001 C CNN "LCSC"
-	1    10490 4310
-	1    0    0    -1  
-$EndComp
-$Comp
-L CRES0805:10K R33
-U 1 1 68CC8C9E
-P 9640 4225
-F 0 "R33" H 9440 4260 50  0000 L CNN
-F 1 "10K" H 9440 4170 50  0000 L CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" H 9640 4225 50  0001 C CNN
-F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2506161110_YAGEO-RC0805FR-0710KL_C84376.pdf" H 9640 4225 50  0001 C CNN
-F 4 "C84376" H 9640 4225 50  0001 C CNN "LCSC"
-	1    9640 4225
-	1    0    0    -1  
-$EndComp
-Text GLabel 9065 5115 0    39   Input ~ 0
-SPI_SSEL_N
-$Comp
-L CRES0805:10K R62
-U 1 1 68D09CD8
-P 9200 4905
-F 0 "R62" H 9259 4946 50  0000 L CNN
-F 1 "10K" H 9259 4855 50  0000 L CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" H 9200 4905 50  0001 C CNN
-F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2506161110_YAGEO-RC0805FR-0710KL_C84376.pdf" H 9200 4905 50  0001 C CNN
-F 4 "C84376" H 9200 4905 50  0001 C CNN "LCSC"
-	1    9200 4905
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	9200 5010 9200 5115
-Wire Wire Line
-	9200 5115 9065 5115
-Text GLabel 10555 4515 2    39   Input ~ 0
-FPGA_CDONE
-Text GLabel 9565 3960 0    50   BiDi ~ 0
-3V3
-Wire Wire Line
-	9565 3960 9640 3960
-Wire Wire Line
-	9640 3960 9640 4130
-Text GLabel 9545 4615 0    39   Input ~ 0
-~FPGA_RESET
-Text GLabel 10480 4715 2    39   Input ~ 0
-SPI_MISO
-Text GLabel 9890 4815 0    39   Output ~ 0
-SPI_MOSI
-Text GLabel 10475 4915 2    39   Input ~ 0
-SPI_SCK
-Wire Wire Line
-	9955 4815 9890 4815
-Wire Wire Line
-	9200 5115 9495 5115
-Wire Wire Line
-	9495 5115 9495 5015
-Wire Wire Line
-	9495 5015 9955 5015
-Connection ~ 9200 5115
-Text GLabel 9045 4760 0    50   BiDi ~ 0
-3V3
-Wire Wire Line
-	9045 4760 9200 4760
-Wire Wire Line
-	9200 4760 9200 4810
-$Comp
-L power:GND #PWR02
-U 1 1 68DC48B2
-P 10465 5315
-F 0 "#PWR02" H 10465 5065 50  0001 C CNN
-F 1 "GND" H 10470 5142 50  0000 C CNN
-F 2 "" H 10465 5315 50  0001 C CNN
-F 3 "" H 10465 5315 50  0001 C CNN
-	1    10465 5315
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	10465 5315 10465 5115
-Text Notes 8535 3790 0    67   ~ 13
-iceprog programmer USB FTDI / SPI
-$Comp
-L RetroBitLab:CONN_SMD_01x08_Staggered_2.54mm J6
-U 1 1 68DF3625
-P 10155 4715
-F 0 "J6" H 10167 5140 50  0000 C CNN
-F 1 "CONN_SMD_01x08_Staggered_2.54mm" H 10205 4215 50  0001 C CNN
-F 2 "Connector_PinSocket_2.54mm:PinSocket_1x08_P2.54mm_Vertical_SMD_Pin1Right" H 9880 4140 50  0001 C CNN
-F 3 "https://www.lcsc.com/datasheet/C42380985.pdf" H 10155 4715 50  0001 C CNN
-F 4 "C42380985" H 10205 4065 50  0001 C CNN "LCSC"
-	1    10155 4715
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	10480 4715 10380 4715
-Wire Wire Line
-	10475 4915 10380 4915
-Wire Wire Line
-	10465 5115 10380 5115
 Text Notes 5085 2515 0    50   ~ 10
 The microSD BUS will be available\nonly when FPGA is ready and programmed
 Text Notes 2120 2185 0    59   Italic 12
 When programming SPI FLASH for bitstream,\nthe JP2 jumper must be closed. Should be\nopen in a normal operational mode.
-Wire Notes Line
-	10555 5575 8485 5575
-Wire Notes Line
-	8485 5575 8485 3635
-Text GLabel 10450 4085 0    50   BiDi ~ 0
-3V3
-Wire Wire Line
-	9640 4330 9640 4615
-Connection ~ 9640 4615
-Wire Wire Line
-	9640 4615 9955 4615
-Wire Wire Line
-	9545 4615 9640 4615
-Wire Wire Line
-	10380 4515 10490 4515
-Wire Wire Line
-	10490 4415 10490 4515
-Connection ~ 10490 4515
-Wire Wire Line
-	10490 4515 10555 4515
-Wire Wire Line
-	10490 4215 10490 4085
-Wire Wire Line
-	10490 4085 10450 4085
-Wire Notes Line
-	11055 3635 11055 5575
-Wire Notes Line
-	11055 5575 10560 5575
-Wire Notes Line
-	8485 3635 11055 3635
 Wire Notes Line
 	4955 3610 4955 5320
 Wire Notes Line
@@ -1204,8 +1060,6 @@ Wire Notes Line
 	8355 5320 8355 3610
 Wire Notes Line
 	8355 3610 4955 3610
-Text Notes 8635 5465 0    59   Italic 12
-ALL SIGNALS MUST BE\nIN 3.3V RANGE
 Wire Wire Line
 	10415 1780 10490 1780
 Wire Wire Line
