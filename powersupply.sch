@@ -5,7 +5,7 @@ $Descr A4 11693 8268
 encoding utf-8
 Sheet 6 6
 Title "POWERSUPPLY and USB"
-Date "2025-09-16"
+Date "2025-09-17"
 Rev "1.0"
 Comp "RetroBit Lab"
 Comment1 "Gianluca Renzi"
@@ -280,8 +280,6 @@ Text Label 4290 2020 0    39   ~ 0
 D-
 Text Label 2915 2120 2    39   ~ 0
 D-
-Wire Wire Line
-	3015 2420 3015 2520
 Text GLabel 1345 2310 1    39   BiDi ~ 0
 5V_USB
 Wire Wire Line
@@ -459,7 +457,7 @@ USB ESP32 PROGRAMMING
 Wire Notes Line
 	10675 5950 10675 4350
 Text Notes 8085 4625 0    79   Italic 16
-POWER 3.3V & POWER 2.5V\n
+POWER 3.3V & POWER 1.2V\n
 $Comp
 L power:GND #PWR?
 U 1 1 6910A6F4
@@ -805,7 +803,7 @@ Wire Wire Line
 	9495 5405 9495 5480
 Connection ~ 9495 5480
 Text GLabel 10345 4945 2    50   BiDi ~ 0
-1V5
+1V2
 $Comp
 L CCAP1206:1uF C43
 U 1 1 68937CC3
@@ -1172,7 +1170,7 @@ Wire Wire Line
 Wire Wire Line
 	5280 5200 5280 4975
 Wire Wire Line
-	5280 4975 5790 4975
+	5280 4975 5640 4975
 Connection ~ 5230 5200
 Wire Notes Line
 	6100 4600 6100 5925
@@ -1200,18 +1198,6 @@ Wire Wire Line
 Wire Wire Line
 	9920 5105 9795 5105
 $Comp
-L RetroBitLab:AMS1117-1.5 U14
-U 1 1 68BF9C88
-P 9495 5155
-F 0 "U14" H 9495 5446 50  0000 C CNN
-F 1 "AMS1117-1.5" H 9495 5355 50  0000 C CNN
-F 2 "Package_TO_SOT_SMD:SOT-223-3_TabPin2" H 9545 4980 50  0001 C CNN
-F 3 "https://www.lcsc.com/datasheet/C16172.pdf" H 9545 4980 50  0001 C CNN
-F 4 "C16172" H 9545 4980 50  0001 C CNN "LCSC"
-	1    9495 5155
-	1    0    0    -1  
-$EndComp
-$Comp
 L RetroBitLab:MAX40200AUK U18
 U 1 1 68C39B1C
 P 1820 2320
@@ -1238,8 +1224,7 @@ F 3 "" H 1820 1995 50  0001 C CNN
 	-1   0    0    1   
 $EndComp
 Wire Wire Line
-	3015 2420 2590 2420
-Connection ~ 3015 2420
+	3015 2420 2900 2420
 Wire Wire Line
 	1820 1995 1820 2020
 Wire Wire Line
@@ -1340,4 +1325,53 @@ F 3 "" H 5690 2620 50  0001 C CNN
 	1    5690 2620
 	-1   0    0    1   
 $EndComp
+$Comp
+L RetroBitLab:AMS1117-1.2 U14
+U 1 1 68D5EFAD
+P 9495 5155
+F 0 "U14" H 9495 5446 50  0000 C CNN
+F 1 "AMS1117-1.2" H 9495 5355 50  0000 C CNN
+F 2 "Package_TO_SOT_SMD:SOT-223-3_TabPin2" H 9545 4980 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C347218.pdf" H 9545 4980 50  0001 C CNN
+F 4 "C347218" H 9545 4980 50  0001 C CNN "LCSC"
+	1    9495 5155
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:PWR_FLAG #FLG0101
+U 1 1 69009244
+P 5640 5030
+F 0 "#FLG0101" H 5640 5105 50  0001 C CNN
+F 1 "PWR_FLAG" H 5640 5203 50  0000 C CNN
+F 2 "" H 5640 5030 50  0001 C CNN
+F 3 "~" H 5640 5030 50  0001 C CNN
+	1    5640 5030
+	-1   0    0    1   
+$EndComp
+Wire Wire Line
+	5640 5030 5640 4975
+Connection ~ 5640 4975
+Wire Wire Line
+	5640 4975 5790 4975
+$Comp
+L power:PWR_FLAG #FLG0105
+U 1 1 6906C05E
+P 1625 5630
+F 0 "#FLG0105" H 1625 5705 50  0001 C CNN
+F 1 "PWR_FLAG" H 1625 5803 50  0000 C CNN
+F 2 "" H 1625 5630 50  0001 C CNN
+F 3 "~" H 1625 5630 50  0001 C CNN
+	1    1625 5630
+	-1   0    0    1   
+$EndComp
+Wire Wire Line
+	1625 5600 1625 5630
+Connection ~ 1625 5600
+Wire Wire Line
+	3015 2520 2900 2520
+Wire Wire Line
+	2900 2520 2900 2420
+Connection ~ 2900 2420
+Wire Wire Line
+	2900 2420 2590 2420
 $EndSCHEMATC

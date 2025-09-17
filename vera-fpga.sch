@@ -5,7 +5,7 @@ $Descr A3 16535 11693
 encoding utf-8
 Sheet 2 6
 Title "VERA MODULE AND EXTERNAL VIDEO CONNECTOR"
-Date "2025-09-16"
+Date "2025-09-17"
 Rev "1.0"
 Comp "RetroBit Lab"
 Comment1 "Gianluca Renzi"
@@ -202,7 +202,7 @@ Wire Wire Line
 	7365 5515 7190 5515
 Wire Wire Line
 	7190 5715 7365 5715
-Text Label 11240 2370 0    39   ~ 0
+Text Label 11450 2370 2    39   ~ 0
 VFPGA_DONE
 Text Label 13280 8325 2    39   ~ 0
 VFPGA_DONE
@@ -246,8 +246,6 @@ Wire Wire Line
 	9790 3770 10065 3770
 Wire Wire Line
 	7665 2870 7865 2870
-Wire Wire Line
-	7665 3070 7865 3070
 Wire Wire Line
 	7665 3170 7865 3170
 Text Label 7465 3370 2    39   ~ 0
@@ -634,7 +632,7 @@ Text Label 9915 8425 2    39   ~ 0
 Wire Wire Line
 	10065 8425 9915 8425
 Text GLabel 9865 4600 0    50   Input ~ 0
-1V5
+1V2
 Wire Wire Line
 	8915 4765 8990 4765
 Wire Wire Line
@@ -660,7 +658,7 @@ Text GLabel 7665 2870 0    39   Input ~ 0
 ~mVCS0
 Text GLabel 7665 2970 0    39   Input ~ 0
 ~mWE
-Text GLabel 7665 3070 0    39   Input ~ 0
+Text GLabel 7075 3070 0    39   Input ~ 0
 ~mVIRQ
 Text GLabel 7665 3170 0    39   Input ~ 0
 mA4
@@ -688,8 +686,6 @@ Text GLabel 10065 8275 2    39   Input ~ 0
 FPGA_CDONE
 Wire Wire Line
 	9915 8275 10065 8275
-Wire Wire Line
-	11065 2370 11240 2370
 $Comp
 L CRES1206:10K R5
 U 1 1 68C0234F
@@ -1420,4 +1416,51 @@ F 4 "C75754" H 7790 8950 50  0001 C CNN "LCSC"
 	1    7790 8950
 	1    0    0    -1  
 $EndComp
+$Comp
+L CRES1206:10K R63
+U 1 1 68CBB0EB
+P 11495 2040
+F 0 "R63" H 11554 2081 50  0000 L CNN
+F 1 "10K" H 11554 1990 50  0000 L CNN
+F 2 "Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder" H 11495 2040 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2411221126_UNI-ROYAL-1206W4F1002T5E_C17902.pdf" H 11495 2040 50  0001 C CNN
+F 4 "C17902" H 11495 2040 50  0001 C CNN "LCSC"
+	1    11495 2040
+	1    0    0    -1  
+$EndComp
+Text GLabel 11555 1835 2    50   BiDi ~ 0
+3V3
+Wire Wire Line
+	11495 2370 11495 2145
+Wire Wire Line
+	11065 2370 11495 2370
+Wire Wire Line
+	11555 1835 11495 1835
+Wire Wire Line
+	11495 1835 11495 1945
+$Comp
+L CRES1206:10K R65
+U 1 1 68CF9E81
+P 7245 2695
+F 0 "R65" H 7304 2736 50  0000 L CNN
+F 1 "10K" H 7304 2645 50  0000 L CNN
+F 2 "Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder" H 7245 2695 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2411221126_UNI-ROYAL-1206W4F1002T5E_C17902.pdf" H 7245 2695 50  0001 C CNN
+F 4 "C17902" H 7245 2695 50  0001 C CNN "LCSC"
+	1    7245 2695
+	1    0    0    -1  
+$EndComp
+Text GLabel 7140 2305 0    50   BiDi ~ 0
+3V3
+Wire Wire Line
+	7140 2305 7245 2305
+Wire Wire Line
+	7245 2305 7245 2600
+Wire Wire Line
+	7245 3070 7865 3070
+Wire Wire Line
+	7245 2800 7245 3070
+Wire Wire Line
+	7245 3070 7075 3070
+Connection ~ 7245 3070
 $EndSCHEMATC
