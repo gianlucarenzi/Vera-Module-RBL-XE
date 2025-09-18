@@ -13,7 +13,7 @@ def filtra_csv(input_file, output_file):
             
             # Se la colonna non esiste, solleva un errore
             if "LCSC" not in fieldnames:
-                print("Errore: La colonna 'LCSC' non è stata trovata nel file.")
+                print("Error: 'LCSC' column is missing in the file.")
                 return
 
             filtered_rows = []
@@ -33,18 +33,18 @@ def filtra_csv(input_file, output_file):
             # Scrive le righe filtrate
             writer.writerows(filtered_rows)
         
-        print(f"Operazione completata con successo! Il nuovo file è stato salvato come '{output_file}'.")
-        print(f"Sono state trovate e salvate {len(filtered_rows)} righe con la colonna 'LCSC' presente.")
+        print(f"Operation complete with success! New file is saved as '{output_file}'.")
+        print(f"Found and saved {len(filtered_rows)} rows with the 'LCSC' column.")
 
     except FileNotFoundError:
-        print(f"Errore: Il file '{input_file}' non è stato trovato.")
+        print(f"Error: file '{input_file}' was not found.")
     except Exception as e:
-        print(f"Si è verificato un errore: {e}")
+        print(f"An error occurs: {e}")
 
 # Questa parte gestisce gli argomenti da riga di comando
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print("Uso: python filtra_csv.py <file_di_input.csv> <file_di_output.csv>")
+        print("Usage: python filtra_csv.py <input_file.csv> <output_file.csv>")
     else:
         input_csv = sys.argv[1]
         output_csv = sys.argv[2]
