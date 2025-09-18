@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <export version="D">
   <design>
-    <source>/home/gianluca/Progetti-CVS/ATARI/Vera-Module-RBL-XE/VERA-MODULE-RBL.sch</source>
-    <date>Wed 17 Sep 2025 04:00:22 PM CEST</date>
+    <source>/home/debian/Progetti/Vera-Module-RBL-XE/VERA-MODULE-RBL.sch</source>
+    <date>Thu 18 Sep 2025 03:40:17 PM CEST</date>
     <tool>Eeschema 5.1.9+dfsg1-1+deb11u1</tool>
     <sheet number="1" name="/" tstamps="/">
       <title_block>
@@ -3502,22 +3502,22 @@
   </libparts>
   <libraries>
     <library logical="CCAP1206">
-      <uri>/home/gianluca/Progetti/RetroBitLab-Library/CCAP1206.lib</uri>
+      <uri>/home/debian/Progetti/RetroBitLab-Library/CCAP1206.lib</uri>
     </library>
     <library logical="CLED0805">
-      <uri>/home/gianluca/Progetti-CVS/RetroBitLab-Library/CLED0805.lib</uri>
+      <uri>/home/debian/Progetti/RetroBitLab-Library/CLED0805.lib</uri>
     </library>
     <library logical="CLED1206">
-      <uri>/home/gianluca/Progetti-CVS/RetroBitLab-Library/CLED1206.lib</uri>
+      <uri>/home/debian/Progetti/RetroBitLab-Library/CLED1206.lib</uri>
     </library>
     <library logical="CRES0603">
-      <uri>/home/gianluca/Progetti/RetroBitLab-Library/CRES0603.lib</uri>
+      <uri>/home/debian/Progetti/RetroBitLab-Library/CRES0603.lib</uri>
     </library>
     <library logical="CRES0805">
-      <uri>/home/gianluca/Progetti/RetroBitLab-Library/CRES0805.lib</uri>
+      <uri>/home/debian/Progetti/RetroBitLab-Library/CRES0805.lib</uri>
     </library>
     <library logical="CRES1206">
-      <uri>/home/gianluca/Progetti/RetroBitLab-Library/CRES1206.lib</uri>
+      <uri>/home/debian/Progetti/RetroBitLab-Library/CRES1206.lib</uri>
     </library>
     <library logical="Connector">
       <uri>/usr/share/kicad/library/Connector.lib</uri>
@@ -3532,10 +3532,10 @@
       <uri>/usr/share/kicad/library/Mechanical.lib</uri>
     </library>
     <library logical="RetroBitLab">
-      <uri>/home/gianluca/Progetti/RetroBitLab-Library/AmigaComponents.lib</uri>
+      <uri>/home/debian/Progetti/RetroBitLab-Library/AmigaComponents.lib</uri>
     </library>
     <library logical="TCAP3528">
-      <uri>/home/gianluca/Progetti/RetroBitLab-Library/TCAP3528.lib</uri>
+      <uri>/home/debian/Progetti/RetroBitLab-Library/TCAP3528.lib</uri>
     </library>
   </libraries>
   <nets>
