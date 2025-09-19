@@ -5,7 +5,7 @@ $Descr A3 16535 11693
 encoding utf-8
 Sheet 5 6
 Title "uSD Card and FLASH for FPGA"
-Date "2025-09-17"
+Date "2025-09-19"
 Rev "1.0"
 Comp "RetroBit Lab"
 Comment1 "Gianluca Renzi"
@@ -1090,9 +1090,9 @@ F 13 "C4991872" H 7115 7975 50  0001 C CNN "LCSC"
 	1    7115 7975
 	-1   0    0    1   
 $EndComp
-Text GLabel 6585 7775 0    39   Input ~ 0
+Text GLabel 6230 7775 0    39   Input ~ 0
 AUDIOL
-Text GLabel 6595 8075 0    39   Input ~ 0
+Text GLabel 6240 8075 0    39   Input ~ 0
 AUDIOR
 $Comp
 L power:GND #PWR03
@@ -1117,10 +1117,6 @@ Wire Notes Line
 	6195 8505 7980 8505
 Wire Notes Line
 	7980 8505 7980 7325
-Wire Notes Line
-	7980 7325 6195 7325
-Wire Notes Line
-	6195 7325 6195 8505
 Text Notes 6280 7480 0    79   Italic 16
 AUDIO 3.5mm OUTPUT
 Wire Notes Line
@@ -1135,4 +1131,38 @@ Wire Notes Line
 	1090 6060 1090 6120
 Text Notes 3975 6435 0    118  ~ 24
 AUDIO SECTION
+$Comp
+L CRES1206:560R R67
+U 1 1 68CDB550
+P 6490 7775
+F 0 "R67" V 6555 7775 50  0000 C CNN
+F 1 "560R" V 6420 7780 50  0000 C CNN
+F 2 "Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder" H 6490 7775 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2411071710_FOJAN-FRC1206F5100TS_C2933720.pdf" H 6490 7775 50  0001 C CNN
+F 4 "C2759125" H 6490 7775 50  0001 C CNN "LCSC"
+	1    6490 7775
+	0    1    1    0   
+$EndComp
+$Comp
+L CRES1206:560R R68
+U 1 1 68CDE7A1
+P 6500 8075
+F 0 "R68" V 6565 8075 50  0000 C CNN
+F 1 "560R" V 6430 8080 50  0000 C CNN
+F 2 "Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder" H 6500 8075 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2411071710_FOJAN-FRC1206F5100TS_C2933720.pdf" H 6500 8075 50  0001 C CNN
+F 4 "C2759125" H 6500 8075 50  0001 C CNN "LCSC"
+	1    6500 8075
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	6385 7775 6230 7775
+Wire Wire Line
+	6395 8075 6240 8075
+Wire Notes Line
+	5750 7325 5750 8505
+Wire Notes Line
+	5750 8505 6190 8505
+Wire Notes Line
+	5750 7325 7980 7325
 $EndSCHEMATC
