@@ -21,6 +21,7 @@ Comment,Designator,Footprint,LCSC
 "SJ-3523-SMT-TR","J7","RetroBitLab:CONN_AUDIO_CUI_SJ-3523-SMT-TR","C4991872"
 "Jumper_2_Open","JP2","Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical",""
 "FB0805100R100MHZ4A","L1","Inductor_SMD:L_0805_2012Metric_Pad1.15x1.40mm_HandSolder","C15957"
+"Label-20mmx10mm","LBL1","RetroBitLab:Label-20mmx10mm-Silkscreen",""
 "RED","LD1,LD3,LD5","LED_SMD:LED_1206_3216Metric_Pad1.42x1.75mm_HandSolder","C965822"
 "GREEN","LD2,LD4","LED_SMD:LED_0805_2012Metric_Pad1.15x1.40mm_HandSolder","C84260"
 "VERA X16 LOGO","LOGO1","RetroBitLab:x16logo",""
