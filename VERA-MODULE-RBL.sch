@@ -5,7 +5,7 @@ $Descr A3 16535 11693
 encoding utf-8
 Sheet 1 6
 Title "VERA FPGA Audio & Video Board"
-Date "2025-09-19"
+Date "2025-09-23"
 Rev "1.0"
 Comp "RetroBit Lab"
 Comment1 "Gianluca Renzi"
@@ -172,6 +172,17 @@ F 1 "ESP32_BOBOARD" H 7650 9658 59  0000 L CNN
 F 2 "RetroBitLab:ESP32_BOBOARD_5V_21.7mmx21.7mm" H 7625 9710 59  0001 C CNN
 F 3 "" H 7625 9710 59  0001 C CNN
 	1    7625 9710
+	1    0    0    -1  
+$EndComp
+$Comp
+L RetroBitLab:Label-20mmx10mm LBL1
+U 1 1 68D3F38A
+P 8540 9755
+F 0 "LBL1" H 8565 9755 50  0000 L CNN
+F 1 "Label-20mmx10mm" H 8540 9655 50  0001 C CNN
+F 2 "RetroBitLab:Label-20mmx10mm-Silkscreen" H 8540 9755 50  0001 C CNN
+F 3 "" H 8540 9755 50  0001 C CNN
+	1    8540 9755
 	1    0    0    -1  
 $EndComp
 $EndSCHEMATC
