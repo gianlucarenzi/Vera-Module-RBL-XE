@@ -253,13 +253,13 @@ Commander X16 computer but has been adapted for ATARI systems. It provides:
 | Pin | Signal | Function |
 |-----|--------|----------|
 | 1 | 5V | Power supply |
-| 2 | GND | Ground |
-| 3 | TXD | Serial transmit |
-| 4 | RXD | Serial receive |
-| 5 | SCK | SPI clock |
-| 6 | MISO | SPI data in |
-| 7 | MOSI | SPI data out |
-| 8 | SS | SPI select |
+| 2 | FPGA_CDONE/PULL-UP | FPGA Programmed |
+| 3 | FPGA_RESET | FPGA Reset |
+| 4 | MISO | SPI data in |
+| 5 | MOSI | SPI data out |
+| 6 | SCK | SPI clock |
+| 7 | SS | SPI select |
+| 8 | GND | Ground |
 
 #### Reset & Control
 - **Reset Button (SW1)**: ESP32 system reset
@@ -817,15 +817,15 @@ computer Commander X16 ma è stato adattato per i sistemi ATARI. Fornisce:
 
 #### Connettore ICEPROG (J6)
 | Pin | Segnale | Funzione |
-|-----|---------|----------|
+|-----|--------|----------|
 | 1 | 5V | Alimentazione |
-| 2 | GND | Massa |
-| 3 | TXD | Trasmissione seriale |
-| 4 | RXD | Ricezione seriale |
-| 5 | SCK | Clock SPI |
-| 6 | MISO | Dati SPI in ingresso |
-| 7 | MOSI | Dati SPI in uscita |
-| 8 | SS | Selezione SPI |
+| 2 | FPGA_CDONE/PULL-UP | FPGA Programmata |
+| 3 | FPGA_RESET | FPGA Reset |
+| 4 | MISO | Dati SPI in ingresso |
+| 5 | MOSI | Dati SPI in uscita |
+| 6 | SCK | Clock SPI |
+| 7 | SS | Selezione SPI |
+| 8 | GND | Ground |
 
 #### Reset e Controllo
 - **Pulsante Reset (SW1)**: Reset sistema ESP32
