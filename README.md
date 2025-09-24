@@ -69,7 +69,7 @@ The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansi
 
 ### ▶ Audio Features
 - **Digital Audio**: High-quality PCM audio output
-- **Multi-channel**: Stereo audio with I2S interface
+- **Multi-channel**: Stereo audio
 - **Audio Codec**: WM8524 for professional audio quality
 - **3.5mm Jack**: Standard audio output connector
 
@@ -645,7 +645,7 @@ Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video 
 
 ### ▶ Caratteristiche Audio
 - **Audio Digitale**: Uscita audio PCM di alta qualità
-- **Multicanale**: Audio stereo con interfaccia I2S
+- **Multicanale**: Audio stereo
 - **Codec Audio**: WM8524 per qualità audio professionale
 - **Jack 3.5mm**: Connettore uscita audio standard
 
