@@ -1,40 +1,5 @@
-<style>
-.section-frame {
-  border: 2px solid #e0e0e0;
-  border-radius: 12px;
-  margin: 20px 0;
-  overflow: hidden;
-  background: #fafafa;
-}
-
-.section-header {
-  background: #757575;
-  color: white;
-  padding: 12px 20px;
-  margin: 0;
-  border-radius: 10px 10px 0 0;
-  font-weight: bold;
-  font-size: 1.2em;
-}
-
-.section-content {
-  padding: 20px;
-  background: white;
-}
-
-.main-title {
-  background: linear-gradient(135deg, #424242, #616161);
-  color: white;
-  padding: 20px;
-  border-radius: 12px;
-  text-align: center;
-  margin: 20px 0;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-</style>
-
-<div class="main-title">
-<h1>▶ VERA Module RBL-XE</h1>
+<div style="background: linear-gradient(135deg, #424242, #616161); color: white; padding: 20px; border-radius: 12px; text-align: center; margin: 20px 0; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+<h1 style="margin: 0; color: white;">▶ VERA Module RBL-XE</h1>
 </div>
 
 <div align="center">
@@ -50,9 +15,9 @@
 
 ---
 
-<div class="section-frame">
-<div class="section-header">▤ Table of Contents</div>
-<div class="section-content">
+<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
+<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">▤ Table of Contents</div>
+<div style="padding: 20px; background: white;">
 
 <details>
 <summary>▼ Click to expand navigation</summary>
@@ -79,9 +44,9 @@
 
 ---
 
-<div class="section-frame">
-<div class="section-header">▶ Overview</div>
-<div class="section-content">
+<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
+<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">▶ Overview</div>
+<div style="padding: 20px; background: white;">
 
 The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansion card designed specifically for **ATARI XE/XL** computers. This module brings modern graphics and audio capabilities to classic ATARI systems through the **PBI (Parallel Bus Interface)** connector.
 
@@ -102,9 +67,9 @@ The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansi
 
 ---
 
-<div class="section-frame">
-<div class="section-header">◆ Features</div>
-<div class="section-content">
+<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
+<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">◆ Features</div>
+<div style="padding: 20px; background: white;">
 
 <details>
 <summary>▼ <strong>Graphics Capabilities</strong></summary>
@@ -146,9 +111,9 @@ The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansi
 
 ---
 
-<div class="section-frame">
-<div class="section-header">⚙ Technical Specifications</div>
-<div class="section-content">
+<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
+<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">⚙ Technical Specifications</div>
+<div style="padding: 20px; background: white;">
 
 <details>
 <summary>▼ <strong>Core Specifications</strong></summary>
@@ -185,9 +150,9 @@ The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansi
 
 ---
 
-<div class="section-frame">
-<div class="section-header">▣ Hardware Components</div>
-<div class="section-content">
+<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
+<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">▣ Hardware Components</div>
+<div style="padding: 20px; background: white;">
 
 <details>
 <summary>▼ <strong>Main Processing Units</strong></summary>
@@ -230,9 +195,9 @@ The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansi
 
 ---
 
-<div class="section-frame">
-<div class="section-header">▦ Board Preview</div>
-<div class="section-content">
+<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
+<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">▦ Board Preview</div>
+<div style="padding: 20px; background: white;">
 
 <details>
 <summary>▼ <strong>3D Renderings</strong></summary>
@@ -267,9 +232,9 @@ The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansi
 
 ---
 
-<div class="section-frame">
-<div class="section-header">▤ PCB Layers</div>
-<div class="section-content">
+<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
+<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">▤ PCB Layers</div>
+<div style="padding: 20px; background: white;">
 
 <details>
 <summary>▼ <strong>Layer Stack-up</strong></summary>
@@ -297,9 +262,9 @@ The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansi
 
 ---
 
-<div class="section-frame">
-<div class="section-header">⚡ Connectors & Interfaces</div>
-<div class="section-content">
+<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
+<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">⚡ Connectors & Interfaces</div>
+<div style="padding: 20px; background: white;">
 
 <details>
 <summary>▼ <strong>External Connections</strong></summary>
@@ -352,9 +317,9 @@ The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansi
 
 ---
 
-<div class="section-frame">
-<div class="section-header">⚡ Power Requirements</div>
-<div class="section-content">
+<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
+<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">⚡ Power Requirements</div>
+<div style="padding: 20px; background: white;">
 
 <details>
 <summary>▼ <strong>Power Distribution</strong></summary>
@@ -384,9 +349,9 @@ The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansi
 
 ---
 
-<div class="section-frame">
-<div class="section-header">⚙ Assembly Instructions</div>
-<div class="section-content">
+<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
+<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">⚙ Assembly Instructions</div>
+<div style="padding: 20px; background: white;">
 
 <details>
 <summary>▼ <strong>Component Assembly</strong></summary>
@@ -428,9 +393,9 @@ The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansi
 
 ---
 
-<div class="section-frame">
-<div class="section-header">▤ Bill of Materials</div>
-<div class="section-content">
+<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
+<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">▤ Bill of Materials</div>
+<div style="padding: 20px; background: white;">
 
 <details>
 <summary>▼ <strong>Component Categories</strong></summary>
@@ -479,9 +444,9 @@ The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansi
 
 ---
 
-<div class="section-frame">
-<div class="section-header">⚙ Programming & Configuration</div>
-<div class="section-content">
+<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
+<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">⚙ Programming & Configuration</div>
+<div style="padding: 20px; background: white;">
 
 <details>
 <summary>▼ <strong>FPGA Programming</strong></summary>
@@ -539,9 +504,9 @@ idf.py flash
 
 ---
 
-<div class="section-frame">
-<div class="section-header">▦ Project Structure</div>
-<div class="section-content">
+<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
+<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">▦ Project Structure</div>
+<div style="padding: 20px; background: white;">
 
 <details>
 <summary>▼ <strong>Repository Organization</strong></summary>
@@ -600,9 +565,9 @@ Vera-Module-RBL-XE/
 
 ---
 
-<div class="section-frame">
-<div class="section-header">◉ Contributing</div>
-<div class="section-content">
+<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
+<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">◉ Contributing</div>
+<div style="padding: 20px; background: white;">
 
 <details>
 <summary>▼ <strong>Development Guidelines</strong></summary>
@@ -635,9 +600,9 @@ Vera-Module-RBL-XE/
 
 ---
 
-<div class="section-frame">
-<div class="section-header">▤ License</div>
-<div class="section-content">
+<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
+<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">▤ License</div>
+<div style="padding: 20px; background: white;">
 
 This project is licensed under the **GNU General Public License v3.0**.
 
@@ -672,9 +637,9 @@ For the complete license text, see the [LICENSE](LICENSE) file.
 
 <div align="center">
 
-<div class="section-frame">
-<div class="section-header">◆ Support the Project</div>
-<div class="section-content">
+<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
+<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">◆ Support the Project</div>
+<div style="padding: 20px; background: white;">
 
 If you find this project useful, please consider:
 
@@ -694,8 +659,8 @@ If you find this project useful, please consider:
 
 ---
 
-<div class="main-title">
-<h1>▶ VERA Module RBL-XE (Italiano)</h1>
+<div style="background: linear-gradient(135deg, #424242, #616161); color: white; padding: 20px; border-radius: 12px; text-align: center; margin: 20px 0; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+<h1 style="margin: 0; color: white;">▶ VERA Module RBL-XE (Italiano)</h1>
 </div>
 
 <div align="center">
@@ -706,9 +671,9 @@ If you find this project useful, please consider:
 
 ---
 
-<div class="section-frame">
-<div class="section-header">▤ Indice</div>
-<div class="section-content">
+<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
+<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">▤ Indice</div>
+<div style="padding: 20px; background: white;">
 
 <details>
 <summary>▼ Clicca per espandere la navigazione</summary>
@@ -735,9 +700,9 @@ If you find this project useful, please consider:
 
 ---
 
-<div class="section-frame">
-<div class="section-header">▶ Panoramica</div>
-<div class="section-content">
+<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
+<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">▶ Panoramica</div>
+<div style="padding: 20px; background: white;">
 
 Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video basata su FPGA, progettata specificamente per i computer **ATARI XE/XL**. Questo modulo porta capacità grafiche e audio moderne ai sistemi ATARI classici attraverso il connettore **PBI (Parallel Bus Interface)**.
 
@@ -758,9 +723,9 @@ Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video 
 
 ---
 
-<div class="section-frame">
-<div class="section-header">◆ Caratteristiche</div>
-<div class="section-content">
+<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
+<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">◆ Caratteristiche</div>
+<div style="padding: 20px; background: white;">
 
 <details>
 <summary>▼ <strong>Capacità Grafi▼che</strong></summary>
@@ -802,9 +767,9 @@ Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video 
 
 ---
 
-<div class="section-frame">
-<div class="section-header">⚙ Specifiche Tecniche</div>
-<div class="section-content">
+<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
+<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">⚙ Specifiche Tecniche</div>
+<div style="padding: 20px; background: white;">
 
 <details>
 <summary>▼ <strong>Specifiche Principali</strong></summary>
@@ -841,9 +806,9 @@ Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video 
 
 ---
 
-<div class="section-frame">
-<div class="section-header">▣ Componenti Hardware</div>
-<div class="section-content">
+<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
+<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">▣ Componenti Hardware</div>
+<div style="padding: 20px; background: white;">
 
 <details>
 <summary>▼ <strong>Unità di Elaborazione Principali</strong></summary>
@@ -886,9 +851,9 @@ Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video 
 
 ---
 
-<div class="section-frame">
-<div class="section-header">▦ Anteprima Scheda</div>
-<div class="section-content">
+<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
+<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">▦ Anteprima Scheda</div>
+<div style="padding: 20px; background: white;">
 
 <details>
 <summary>▼ <strong>Rendering 3D</strong></summary>
@@ -912,9 +877,9 @@ Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video 
 
 ---
 
-<div class="section-frame">
-<div class="section-header">▤ Layer PCB</div>
-<div class="section-content">
+<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
+<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">▤ Layer PCB</div>
+<div style="padding: 20px; background: white;">
 
 <details>
 <summary>▼ <strong>Stack-up Layer</strong></summary>
@@ -942,9 +907,9 @@ Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video 
 
 ---
 
-<div class="section-frame">
-<div class="section-header">⚡ Connettori e Interfacce</div>
-<div class="section-content">
+<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
+<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">⚡ Connettori e Interfacce</div>
+<div style="padding: 20px; background: white;">
 
 <details>
 <summary>▼ <strong>Connessioni Esterne</strong></summary>
@@ -975,9 +940,9 @@ Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video 
 
 ---
 
-<div class="section-frame">
-<div class="section-header">⚡ Requisiti di Alimentazione</div>
-<div class="section-content">
+<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
+<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">⚡ Requisiti di Alimentazione</div>
+<div style="padding: 20px; background: white;">
 
 <details>
 <summary>▼ <strong>Distribuzione Alimentazione</strong></summary>
@@ -1001,9 +966,9 @@ Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video 
 
 ---
 
-<div class="section-frame">
-<div class="section-header">⚙ Istruzioni di Assemblaggio</div>
-<div class="section-content">
+<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
+<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">⚙ Istruzioni di Assemblaggio</div>
+<div style="padding: 20px; background: white;">
 
 <details>
 <summary>▼ <strong>Assemblaggio Componenti</strong></summary>
@@ -1028,9 +993,9 @@ Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video 
 
 ---
 
-<div class="section-frame">
-<div class="section-header">▤ Distinta Materiali</div>
-<div class="section-content">
+<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
+<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">▤ Distinta Materiali</div>
+<div style="padding: 20px; background: white;">
 
 <details>
 <summary>▼ <strong>Categorie Componenti</strong></summary>
@@ -1063,9 +1028,9 @@ Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video 
 
 ---
 
-<div class="section-frame">
-<div class="section-header">⚙ Programmazione e Configurazione</div>
-<div class="section-content">
+<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
+<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">⚙ Programmazione e Configurazione</div>
+<div style="padding: 20px; background: white;">
 
 <details>
 <summary>▼ <strong>Programmazione FPGA</strong></summary>
@@ -1094,9 +1059,9 @@ iceprog -c
 
 ---
 
-<div class="section-frame">
-<div class="section-header">▦ Struttura Progetto</div>
-<div class="section-content">
+<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
+<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">▦ Struttura Progetto</div>
+<div style="padding: 20px; background: white;">
 
 <details>
 <summary>▼ <strong>Organizzazione Repository</strong></summary>
@@ -1123,9 +1088,9 @@ Vera-Module-RBL-XE/
 
 ---
 
-<div class="section-frame">
-<div class="section-header">◉ Contribuire</div>
-<div class="section-content">
+<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
+<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">◉ Contribuire</div>
+<div style="padding: 20px; background: white;">
 
 <details>
 <summary>▼ <strong>Linee Guida Sviluppo</strong></summary>
@@ -1151,9 +1116,9 @@ Vera-Module-RBL-XE/
 
 ---
 
-<div class="section-frame">
-<div class="section-header">▤ Licenza</div>
-<div class="section-content">
+<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
+<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">▤ Licenza</div>
+<div style="padding: 20px; background: white;">
 
 Questo progetto è licenziato sotto la **GNU General Public License v3.0**.
 
@@ -1166,9 +1131,9 @@ Per il testo completo della licenza, vedere il file [LICENSE](LICENSE).
 
 <div align="center">
 
-<div class="section-frame">
-<div class="section-header">◆ Supporta il Progetto</div>
-<div class="section-content">
+<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
+<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">◆ Supporta il Progetto</div>
+<div style="padding: 20px; background: white;">
 
 Se trovi utile questo progetto, considera di:
 
