@@ -1,11 +1,48 @@
-# ▶ VERA Module RBL-XE
+<style>
+.section-frame {
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  margin: 20px 0;
+  overflow: hidden;
+  background: #fafafa;
+}
+
+.section-header {
+  background: #757575;
+  color: white;
+  padding: 12px 20px;
+  margin: 0;
+  border-radius: 10px 10px 0 0;
+  font-weight: bold;
+  font-size: 1.2em;
+}
+
+.section-content {
+  padding: 20px;
+  background: white;
+}
+
+.main-title {
+  background: linear-gradient(135deg, #424242, #616161);
+  color: white;
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  margin: 20px 0;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+</style>
+
+<div class="main-title">
+<h1>▶ VERA Module RBL-XE</h1>
+</div>
 
 <div align="center">
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![KiCad](https://img.shields.io/badge/KiCad-5.1.9-blue.svg)](https://www.kicad.org/)
+[![KiCad](https://img.shields.io/badge/KiCad-7.0+-blue.svg)](https://www.kicad.org/)
 [![ATARI Ready](https://img.shields.io/badge/ATARI-Ready-red.svg)](https://atari.com)
-[![ESP32](https://img.shields.io/badge/ESP32-PICO--D4-yellow.svg)](https://www.espressif.com/)
+[![ESP32](https://img.shields.io/badge/ESP32-PICO--D4-green.svg)](https://www.espressif.com/)
 
 *🌐 English | [🌐 Italiano](#-vera-module-rbl-xe-italiano)*
 
@@ -13,7 +50,9 @@
 
 ---
 
-## ▤ Table of Contents
+<div class="section-frame">
+<div class="section-header">▤ Table of Contents</div>
+<div class="section-content">
 
 <details>
 <summary>▼ Click to expand navigation</summary>
@@ -35,9 +74,14 @@
 
 </details>
 
+</div>
+</div>
+
 ---
 
-## ▶ Overview
+<div class="section-frame">
+<div class="section-header">▶ Overview</div>
+<div class="section-content">
 
 The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansion card designed specifically for **ATARI XE/XL** computers. This module brings modern graphics and audio capabilities to classic ATARI systems through the **PBI (Parallel Bus Interface)** connector.
 
@@ -53,9 +97,14 @@ The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansi
 
 </details>
 
+</div>
+</div>
+
 ---
 
-## ◆ Features
+<div class="section-frame">
+<div class="section-header">◆ Features</div>
+<div class="section-content">
 
 <details>
 <summary>▼ <strong>Graphics Capabilities</strong></summary>
@@ -92,9 +141,14 @@ The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansi
 
 </details>
 
+</div>
+</div>
+
 ---
 
-## ⚙ Technical Specifications
+<div class="section-frame">
+<div class="section-header">⚙ Technical Specifications</div>
+<div class="section-content">
 
 <details>
 <summary>▼ <strong>Core Specifications</strong></summary>
@@ -126,9 +180,14 @@ The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansi
 
 </details>
 
+</div>
+</div>
+
 ---
 
-## ▣ Hardware Components
+<div class="section-frame">
+<div class="section-header">▣ Hardware Components</div>
+<div class="section-content">
 
 <details>
 <summary>▼ <strong>Main Processing Units</strong></summary>
@@ -166,9 +225,14 @@ The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansi
 
 </details>
 
+</div>
+</div>
+
 ---
 
-## ▦ Board Preview
+<div class="section-frame">
+<div class="section-header">▦ Board Preview</div>
+<div class="section-content">
 
 <details>
 <summary>▼ <strong>3D Renderings</strong></summary>
@@ -198,9 +262,14 @@ The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansi
 
 </details>
 
+</div>
+</div>
+
 ---
 
-## ▤ PCB Layers
+<div class="section-frame">
+<div class="section-header">▤ PCB Layers</div>
+<div class="section-content">
 
 <details>
 <summary>▼ <strong>Layer Stack-up</strong></summary>
@@ -223,9 +292,14 @@ The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansi
 
 </details>
 
+</div>
+</div>
+
 ---
 
-## ⚡ Connectors & Interfaces
+<div class="section-frame">
+<div class="section-header">⚡ Connectors & Interfaces</div>
+<div class="section-content">
 
 <details>
 <summary>▼ <strong>External Connections</strong></summary>
@@ -273,9 +347,14 @@ The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansi
 
 </details>
 
+</div>
+</div>
+
 ---
 
-## ⚡ Power Requirements
+<div class="section-frame">
+<div class="section-header">⚡ Power Requirements</div>
+<div class="section-content">
 
 <details>
 <summary>▼ <strong>Power Distribution</strong></summary>
@@ -300,9 +379,14 @@ The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansi
 
 </details>
 
+</div>
+</div>
+
 ---
 
-## ⚙ Assembly Instructions
+<div class="section-frame">
+<div class="section-header">⚙ Assembly Instructions</div>
+<div class="section-content">
 
 <details>
 <summary>▼ <strong>Component Assembly</strong></summary>
@@ -339,9 +423,14 @@ The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansi
 
 </details>
 
+</div>
+</div>
+
 ---
 
-## ▤ Bill of Materials
+<div class="section-frame">
+<div class="section-header">▤ Bill of Materials</div>
+<div class="section-content">
 
 <details>
 <summary>▼ <strong>Component Categories</strong></summary>
@@ -385,9 +474,14 @@ The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansi
 
 </details>
 
+</div>
+</div>
+
 ---
 
-## ⚙ Programming & Configuration
+<div class="section-frame">
+<div class="section-header">⚙ Programming & Configuration</div>
+<div class="section-content">
 
 <details>
 <summary>▼ <strong>FPGA Programming</strong></summary>
@@ -440,9 +534,14 @@ idf.py flash
 
 </details>
 
+</div>
+</div>
+
 ---
 
-## ▦ Project Structure
+<div class="section-frame">
+<div class="section-header">▦ Project Structure</div>
+<div class="section-content">
 
 <details>
 <summary>▼ <strong>Repository Organization</strong></summary>
@@ -496,9 +595,14 @@ Vera-Module-RBL-XE/
 
 </details>
 
+</div>
+</div>
+
 ---
 
-## ◉ Contributing
+<div class="section-frame">
+<div class="section-header">◉ Contributing</div>
+<div class="section-content">
 
 <details>
 <summary>▼ <strong>Development Guidelines</strong></summary>
@@ -526,9 +630,14 @@ Vera-Module-RBL-XE/
 
 </details>
 
+</div>
+</div>
+
 ---
 
-## ▤ License
+<div class="section-frame">
+<div class="section-header">▤ License</div>
+<div class="section-content">
 
 This project is licensed under the **GNU General Public License v3.0**.
 
@@ -556,11 +665,16 @@ For the complete license text, see the [LICENSE](LICENSE) file.
 
 </details>
 
+</div>
+</div>
+
 ---
 
 <div align="center">
 
-## ◆ Support the Project
+<div class="section-frame">
+<div class="section-header">◆ Support the Project</div>
+<div class="section-content">
 
 If you find this project useful, please consider:
 
@@ -576,10 +690,13 @@ If you find this project useful, please consider:
 *Bringing modern capabilities to classic computers*
 
 </div>
+</div>
 
 ---
 
-# ▶ VERA Module RBL-XE (Italiano)
+<div class="main-title">
+<h1>▶ VERA Module RBL-XE (Italiano)</h1>
+</div>
 
 <div align="center">
 
@@ -589,7 +706,9 @@ If you find this project useful, please consider:
 
 ---
 
-## ▤ Indice
+<div class="section-frame">
+<div class="section-header">▤ Indice</div>
+<div class="section-content">
 
 <details>
 <summary>▼ Clicca per espandere la navigazione</summary>
@@ -611,9 +730,14 @@ If you find this project useful, please consider:
 
 </details>
 
+</div>
+</div>
+
 ---
 
-## ▶ Panoramica
+<div class="section-frame">
+<div class="section-header">▶ Panoramica</div>
+<div class="section-content">
 
 Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video basata su FPGA, progettata specificamente per i computer **ATARI XE/XL**. Questo modulo porta capacità grafiche e audio moderne ai sistemi ATARI classici attraverso il connettore **PBI (Parallel Bus Interface)**.
 
@@ -629,9 +753,14 @@ Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video 
 
 </details>
 
+</div>
+</div>
+
 ---
 
-## ◆ Caratteristiche
+<div class="section-frame">
+<div class="section-header">◆ Caratteristiche</div>
+<div class="section-content">
 
 <details>
 <summary>▼ <strong>Capacità Grafi▼che</strong></summary>
@@ -668,9 +797,14 @@ Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video 
 
 </details>
 
+</div>
+</div>
+
 ---
 
-## ⚙ Specifiche Tecniche
+<div class="section-frame">
+<div class="section-header">⚙ Specifiche Tecniche</div>
+<div class="section-content">
 
 <details>
 <summary>▼ <strong>Specifiche Principali</strong></summary>
@@ -702,9 +836,14 @@ Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video 
 
 </details>
 
+</div>
+</div>
+
 ---
 
-## ▣ Componenti Hardware
+<div class="section-frame">
+<div class="section-header">▣ Componenti Hardware</div>
+<div class="section-content">
 
 <details>
 <summary>▼ <strong>Unità di Elaborazione Principali</strong></summary>
@@ -742,9 +881,14 @@ Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video 
 
 </details>
 
+</div>
+</div>
+
 ---
 
-## ▦ Anteprima Scheda
+<div class="section-frame">
+<div class="section-header">▦ Anteprima Scheda</div>
+<div class="section-content">
 
 <details>
 <summary>▼ <strong>Rendering 3D</strong></summary>
@@ -763,9 +907,14 @@ Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video 
 
 </details>
 
+</div>
+</div>
+
 ---
 
-## ▤ Layer PCB
+<div class="section-frame">
+<div class="section-header">▤ Layer PCB</div>
+<div class="section-content">
 
 <details>
 <summary>▼ <strong>Stack-up Layer</strong></summary>
@@ -788,9 +937,14 @@ Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video 
 
 </details>
 
+</div>
+</div>
+
 ---
 
-## ⚡ Connettori e Interfacce
+<div class="section-frame">
+<div class="section-header">⚡ Connettori e Interfacce</div>
+<div class="section-content">
 
 <details>
 <summary>▼ <strong>Connessioni Esterne</strong></summary>
@@ -816,9 +970,14 @@ Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video 
 
 </details>
 
+</div>
+</div>
+
 ---
 
-## ⚡ Requisiti di Alimentazione
+<div class="section-frame">
+<div class="section-header">⚡ Requisiti di Alimentazione</div>
+<div class="section-content">
 
 <details>
 <summary>▼ <strong>Distribuzione Alimentazione</strong></summary>
@@ -837,9 +996,14 @@ Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video 
 
 </details>
 
+</div>
+</div>
+
 ---
 
-## ⚙ Istruzioni di Assemblaggio
+<div class="section-frame">
+<div class="section-header">⚙ Istruzioni di Assemblaggio</div>
+<div class="section-content">
 
 <details>
 <summary>▼ <strong>Assemblaggio Componenti</strong></summary>
@@ -859,9 +1023,14 @@ Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video 
 
 </details>
 
+</div>
+</div>
+
 ---
 
-## ▤ Distinta Materiali
+<div class="section-frame">
+<div class="section-header">▤ Distinta Materiali</div>
+<div class="section-content">
 
 <details>
 <summary>▼ <strong>Categorie Componenti</strong></summary>
@@ -889,9 +1058,14 @@ Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video 
 
 </details>
 
+</div>
+</div>
+
 ---
 
-## ⚙ Programmazione e Configurazione
+<div class="section-frame">
+<div class="section-header">⚙ Programmazione e Configurazione</div>
+<div class="section-content">
 
 <details>
 <summary>▼ <strong>Programmazione FPGA</strong></summary>
@@ -915,9 +1089,14 @@ iceprog -c
 
 </details>
 
+</div>
+</div>
+
 ---
 
-## ▦ Struttura Progetto
+<div class="section-frame">
+<div class="section-header">▦ Struttura Progetto</div>
+<div class="section-content">
 
 <details>
 <summary>▼ <strong>Organizzazione Repository</strong></summary>
@@ -939,9 +1118,14 @@ Vera-Module-RBL-XE/
 
 </details>
 
+</div>
+</div>
+
 ---
 
-## ◉ Contribuire
+<div class="section-frame">
+<div class="section-header">◉ Contribuire</div>
+<div class="section-content">
 
 <details>
 <summary>▼ <strong>Linee Guida Sviluppo</strong></summary>
@@ -962,19 +1146,29 @@ Vera-Module-RBL-XE/
 
 </details>
 
+</div>
+</div>
+
 ---
 
-## ▤ Licenza
+<div class="section-frame">
+<div class="section-header">▤ Licenza</div>
+<div class="section-content">
 
 Questo progetto è licenziato sotto la **GNU General Public License v3.0**.
 
 Per il testo completo della licenza, vedere il file [LICENSE](LICENSE).
 
+</div>
+</div>
+
 ---
 
 <div align="center">
 
-## ◆ Supporta il Progetto
+<div class="section-frame">
+<div class="section-header">◆ Supporta il Progetto</div>
+<div class="section-content">
 
 Se trovi utile questo progetto, considera di:
 
@@ -989,4 +1183,5 @@ Se trovi utile questo progetto, considera di:
 
 *Portando capacità moderne ai computer classici*
 
+</div>
 </div>
