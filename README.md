@@ -1,6 +1,4 @@
-<div style="background: linear-gradient(135deg, #424242, #616161); color: white; padding: 20px; border-radius: 12px; text-align: center; margin: 20px 0; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-<h1 style="margin: 0; color: white;">▶ VERA Module RBL-XE</h1>
-</div>
+# VERA Module RBL-XE
 
 <div align="center">
 
@@ -9,49 +7,42 @@
 [![ATARI Ready](https://img.shields.io/badge/ATARI-Ready-red.svg)](https://atari.com)
 [![ESP32](https://img.shields.io/badge/ESP32-PICO--D4-green.svg)](https://www.espressif.com/)
 
-*🌐 English | [🌐 Italiano](#-vera-module-rbl-xe-italiano)*
+*🌐 English | [🌐 Italiano](#vera-module-rbl-xe-italiano)*
 
 </div>
 
 ---
 
-<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
-<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">▤ Table of Contents</div>
-<div style="padding: 20px; background: white;">
+<div style="background: #ffffff; border-radius: 16px; padding: 24px; margin: 24px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
 
-<details>
-<summary>▼ Click to expand navigation</summary>
+## 📋 Table of Contents
 
-- [▶ Overview](#-overview)
-- [◆ Features](#-features)
-- [⚙ Technical Specifications](#-technical-specifications)
-- [▣ Hardware Components](#-hardware-components)
-- [▦ Board Preview](#-board-preview)
-- [▤ PCB Layers](#-pcb-layers)
-- [⚡ Connectors & Interfaces](#-connectors--interfaces)
+- [🔍 Overview](#-overview)
+- [✨ Features](#-features)
+- [⚙️ Technical Specifications](#️-technical-specifications)
+- [🔧 Hardware Components](#-hardware-components)
+- [🖼️ Board Preview](#️-board-preview)
+- [📐 PCB Layers](#-pcb-layers)
+- [🔌 Connectors & Interfaces](#-connectors--interfaces)
 - [⚡ Power Requirements](#-power-requirements)
-- [⚙ Assembly Instructions](#-assembly-instructions)
-- [▤ Bill of Materials](#-bill-of-materials)
-- [⚙ Programming & Configuration](#-programming--configuration)
-- [▦ Project Structure](#-project-structure)
-- [◉ Contributing](#-contributing)
-- [▤ License](#-license)
+- [🔨 Assembly Instructions](#-assembly-instructions)
+- [📦 Bill of Materials](#-bill-of-materials)
+- [💻 Programming & Configuration](#-programming--configuration)
+- [📁 Project Structure](#-project-structure)
+- [🤝 Contributing](#-contributing)
+- [📄 License](#-license)
 
-</details>
-
-</div>
 </div>
 
 ---
 
-<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
-<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">▶ Overview</div>
-<div style="padding: 20px; background: white;">
+<div style="background: #ffffff; border-radius: 16px; padding: 24px; margin: 24px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
+
+## 🔍 Overview
 
 The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansion card designed specifically for **ATARI XE/XL** computers. This module brings modern graphics and audio capabilities to classic ATARI systems through the **PBI (Parallel Bus Interface)** connector.
 
-<details>
-<summary>▼ <strong>What is VERA?</strong></summary>
+### What is VERA?
 
 **VERA** (Video Enhanced Retro Adapter) is originally designed for the Commander X16 computer but has been adapted for ATARI systems. It provides:
 
@@ -60,63 +51,52 @@ The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansi
 - **Modern Connectivity**: VGA output, SD card storage, and USB programming
 - **Retro Compatibility**: Seamless integration with classic ATARI software
 
-</details>
-
-</div>
 </div>
 
 ---
 
-<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
-<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">◆ Features</div>
-<div style="padding: 20px; background: white;">
+<div style="background: #ffffff; border-radius: 16px; padding: 24px; margin: 24px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
 
-<details>
-<summary>▼ <strong>Graphics Capabilities</strong></summary>
+## ✨ Features
 
-### ▶ Video Output
+### 🎨 Graphics Capabilities
+
+#### Video Output
 - **VGA Output**: 640x480 @ 60Hz with analog RGB signals
 - **Multiple Layers**: Background, foreground, and sprite layers
 - **Color Depth**: 256 colors from a palette of 4096
 - **Sprites**: Hardware-accelerated sprite engine
 - **Scrolling**: Smooth horizontal and vertical scrolling
 
-### ▶ Audio Features
+#### Audio Features
 - **Digital Audio**: High-quality PCM audio output
 - **Multi-channel**: Stereo audio
 - **Audio Codec**: WM8524 for professional audio quality
 - **3.5mm Jack**: Standard audio output connector
 
-</details>
+### 🔗 System Integration
 
-<details>
-<summary>▼ <strong>System Integration</strong></summary>
-
-### ▶ ATARI Compatibility
+#### ATARI Compatibility
 - **PBI Interface**: Direct connection to ATARI XE/XL systems
 - **Memory Mapping**: $D1XX-$DFXX address space
 - **Bus Decoder**: Intelligent address decoding with ESP32
 - **Power Management**: Efficient 5V to 3.3V/1.2V conversion
 
-### ▶ Storage & Programming
+#### Storage & Programming
 - **SD Card Slot**: Micro SD for data storage and ROM loading
 - **SPI Flash**: 16Mbit W25Q16 for FPGA configuration
 - **USB Programming**: CH340 USB-to-serial for easy updates
 - **JTAG/SPI**: Direct FPGA programming interface
 
-</details>
-
-</div>
 </div>
 
 ---
 
-<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
-<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">⚙ Technical Specifications</div>
-<div style="padding: 20px; background: white;">
+<div style="background: #ffffff; border-radius: 16px; padding: 24px; margin: 24px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
 
-<details>
-<summary>▼ <strong>Core Specifications</strong></summary>
+## ⚙️ Technical Specifications
+
+### Core Specifications
 
 | Component | Specification |
 |-----------|---------------|
@@ -130,10 +110,7 @@ The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansi
 | **PCB Layers** | 4-layer (Signal/Power/GND/Signal) |
 | **Board Size** | TBD mm x TBD mm |
 
-</details>
-
-<details>
-<summary>▼ <strong>Electrical Characteristics</strong></summary>
+### Electrical Characteristics
 
 | Parameter | Min | Typ | Max | Unit |
 |-----------|-----|-----|-----|------|
@@ -143,81 +120,67 @@ The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansi
 | **VGA Output Impedance** | - | 75 | - | Ω |
 | **Audio Output Level** | - | 2.0 | - | Vrms |
 
-</details>
-
-</div>
 </div>
 
 ---
 
-<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
-<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">▣ Hardware Components</div>
-<div style="padding: 20px; background: white;">
+<div style="background: #ffffff; border-radius: 16px; padding: 24px; margin: 24px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
 
-<details>
-<summary>▼ <strong>Main Processing Units</strong></summary>
+## 🔧 Hardware Components
 
-### ▣ FPGA - ICE40UP5K
+### Main Processing Units
+
+#### FPGA - ICE40UP5K
 - **Logic Elements**: 5,280 LUTs
 - **Memory**: 120 Kbit BRAM, 1 Mbit SPRAM
 - **I/O Pins**: 39 user I/O
 - **Package**: QFN-48 (7x7mm)
 - **Programming**: SPI configuration
 
-### ▣ ESP32-PICO-D4
+#### ESP32-PICO-D4
 - **CPU**: Dual-core Xtensa LX6 @ 240MHz
 - **Memory**: 4MB SPI flash, 520KB SRAM
 - **Connectivity**: Wi-Fi 802.11 b/g/n, Bluetooth 4.2
 - **Package**: QFN-48 (7x7mm)
 - **Role**: Bus decoder and system controller
 
-</details>
+### Interface Components
 
-<details>
-<summary>▼ <strong>Interface Components</strong></summary>
-
-### ▶ Audio System
+#### Audio System
 - **Codec**: WM8524CGEDT (24-bit, 192kHz)
 - **Interface**: I2S digital audio
 - **Output**: 3.5mm stereo jack
 - **SNR**: >100dB
 
-### ▶ Video System
+#### Video System
 - **Output**: 15-pin VGA connector
 - **Resolution**: 640x480 @ 60Hz
 - **Colors**: 8-bit RGB (256 colors)
 - **Sync**: Separate H/V sync signals
 
-</details>
-
-</div>
 </div>
 
 ---
 
-<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
-<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">▦ Board Preview</div>
-<div style="padding: 20px; background: white;">
+<div style="background: #ffffff; border-radius: 16px; padding: 24px; margin: 24px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
 
-<details>
-<summary>▼ <strong>3D Renderings</strong></summary>
+## 🖼️ Board Preview
 
-### ▶ Top View
+### 3D Renderings
+
+#### Top View
 ![VERA Module Top](images/VERA-MODULE-RBL-TOP.png)
 *Top side showing main components and connectors*
 
-### ▶ Bottom View  
+#### Bottom View  
 ![VERA Module Bottom](images/VERA-MODULE-RBL-BOTTOM.png)
 *Bottom side with additional components*
 
-### ▶ Cartridge Adapter
+#### Cartridge Adapter
 ![VERA Cartridge Adapter](images/VERA-ADAPTER-CARTRIDGE.png)
 *Optional cartridge interface adapter*
 
-</details>
-
-<details>
-<summary>▼ <strong>Board Dimensions</strong></summary>
+### Board Dimensions
 
 - **Length**: TBD mm
 - **Width**: TBD mm  
@@ -225,57 +188,49 @@ The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansi
 - **Mounting**: Compatible with ATARI XE/XL PBI slot
 - **Connectors**: Right-angle for space efficiency
 
-</details>
-
-</div>
 </div>
 
 ---
 
-<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
-<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">▤ PCB Layers</div>
-<div style="padding: 20px; background: white;">
+<div style="background: #ffffff; border-radius: 16px; padding: 24px; margin: 24px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
 
-<details>
-<summary>▼ <strong>Layer Stack-up</strong></summary>
+## 📐 PCB Layers
 
-### Layer 1 - Top Copper (F.Cu)
+### Layer Stack-up
+
+#### Layer 1 - Top Copper (F.Cu)
 ![Top Copper Layer](images/F.Cu-L1.png)
 *Component placement and signal routing*
 
-### Layer 2 - Power Plane (POWER)
+#### Layer 2 - Power Plane (POWER)
 ![Power Layer](images/POWER-L2.png)
 *5V, 3.3V, and 1.2V power distribution*
 
-### Layer 3 - Ground Plane (GND)
+#### Layer 3 - Ground Plane (GND)
 ![Ground Layer](images/GND-L3.png)
 *Solid ground plane for signal integrity*
 
-### Layer 4 - Bottom Copper (B.Cu)
+#### Layer 4 - Bottom Copper (B.Cu)
 ![Bottom Copper Layer](images/B.Cu-L4.png)
 *Additional signal routing and components*
 
-</details>
-
-</div>
 </div>
 
 ---
 
-<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
-<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">⚡ Connectors & Interfaces</div>
-<div style="padding: 20px; background: white;">
+<div style="background: #ffffff; border-radius: 16px; padding: 24px; margin: 24px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
 
-<details>
-<summary>▼ <strong>External Connections</strong></summary>
+## 🔌 Connectors & Interfaces
 
-### ▶ ATARI Interface
+### External Connections
+
+#### ATARI Interface
 - **PBI Connector**: 50-pin edge connector
 - **ECI Slot**: Enhanced Cartridge Interface
 - **Address Range**: $D1XX-$DFXX
 - **Signals**: Data bus, address bus, control signals
 
-### ▶ Video Output (J2)
+#### Video Output (J2)
 | Pin | Signal | Description |
 |-----|--------|-------------|
 | 1-3 | RGB | Red, Green, Blue analog signals |
@@ -283,17 +238,14 @@ The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansi
 | 6-10 | GND | Ground connections |
 | 11-12 | Audio L/R | Stereo audio output |
 
-### ▶ Storage Interfaces
+#### Storage Interfaces
 - **SD Card Slot (J3)**: Micro SD card interface
 - **SPI Flash**: On-board 16Mbit storage
 - **USB Port (J4)**: Programming and data transfer
 
-</details>
+### Programming Interfaces
 
-<details>
-<summary>▼ <strong>Programming Interfaces</strong></summary>
-
-### ▶ ICEPROG Connector (J6)
+#### ICEPROG Connector (J6)
 | Pin | Signal | Function |
 |-----|--------|----------|
 | 1 | 5V | Power supply |
@@ -305,126 +257,108 @@ The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansi
 | 7 | MOSI | SPI data out |
 | 8 | SS | SPI select |
 
-### ▶ Reset & Control
+#### Reset & Control
 - **Reset Button (SW1)**: ESP32 system reset
 - **DIP Switch (SW2)**: Configuration options
 - **Status LEDs**: Power, programming, activity indicators
 
-</details>
-
-</div>
 </div>
 
 ---
 
-<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
-<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">⚡ Power Requirements</div>
-<div style="padding: 20px; background: white;">
+<div style="background: #ffffff; border-radius: 16px; padding: 24px; margin: 24px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
 
-<details>
-<summary>▼ <strong>Power Distribution</strong></summary>
+## ⚡ Power Requirements
 
-### ▶ Power Rails
+### Power Distribution
+
+#### Power Rails
 | Rail | Voltage | Current | Components |
 |------|---------|---------|------------|
 | **5V** | 5.0V ± 5% | 200mA | Input from ATARI, USB |
 | **3.3V** | 3.3V ± 3% | 400mA | ESP32, logic, interfaces |
 | **1.2V** | 1.2V ± 3% | 300mA | FPGA core voltage |
 
-### ▶ Power Sources
+#### Power Sources
 1. **ATARI PBI**: Primary 5V supply from computer
 2. **USB**: Alternative 5V for programming/testing
 3. **External**: Optional external 5V supply (J5)
 
-### ▶ Power Protection
+#### Power Protection
 - **Schottky Diodes**: Reverse polarity protection
 - **Ferrite Beads**: EMI filtering
 - **Decoupling**: Extensive capacitor network
 - **Current Limiting**: Overcurrent protection
 
-</details>
-
-</div>
 </div>
 
 ---
 
-<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
-<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">⚙ Assembly Instructions</div>
-<div style="padding: 20px; background: white;">
+<div style="background: #ffffff; border-radius: 16px; padding: 24px; margin: 24px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
 
-<details>
-<summary>▼ <strong>Component Assembly</strong></summary>
+## 🔨 Assembly Instructions
 
-### ▶ Assembly Order
+### Component Assembly
+
+#### Assembly Order
 1. **SMD Components**: Start with smallest components (0603, 0805)
 2. **ICs**: Place all integrated circuits
 3. **Connectors**: Install all external connectors
 4. **Through-hole**: Add any remaining THT components
 5. **Testing**: Verify power rails before first power-on
 
-### ▶ Special Considerations
+#### Special Considerations
 - **FPGA**: Use proper ESD precautions
 - **BGA Components**: Requires professional assembly
 - **Thermal Management**: Ensure adequate cooling
 - **Impedance Control**: Maintain 50Ω for high-speed signals
 
-</details>
+### Testing & Validation
 
-<details>
-<summary>▼ <strong>Testing & Validation</strong></summary>
-
-### ▶ Power-On Tests
+#### Power-On Tests
 1. **Visual Inspection**: Check for shorts, proper orientation
 2. **Power Rails**: Verify all voltages within tolerance
 3. **Clock Signals**: Confirm oscillator operation
 4. **Communication**: Test SPI, I2C, UART interfaces
 
-### ▶ Functional Tests
+#### Functional Tests
 1. **FPGA Programming**: Load test bitstream
 2. **Video Output**: Verify VGA signal generation
 3. **Audio Output**: Test audio codec functionality
 4. **ATARI Interface**: Confirm PBI communication
 
-</details>
-
-</div>
 </div>
 
 ---
 
-<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
-<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">▤ Bill of Materials</div>
-<div style="padding: 20px; background: white;">
+<div style="background: #ffffff; border-radius: 16px; padding: 24px; margin: 24px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
 
-<details>
-<summary>▼ <strong>Component Categories</strong></summary>
+## 📦 Bill of Materials
 
-### ▣ Major Components
+### Component Categories
+
+#### Major Components
 - **1x** ICE40UP5K-SG48ITR FPGA
 - **1x** ESP32-PICO-D4 Microcontroller  
 - **1x** W25Q16JVSNIQ SPI Flash
 - **1x** WM8524CGEDT Audio Codec
 - **1x** CH340T USB Interface
 
-### ▣ Passive Components
+#### Passive Components
 - **23x** 1µF Capacitors (1206)
 - **20x** 100nF Capacitors (1206)
 - **6x** 10µF Capacitors (1206)
 - **Various** Resistors (0805/1206)
 - **1x** 25MHz Crystal Oscillator
 
-### ▣ Connectors
+#### Connectors
 - **1x** 15-pin VGA Connector
 - **1x** Micro SD Card Slot
 - **1x** USB Type-C Connector
 - **1x** 3.5mm Audio Jack
 - **1x** 8-pin Programming Header
 
-</details>
-
-<details>
-<summary>▼ <strong>Cost Analysis</strong></summary>
+### Cost Analysis
 
 | Category | Estimated Cost | Percentage |
 |----------|----------------|------------|
@@ -437,26 +371,22 @@ The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansi
 
 *Costs are estimates for small quantity production*
 
-</details>
-
-</div>
 </div>
 
 ---
 
-<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
-<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">⚙ Programming & Configuration</div>
-<div style="padding: 20px; background: white;">
+<div style="background: #ffffff; border-radius: 16px; padding: 24px; margin: 24px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
 
-<details>
-<summary>▼ <strong>FPGA Programming</strong></summary>
+## 💻 Programming & Configuration
 
-### ▶ Programming Methods
+### FPGA Programming
+
+#### Programming Methods
 1. **USB/Serial**: Using CH340 interface with iceprog
 2. **SPI Direct**: Direct SPI flash programming
 3. **JTAG**: Hardware debugging interface
 
-### ▶ Programming Steps
+#### Programming Steps
 ```bash
 # Install icestorm toolchain
 sudo apt install fpga-icestorm
@@ -468,25 +398,22 @@ iceprog vera_module.bin
 iceprog -c
 ```
 
-### ▶ Development Tools
+#### Development Tools
 - **IceStorm**: Open-source FPGA toolchain
 - **Yosys**: Verilog synthesis
 - **NextPNR**: Place and route
 - **KiCad**: PCB design and layout
 
-</details>
+### ESP32 Configuration
 
-<details>
-<summary>▼ <strong>ESP32 Configuration</strong></summary>
-
-### ▶ ESP32 Firmware
+#### ESP32 Firmware
 The ESP32 handles:
 - **Bus Decoding**: ATARI address space management
 - **Configuration**: FPGA and system setup
 - **Communication**: USB, Wi-Fi, Bluetooth interfaces
 - **Debugging**: System monitoring and diagnostics
 
-### ▶ Programming ESP32
+#### Programming ESP32
 ```bash
 # Install ESP-IDF
 git clone https://github.com/espressif/esp-idf.git
@@ -497,217 +424,187 @@ idf.py build
 idf.py flash
 ```
 
-</details>
-
-</div>
 </div>
 
 ---
 
-<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
-<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">▦ Project Structure</div>
-<div style="padding: 20px; background: white;">
+<div style="background: #ffffff; border-radius: 16px; padding: 24px; margin: 24px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
 
-<details>
-<summary>▼ <strong>Repository Organization</strong></summary>
+## 📁 Project Structure
+
+### Repository Organization
 
 ```
 Vera-Module-RBL-XE/
-├── ▤ README.md                    # This documentation
-├── ▤ LICENSE                      # GPL v3 license
-├── ⚙ VERA-MODULE-RBL.pro         # KiCad project file
-├── ▤ VERA-MODULE-RBL.sch         # Main schematic
-├── ▣ VERA-MODULE-RBL.kicad_pcb   # PCB layout
-├── ▤ VERA-MODULE-RBL.csv         # Bill of materials
-├── ▶ jlcpcb-check-bom.py        # BOM processing script
-├── ▦ images/                      # Board images and renders
-│   ├── ▦ VERA-MODULE-RBL-TOP.png
-│   ├── ▦ VERA-MODULE-RBL-BOTTOM.png
-│   ├── ▦ F.Cu-L1.png            # PCB layer images
-│   ├── ▦ POWER-L2.png
-│   ├── ▦ GND-L3.png
-│   └── ▦ B.Cu-L4.png
-├── ▦ production/                  # Manufacturing files
-│   ├── ▤ *.gbl, *.gtl            # Gerber files
-│   ├── ▤ *.drl                   # Drill files
-│   └── ▤ *.gbrjob                # Job files
-├── ▦ ibom/                       # Interactive BOM
-│   └── ▶ ibom.html
-└── ▦ schematics/                 # Individual schematics
-    ├── ▤ vera-fpga.sch           # FPGA module
-    ├── ▤ busdecoder.sch          # Bus decoder
-    ├── ▤ cartridgeInterface.sch   # Cartridge interface
-    ├── ▤ vera-fpga-flash.sch     # Flash memory
-    └── ▤ powersupply.sch         # Power management
+├── 📄 README.md                    # This documentation
+├── 📄 LICENSE                      # GPL v3 license
+├── ⚙️ VERA-MODULE-RBL.pro         # KiCad project file
+├── 📄 VERA-MODULE-RBL.sch         # Main schematic
+├── 🔧 VERA-MODULE-RBL.kicad_pcb   # PCB layout
+├── 📄 VERA-MODULE-RBL.csv         # Bill of materials
+├── 🐍 jlcpcb-check-bom.py        # BOM processing script
+├── 📁 images/                      # Board images and renders
+│   ├── 🖼️ VERA-MODULE-RBL-TOP.png
+│   ├── 🖼️ VERA-MODULE-RBL-BOTTOM.png
+│   ├── 🖼️ F.Cu-L1.png            # PCB layer images
+│   ├── 🖼️ POWER-L2.png
+│   ├── 🖼️ GND-L3.png
+│   └── 🖼️ B.Cu-L4.png
+├── 📁 production/                  # Manufacturing files
+│   ├── 📄 *.gbl, *.gtl            # Gerber files
+│   ├── 📄 *.drl                   # Drill files
+│   └── 📄 *.gbrjob                # Job files
+├── 📁 ibom/                       # Interactive BOM
+│   └── 🌐 ibom.html
+└── 📁 schematics/                 # Individual schematics
+    ├── 📄 vera-fpga.sch           # FPGA module
+    ├── 📄 busdecoder.sch          # Bus decoder
+    ├── 📄 cartridgeInterface.sch   # Cartridge interface
+    ├── 📄 vera-fpga-flash.sch     # Flash memory
+    └── 📄 powersupply.sch         # Power management
 ```
 
-</details>
+### Design Files
 
-<details>
-<summary>▼ <strong>Design Files</strong></summary>
-
-### ▶ KiCad Files
+#### KiCad Files
 - **Schematic**: Multi-sheet hierarchical design
 - **PCB Layout**: 4-layer board with controlled impedance
 - **3D Models**: Custom component models
 - **Footprints**: Custom connector footprints
 
-### ▶ Manufacturing Files
+#### Manufacturing Files
 - **Gerber Files**: Industry-standard PCB fabrication
 - **Drill Files**: NC drill and via specifications  
 - **Pick & Place**: SMT assembly coordinates
 - **BOM**: Component specifications with LCSC part numbers
 
-</details>
-
-</div>
 </div>
 
 ---
 
-<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
-<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">◉ Contributing</div>
-<div style="padding: 20px; background: white;">
+<div style="background: #ffffff; border-radius: 16px; padding: 24px; margin: 24px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
 
-<details>
-<summary>▼ <strong>Development Guidelines</strong></summary>
+## 🤝 Contributing
 
-### ▶ Contributing Process
+### Development Guidelines
+
+#### Contributing Process
 1. **Fork** the repository
 2. **Create** a feature branch
 3. **Make** your changes
 4. **Test** thoroughly
 5. **Submit** a pull request
 
-### ▶ Contribution Areas
+#### Contribution Areas
 - **Hardware Design**: PCB layout improvements
 - **Firmware**: ESP32 and FPGA code
 - **Documentation**: User guides and tutorials
 - **Testing**: Validation and verification
 - **Software**: Host applications and tools
 
-### ▶ Design Goals
+#### Design Goals
 - **Compatibility**: Maintain ATARI XE/XL compatibility
 - **Performance**: Optimize for speed and efficiency
 - **Reliability**: Ensure robust operation
 - **Manufacturability**: Design for production
 - **Cost**: Balance features with affordability
 
-</details>
-
-</div>
 </div>
 
 ---
 
-<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
-<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">▤ License</div>
-<div style="padding: 20px; background: white;">
+<div style="background: #ffffff; border-radius: 16px; padding: 24px; margin: 24px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
+
+## 📄 License
 
 This project is licensed under the **GNU General Public License v3.0**.
 
-<details>
-<summary>▼ <strong>License Details</strong></summary>
+### License Details
 
-### ▶ Permissions
-- ◉ Commercial use
-- ◉ Modification
-- ◉ Distribution
-- ◉ Patent use
-- ◉ Private use
+#### Permissions
+- ✅ Commercial use
+- ✅ Modification
+- ✅ Distribution
+- ✅ Patent use
+- ✅ Private use
 
-### ▶ Limitations
-- ◯ Liability
-- ◯ Warranty
+#### Limitations
+- ❌ Liability
+- ❌ Warranty
 
-### ▶ Conditions
-- ▤ License and copyright notice
-- ▤ State changes
-- ▤ Disclose source
-- ▤ Same license
+#### Conditions
+- 📄 License and copyright notice
+- 📄 State changes
+- 📄 Disclose source
+- 📄 Same license
 
 For the complete license text, see the [LICENSE](LICENSE) file.
 
-</details>
-
-</div>
 </div>
 
 ---
 
-<div align="center">
+<div style="background: linear-gradient(135deg, #1976d2, #42a5f5); color: white; border-radius: 16px; padding: 32px; margin: 32px 0; box-shadow: 0 8px 24px rgba(25,118,210,0.3); text-align: center;">
 
-<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
-<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">◆ Support the Project</div>
-<div style="padding: 20px; background: white;">
+## 💙 Support the Project
 
 If you find this project useful, please consider:
 
-◆ **Starring** the repository  
-◉ **Reporting** issues  
-⚙ **Contributing** improvements  
-▶ **Sharing** with the community  
+🌟 **Starring** the repository  
+🐛 **Reporting** issues  
+🔧 **Contributing** improvements  
+📢 **Sharing** with the community  
 
 ---
 
-**Made with ◉ by RetroBit Lab**
+**Made with ❤️ by RetroBit Lab**
 
 *Bringing modern capabilities to classic computers*
 
 </div>
-</div>
 
 ---
 
-<div style="background: linear-gradient(135deg, #424242, #616161); color: white; padding: 20px; border-radius: 12px; text-align: center; margin: 20px 0; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-<h1 style="margin: 0; color: white;">▶ VERA Module RBL-XE (Italiano)</h1>
-</div>
+# VERA Module RBL-XE (Italiano)
 
 <div align="center">
 
-*[🌐 English](#-vera-module-rbl-xe) | 🌐 Italiano*
+*[🌐 English](#vera-module-rbl-xe) | 🌐 Italiano*
 
 </div>
 
 ---
 
-<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
-<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">▤ Indice</div>
-<div style="padding: 20px; background: white;">
+<div style="background: #ffffff; border-radius: 16px; padding: 24px; margin: 24px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
 
-<details>
-<summary>▼ Clicca per espandere la navigazione</summary>
+## 📋 Indice
 
-- [▶ Panoramica](#-panoramica)
-- [◆ Caratteristiche](#-caratteristiche)
-- [⚙ Specifiche Tecniche](#-specifiche-tecniche)
-- [▣ Componenti Hardware](#-componenti-hardware)
-- [▦ Anteprima Scheda](#-anteprima-scheda)
-- [▤ Layer PCB](#-layer-pcb)
-- [⚡ Connettori e Interfacce](#-connettori-e-interfacce)
+- [🔍 Panoramica](#-panoramica)
+- [✨ Caratteristiche](#-caratteristiche)
+- [⚙️ Specifiche Tecniche](#️-specifiche-tecniche)
+- [🔧 Componenti Hardware](#-componenti-hardware)
+- [🖼️ Anteprima Scheda](#️-anteprima-scheda)
+- [📐 Layer PCB](#-layer-pcb)
+- [🔌 Connettori e Interfacce](#-connettori-e-interfacce)
 - [⚡ Requisiti di Alimentazione](#-requisiti-di-alimentazione)
-- [⚙ Istruzioni di Assemblaggio](#-istruzioni-di-assemblaggio)
-- [▤ Distinta Materiali](#-distinta-materiali)
-- [⚙ Programmazione e Configurazione](#-programmazione-e-configurazione)
-- [▦ Struttura Progetto](#-struttura-progetto)
-- [◉ Contribuire](#-contribuire)
-- [▤ Licenza](#-licenza-1)
+- [🔨 Istruzioni di Assemblaggio](#-istruzioni-di-assemblaggio)
+- [📦 Distinta Materiali](#-distinta-materiali)
+- [💻 Programmazione e Configurazione](#-programmazione-e-configurazione)
+- [📁 Struttura Progetto](#-struttura-progetto)
+- [🤝 Contribuire](#-contribuire)
+- [📄 Licenza](#-licenza-1)
 
-</details>
-
-</div>
 </div>
 
 ---
 
-<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
-<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">▶ Panoramica</div>
-<div style="padding: 20px; background: white;">
+<div style="background: #ffffff; border-radius: 16px; padding: 24px; margin: 24px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
+
+## 🔍 Panoramica
 
 Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video basata su FPGA, progettata specificamente per i computer **ATARI XE/XL**. Questo modulo porta capacità grafiche e audio moderne ai sistemi ATARI classici attraverso il connettore **PBI (Parallel Bus Interface)**.
 
-<details>
-<summary>▼ <strong>Cos'è VERA?</strong></summary>
+### Cos'è VERA?
 
 **VERA** (Video Enhanced Retro Adapter) è originariamente progettato per il computer Commander X16 ma è stato adattato per i sistemi ATARI. Fornisce:
 
@@ -716,63 +613,52 @@ Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video 
 - **Connettività Moderna**: Uscita VGA, storage su scheda SD e programmazione USB
 - **Compatibilità Retro**: Integrazione perfetta con il software ATARI classico
 
-</details>
-
-</div>
 </div>
 
 ---
 
-<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
-<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">◆ Caratteristiche</div>
-<div style="padding: 20px; background: white;">
+<div style="background: #ffffff; border-radius: 16px; padding: 24px; margin: 24px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
 
-<details>
-<summary>▼ <strong>Capacità Grafi▼che</strong></summary>
+## ✨ Caratteristiche
 
-### ▶ Uscita Video
+### 🎨 Capacità Grafiche
+
+#### Uscita Video
 - **Uscita VGA**: 640x480 @ 60Hz con segnali RGB analogici
 - **Livelli Multipli**: Livelli di sfondo, primo piano e sprite
 - **Profondità Colore**: 256 colori da una palette di 4096
 - **Sprite**: Motore sprite accelerato hardware
 - **Scrolling**: Scorrimento orizzontale e verticale fluido
 
-### ▶ Caratteristiche Audio
+#### Caratteristiche Audio
 - **Audio Digitale**: Uscita audio PCM di alta qualità
 - **Multicanale**: Audio stereo
 - **Codec Audio**: WM8524 per qualità audio professionale
 - **Jack 3.5mm**: Connettore uscita audio standard
 
-</details>
+### 🔗 Integrazione Sistema
 
-<details>
-<summary>▼ <strong>Integrazione Sistema</strong></summary>
-
-### ▶ Compatibilità ATARI
+#### Compatibilità ATARI
 - **Interfaccia PBI**: Connessione diretta ai sistemi ATARI XE/XL
 - **Mappatura Memoria**: Spazio indirizzi $D1XX-$DFXX
 - **Decodificatore Bus**: Decodifica indirizzi intelligente con ESP32
 - **Gestione Alimentazione**: Conversione efficiente da 5V a 3.3V/1.2V
 
-### ▶ Storage e Programmazione
+#### Storage e Programmazione
 - **Slot Scheda SD**: Micro SD per storage dati e caricamento ROM
 - **Flash SPI**: 16Mbit W25Q16 per configurazione FPGA
 - **Programmazione USB**: CH340 USB-to-serial per aggiornamenti facili
 - **JTAG/SPI**: Interfaccia programmazione FPGA diretta
 
-</details>
-
-</div>
 </div>
 
 ---
 
-<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
-<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">⚙ Specifiche Tecniche</div>
-<div style="padding: 20px; background: white;">
+<div style="background: #ffffff; border-radius: 16px; padding: 24px; margin: 24px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
 
-<details>
-<summary>▼ <strong>Specifiche Principali</strong></summary>
+## ⚙️ Specifiche Tecniche
+
+### Specifiche Principali
 
 | Componente | Specifica |
 |------------|-----------|
@@ -786,10 +672,7 @@ Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video 
 | **Layer PCB** | 4 layer (Segnale/Alimentazione/GND/Segnale) |
 | **Dimensioni Scheda** | TBD mm x TBD mm |
 
-</details>
-
-<details>
-<summary>▼ <strong>Caratteristiche Elettriche</strong></summary>
+### Caratteristiche Elettriche
 
 | Parametro | Min | Tip | Max | Unità |
 |-----------|-----|-----|-----|-------|
@@ -799,128 +682,117 @@ Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video 
 | **Impedenza Uscita VGA** | - | 75 | - | Ω |
 | **Livello Uscita Audio** | - | 2.0 | - | Vrms |
 
-</details>
-
-</div>
 </div>
 
 ---
 
-<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
-<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">▣ Componenti Hardware</div>
-<div style="padding: 20px; background: white;">
+<div style="background: #ffffff; border-radius: 16px; padding: 24px; margin: 24px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
 
-<details>
-<summary>▼ <strong>Unità di Elaborazione Principali</strong></summary>
+## 🔧 Componenti Hardware
 
-### ▣ FPGA - ICE40UP5K
+### Unità di Elaborazione Principali
+
+#### FPGA - ICE40UP5K
 - **Elementi Logici**: 5,280 LUT
 - **Memoria**: 120 Kbit BRAM, 1 Mbit SPRAM
 - **Pin I/O**: 39 I/O utente
 - **Package**: QFN-48 (7x7mm)
 - **Programmazione**: Configurazione SPI
 
-### ▣ ESP32-PICO-D4
+#### ESP32-PICO-D4
 - **CPU**: Dual-core Xtensa LX6 @ 240MHz
 - **Memoria**: 4MB flash SPI, 520KB SRAM
 - **Connettività**: Wi-Fi 802.11 b/g/n, Bluetooth 4.2
 - **Package**: QFN-48 (7x7mm)
 - **Ruolo**: Decodificatore bus e controllore sistema
 
-</details>
+### Componenti Interfaccia
 
-<details>
-<summary>▼ <strong>Componenti Interfaccia</strong></summary>
-
-### ▶ Sistema Audio
+#### Sistema Audio
 - **Codec**: WM8524CGEDT (24-bit, 192kHz)
 - **Interfaccia**: Audio digitale I2S
 - **Uscita**: Jack stereo 3.5mm
 - **SNR**: >100dB
 
-### ▶ Sistema Video
+#### Sistema Video
 - **Uscita**: Connettore VGA 15-pin
 - **Risoluzione**: 640x480 @ 60Hz
 - **Colori**: RGB 8-bit (256 colori)
 - **Sync**: Segnali H/V sync separati
 
-</details>
-
-</div>
 </div>
 
 ---
 
-<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
-<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">▦ Anteprima Scheda</div>
-<div style="padding: 20px; background: white;">
+<div style="background: #ffffff; border-radius: 16px; padding: 24px; margin: 24px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
 
-<details>
-<summary>▼ <strong>Rendering 3D</strong></summary>
+## 🖼️ Anteprima Scheda
 
-### ▶ Vista Superiore
+### Rendering 3D
+
+#### Vista Superiore
 ![VERA Module Top](images/VERA-MODULE-RBL-TOP.png)
 *Lato superiore mostrando componenti principali e connettori*
 
-### ▶ Vista Inferiore
+#### Vista Inferiore
 ![VERA Module Bottom](images/VERA-MODULE-RBL-BOTTOM.png)
 *Lato inferiore con componenti aggiuntivi*
 
-### ▶ Adattatore Cartuccia
+#### Adattatore Cartuccia
 ![VERA Cartridge Adapter](images/VERA-ADAPTER-CARTRIDGE.png)
 *Adattatore interfaccia cartuccia opzionale*
 
-</details>
+### Dimensioni Scheda
 
-</div>
+- **Lunghezza**: TBD mm
+- **Larghezza**: TBD mm  
+- **Spessore**: 1.6mm (PCB 4-layer)
+- **Montaggio**: Compatibile con slot PBI ATARI XE/XL
+- **Connettori**: Ad angolo retto per efficienza spazio
+
 </div>
 
 ---
 
-<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
-<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">▤ Layer PCB</div>
-<div style="padding: 20px; background: white;">
+<div style="background: #ffffff; border-radius: 16px; padding: 24px; margin: 24px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
 
-<details>
-<summary>▼ <strong>Stack-up Layer</strong></summary>
+## 📐 Layer PCB
 
-### Layer 1 - Rame Superiore (F.Cu)
+### Stack-up Layer
+
+#### Layer 1 - Rame Superiore (F.Cu)
 ![Top Copper Layer](images/F.Cu-L1.png)
 *Posizionamento componenti e routing segnali*
 
-### Layer 2 - Piano Alimentazione (POWER)
+#### Layer 2 - Piano Alimentazione (POWER)
 ![Power Layer](images/POWER-L2.png)
 *Distribuzione alimentazione 5V, 3.3V e 1.2V*
 
-### Layer 3 - Piano Massa (GND)
+#### Layer 3 - Piano Massa (GND)
 ![Ground Layer](images/GND-L3.png)
 *Piano massa solido per integrità segnale*
 
-### Layer 4 - Rame Inferiore (B.Cu)
+#### Layer 4 - Rame Inferiore (B.Cu)
 ![Bottom Copper Layer](images/B.Cu-L4.png)
 *Routing segnali aggiuntivo e componenti*
 
-</details>
-
-</div>
 </div>
 
 ---
 
-<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
-<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">⚡ Connettori e Interfacce</div>
-<div style="padding: 20px; background: white;">
+<div style="background: #ffffff; border-radius: 16px; padding: 24px; margin: 24px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
 
-<details>
-<summary>▼ <strong>Connessioni Esterne</strong></summary>
+## 🔌 Connettori e Interfacce
 
-### ▶ Interfaccia ATARI
+### Connessioni Esterne
+
+#### Interfaccia ATARI
 - **Connettore PBI**: Connettore edge 50-pin
 - **Slot ECI**: Enhanced Cartridge Interface
 - **Range Indirizzi**: $D1XX-$DFXX
 - **Segnali**: Bus dati, bus indirizzi, segnali controllo
 
-### ▶ Uscita Video (J2)
+#### Uscita Video (J2)
 | Pin | Segnale | Descrizione |
 |-----|---------|-------------|
 | 1-3 | RGB | Segnali analogici Rosso, Verde, Blu |
@@ -928,119 +800,155 @@ Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video 
 | 6-10 | GND | Connessioni massa |
 | 11-12 | Audio L/R | Uscita audio stereo |
 
-### ▶ Interfacce Storage
+#### Interfacce Storage
 - **Slot Scheda SD (J3)**: Interfaccia scheda Micro SD
 - **Flash SPI**: Storage on-board 16Mbit
 - **Porta USB (J4)**: Programmazione e trasferimento dati
 
-</details>
+### Interfacce Programmazione
 
-</div>
+#### Connettore ICEPROG (J6)
+| Pin | Segnale | Funzione |
+|-----|---------|----------|
+| 1 | 5V | Alimentazione |
+| 2 | GND | Massa |
+| 3 | TXD | Trasmissione seriale |
+| 4 | RXD | Ricezione seriale |
+| 5 | SCK | Clock SPI |
+| 6 | MISO | Dati SPI in ingresso |
+| 7 | MOSI | Dati SPI in uscita |
+| 8 | SS | Selezione SPI |
+
+#### Reset e Controllo
+- **Pulsante Reset (SW1)**: Reset sistema ESP32
+- **DIP Switch (SW2)**: Opzioni configurazione
+- **LED di Stato**: Indicatori alimentazione, programmazione, attività
+
 </div>
 
 ---
 
-<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
-<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">⚡ Requisiti di Alimentazione</div>
-<div style="padding: 20px; background: white;">
+<div style="background: #ffffff; border-radius: 16px; padding: 24px; margin: 24px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
 
-<details>
-<summary>▼ <strong>Distribuzione Alimentazione</strong></summary>
+## ⚡ Requisiti di Alimentazione
 
-### ▶ Rail Alimentazione
+### Distribuzione Alimentazione
+
+#### Rail Alimentazione
 | Rail | Tensione | Corrente | Componenti |
 |------|----------|----------|------------|
 | **5V** | 5.0V ± 5% | 200mA | Ingresso da ATARI, USB |
 | **3.3V** | 3.3V ± 3% | 400mA | ESP32, logica, interfacce |
 | **1.2V** | 1.2V ± 3% | 300mA | Tensione core FPGA |
 
-### ▶ Sorgenti Alimentazione
+#### Sorgenti Alimentazione
 1. **PBI ATARI**: Alimentazione 5V primaria dal computer
 2. **USB**: 5V alternativo per programmazione/test
 3. **Esterno**: Alimentazione 5V esterna opzionale (J5)
 
-</details>
+#### Protezione Alimentazione
+- **Diodi Schottky**: Protezione polarità inversa
+- **Perle di Ferrite**: Filtraggio EMI
+- **Disaccoppiamento**: Rete estesa di condensatori
+- **Limitazione Corrente**: Protezione sovracorrente
 
-</div>
 </div>
 
 ---
 
-<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
-<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">⚙ Istruzioni di Assemblaggio</div>
-<div style="padding: 20px; background: white;">
+<div style="background: #ffffff; border-radius: 16px; padding: 24px; margin: 24px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
 
-<details>
-<summary>▼ <strong>Assemblaggio Componenti</strong></summary>
+## 🔨 Istruzioni di Assemblaggio
 
-### ▶ Ordine Assemblaggio
+### Assemblaggio Componenti
+
+#### Ordine Assemblaggio
 1. **Componenti SMD**: Iniziare con componenti più piccoli (0603, 0805)
 2. **IC**: Posizionare tutti i circuiti integrati
 3. **Connettori**: Installare tutti i connettori esterni
 4. **Through-hole**: Aggiungere eventuali componenti THT rimanenti
 5. **Test**: Verificare rail alimentazione prima della prima accensione
 
-### ▶ Considerazioni Speciali
+#### Considerazioni Speciali
 - **FPGA**: Usare precauzioni ESD appropriate
 - **Componenti BGA**: Richiede assemblaggio professionale
 - **Gestione Termica**: Assicurare raffreddamento adeguato
 - **Controllo Impedenza**: Mantenere 50Ω per segnali alta velocità
 
-</details>
+### Test e Validazione
 
-</div>
+#### Test Accensione
+1. **Ispezione Visiva**: Controllare cortocircuiti, orientamento corretto
+2. **Rail Alimentazione**: Verificare tutte le tensioni entro tolleranza
+3. **Segnali Clock**: Confermare funzionamento oscillatore
+4. **Comunicazione**: Testare interfacce SPI, I2C, UART
+
+#### Test Funzionali
+1. **Programmazione FPGA**: Caricare bitstream di test
+2. **Uscita Video**: Verificare generazione segnale VGA
+3. **Uscita Audio**: Testare funzionalità codec audio
+4. **Interfaccia ATARI**: Confermare comunicazione PBI
+
 </div>
 
 ---
 
-<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
-<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">▤ Distinta Materiali</div>
-<div style="padding: 20px; background: white;">
+<div style="background: #ffffff; border-radius: 16px; padding: 24px; margin: 24px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
 
-<details>
-<summary>▼ <strong>Categorie Componenti</strong></summary>
+## 📦 Distinta Materiali
 
-### ▣ Componenti Principali
+### Categorie Componenti
+
+#### Componenti Principali
 - **1x** ICE40UP5K-SG48ITR FPGA
 - **1x** ESP32-PICO-D4 Microcontrollore
 - **1x** W25Q16JVSNIQ Flash SPI
 - **1x** WM8524CGEDT Codec Audio
 - **1x** CH340T Interfaccia USB
 
-### ▣ Componenti Passivi
+#### Componenti Passivi
 - **23x** Condensatori 1µF (1206)
 - **20x** Condensatori 100nF (1206)
 - **6x** Condensatori 10µF (1206)
 - **Vari** Resistori (0805/1206)
 - **1x** Oscillatore Cristallo 25MHz
 
-### ▣ Connettori
+#### Connettori
 - **1x** Connettore VGA 15-pin
 - **1x** Slot Scheda Micro SD
 - **1x** Connettore USB Type-C
 - **1x** Jack Audio 3.5mm
 - **1x** Header Programmazione 8-pin
 
-</details>
+### Analisi Costi
 
-</div>
+| Categoria | Costo Stimato | Percentuale |
+|-----------|---------------|-------------|
+| **FPGA** | $15-20 | 35% |
+| **ESP32** | $8-12 | 20% |
+| **Connettori** | $5-8 | 15% |
+| **Passivi** | $3-5 | 10% |
+| **PCB** | $8-12 | 20% |
+| **Totale** | **$39-57** | **100%** |
+
+*I costi sono stime per produzione piccole quantità*
+
 </div>
 
 ---
 
-<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
-<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">⚙ Programmazione e Configurazione</div>
-<div style="padding: 20px; background: white;">
+<div style="background: #ffffff; border-radius: 16px; padding: 24px; margin: 24px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
 
-<details>
-<summary>▼ <strong>Programmazione FPGA</strong></summary>
+## 💻 Programmazione e Configurazione
 
-### ▶ Metodi Programmazione
+### Programmazione FPGA
+
+#### Metodi Programmazione
 1. **USB/Seriale**: Usando interfaccia CH340 con iceprog
 2. **SPI Diretto**: Programmazione flash SPI diretta
 3. **JTAG**: Interfaccia debug hardware
 
-### ▶ Passi Programmazione
+#### Passi Programmazione
 ```bash
 # Installare toolchain icestorm
 sudo apt install fpga-icestorm
@@ -1052,101 +960,167 @@ iceprog vera_module.bin
 iceprog -c
 ```
 
-</details>
+#### Strumenti Sviluppo
+- **IceStorm**: Toolchain FPGA open-source
+- **Yosys**: Sintesi Verilog
+- **NextPNR**: Place and route
+- **KiCad**: Design e layout PCB
 
-</div>
+### Configurazione ESP32
+
+#### Firmware ESP32
+L'ESP32 gestisce:
+- **Decodifica Bus**: Gestione spazio indirizzi ATARI
+- **Configurazione**: Setup FPGA e sistema
+- **Comunicazione**: Interfacce USB, Wi-Fi, Bluetooth
+- **Debug**: Monitoraggio sistema e diagnostica
+
+#### Programmazione ESP32
+```bash
+# Installare ESP-IDF
+git clone https://github.com/espressif/esp-idf.git
+cd esp-idf && ./install.sh
+
+# Build e flash firmware
+idf.py build
+idf.py flash
+```
+
 </div>
 
 ---
 
-<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
-<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">▦ Struttura Progetto</div>
-<div style="padding: 20px; background: white;">
+<div style="background: #ffffff; border-radius: 16px; padding: 24px; margin: 24px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
 
-<details>
-<summary>▼ <strong>Organizzazione Repository</strong></summary>
+## 📁 Struttura Progetto
+
+### Organizzazione Repository
 
 ```
 Vera-Module-RBL-XE/
-├── ▤ README.md                    # Questa documentazione
-├── ▤ LICENSE                      # Licenza GPL v3
-├── ⚙ VERA-MODULE-RBL.pro         # File progetto KiCad
-├── ▤ VERA-MODULE-RBL.sch         # Schema principale
-├── ▣ VERA-MODULE-RBL.kicad_pcb   # Layout PCB
-├── ▤ VERA-MODULE-RBL.csv         # Distinta materiali
-├── ▶ jlcpcb-check-bom.py        # Script elaborazione BOM
-├── ▦ images/                      # Immagini scheda e render
-├── ▦ production/                  # File produzione
-├── ▦ ibom/                       # BOM interattiva
-└── ▦ schematics/                 # Schemi individuali
+├── 📄 README.md                    # Questa documentazione
+├── 📄 LICENSE                      # Licenza GPL v3
+├── ⚙️ VERA-MODULE-RBL.pro         # File progetto KiCad
+├── 📄 VERA-MODULE-RBL.sch         # Schema principale
+├── 🔧 VERA-MODULE-RBL.kicad_pcb   # Layout PCB
+├── 📄 VERA-MODULE-RBL.csv         # Distinta materiali
+├── 🐍 jlcpcb-check-bom.py        # Script elaborazione BOM
+├── 📁 images/                      # Immagini scheda e render
+│   ├── 🖼️ VERA-MODULE-RBL-TOP.png
+│   ├── 🖼️ VERA-MODULE-RBL-BOTTOM.png
+│   ├── 🖼️ F.Cu-L1.png            # Immagini layer PCB
+│   ├── 🖼️ POWER-L2.png
+│   ├── 🖼️ GND-L3.png
+│   └── 🖼️ B.Cu-L4.png
+├── 📁 production/                  # File produzione
+│   ├── 📄 *.gbl, *.gtl            # File Gerber
+│   ├── 📄 *.drl                   # File drill
+│   └── 📄 *.gbrjob                # File job
+├── 📁 ibom/                       # BOM interattiva
+│   └── 🌐 ibom.html
+└── 📁 schematics/                 # Schemi individuali
+    ├── 📄 vera-fpga.sch           # Modulo FPGA
+    ├── 📄 busdecoder.sch          # Decodificatore bus
+    ├── 📄 cartridgeInterface.sch   # Interfaccia cartuccia
+    ├── 📄 vera-fpga-flash.sch     # Memoria flash
+    └── 📄 powersupply.sch         # Gestione alimentazione
 ```
 
-</details>
+### File Design
 
-</div>
+#### File KiCad
+- **Schema**: Design gerarchico multi-foglio
+- **Layout PCB**: Scheda 4-layer con impedenza controllata
+- **Modelli 3D**: Modelli componenti personalizzati
+- **Footprint**: Footprint connettori personalizzati
+
+#### File Produzione
+- **File Gerber**: Fabbricazione PCB standard industria
+- **File Drill**: Specifiche drill NC e via
+- **Pick & Place**: Coordinate assemblaggio SMT
+- **BOM**: Specifiche componenti con codici LCSC
+
 </div>
 
 ---
 
-<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
-<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">◉ Contribuire</div>
-<div style="padding: 20px; background: white;">
+<div style="background: #ffffff; border-radius: 16px; padding: 24px; margin: 24px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
 
-<details>
-<summary>▼ <strong>Linee Guida Sviluppo</strong></summary>
+## 🤝 Contribuire
 
-### ▶ Processo Contribuzione
+### Linee Guida Sviluppo
+
+#### Processo Contribuzione
 1. **Fork** del repository
 2. **Creare** un branch feature
 3. **Apportare** le modifiche
 4. **Testare** accuratamente
 5. **Inviare** una pull request
 
-### ▶ Aree Contribuzione
+#### Aree Contribuzione
 - **Design Hardware**: Miglioramenti layout PCB
 - **Firmware**: Codice ESP32 e FPGA
 - **Documentazione**: Guide utente e tutorial
 - **Test**: Validazione e verifica
 - **Software**: Applicazioni host e strumenti
 
-</details>
+#### Obiettivi Design
+- **Compatibilità**: Mantenere compatibilità ATARI XE/XL
+- **Performance**: Ottimizzare per velocità ed efficienza
+- **Affidabilità**: Assicurare funzionamento robusto
+- **Producibilità**: Design per produzione
+- **Costo**: Bilanciare caratteristiche con convenienza
 
-</div>
 </div>
 
 ---
 
-<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
-<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">▤ Licenza</div>
-<div style="padding: 20px; background: white;">
+<div style="background: #ffffff; border-radius: 16px; padding: 24px; margin: 24px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e0e0e0;">
+
+## 📄 Licenza
 
 Questo progetto è licenziato sotto la **GNU General Public License v3.0**.
+
+### Dettagli Licenza
+
+#### Permessi
+- ✅ Uso commerciale
+- ✅ Modifica
+- ✅ Distribuzione
+- ✅ Uso brevetti
+- ✅ Uso privato
+
+#### Limitazioni
+- ❌ Responsabilità
+- ❌ Garanzia
+
+#### Condizioni
+- 📄 Avviso licenza e copyright
+- 📄 Dichiarare modifiche
+- 📄 Rivelare sorgente
+- 📄 Stessa licenza
 
 Per il testo completo della licenza, vedere il file [LICENSE](LICENSE).
 
 </div>
-</div>
 
 ---
 
-<div align="center">
+<div style="background: linear-gradient(135deg, #1976d2, #42a5f5); color: white; border-radius: 16px; padding: 32px; margin: 32px 0; box-shadow: 0 8px 24px rgba(25,118,210,0.3); text-align: center;">
 
-<div style="border: 2px solid #e0e0e0; border-radius: 12px; margin: 20px 0; overflow: hidden; background: #fafafa;">
-<div style="background: #757575; color: white; padding: 12px 20px; margin: 0; font-weight: bold; font-size: 1.2em;">◆ Supporta il Progetto</div>
-<div style="padding: 20px; background: white;">
+## 💙 Supporta il Progetto
 
 Se trovi utile questo progetto, considera di:
 
-◆ **Mettere una stella** al repository  
-◉ **Segnalare** problemi  
-⚙ **Contribuire** miglioramenti  
-▶ **Condividere** con la community  
+🌟 **Mettere una stella** al repository  
+🐛 **Segnalare** problemi  
+🔧 **Contribuire** miglioramenti  
+📢 **Condividere** con la community  
 
 ---
 
-**Realizzato con ◉ da RetroBit Lab**
+**Realizzato con ❤️ da RetroBit Lab**
 
 *Portando capacità moderne ai computer classici*
 
-</div>
 </div>
