@@ -90,7 +90,7 @@ Commander X16 computer but has been adapted for ATARI systems. It provides:
 - **SD Card Slot**: Micro SD for data storage and ROM loading
 - **SPI Flash**: 16Mbit W25Q16 for FPGA configuration
 - **USB Programming**: CH340 USB-to-serial for easy updates
-- **JTAG/SPI**: Direct FPGA programming interface
+- **SPI**: Direct FPGA programming interface
 
 </div>
 
@@ -388,7 +388,6 @@ Commander X16 computer but has been adapted for ATARI systems. It provides:
 #### Programming Methods
 1. **USB/Serial**: Using FTDI 232H adapter interface with iceprog
 2. **SPI Direct**: Direct SPI flash programming
-3. **JTAG**: Hardware debugging interface
 
 #### Programming Steps
 ```bash
@@ -656,7 +655,7 @@ computer Commander X16 ma è stato adattato per i sistemi ATARI. Fornisce:
 - **Slot Scheda SD**: Micro SD per storage dati e caricamento ROM
 - **Flash SPI**: 16Mbit W25Q16 per configurazione FPGA
 - **Programmazione USB**: CH340 USB-to-serial per aggiornamenti facili
-- **JTAG/SPI**: Interfaccia programmazione FPGA diretta
+- **SPI**: Interfaccia programmazione FPGA diretta
 
 </div>
 
@@ -954,7 +953,6 @@ computer Commander X16 ma è stato adattato per i sistemi ATARI. Fornisce:
 #### Metodi Programmazione
 1. **USB/Seriale**: Usando interfaccia FTDI 232H per SPI USB con iceprog
 2. **SPI Diretto**: Programmazione flash SPI diretta
-3. **JTAG**: Interfaccia debug hardware
 
 #### Passi Programmazione
 ```bash
