@@ -3,9 +3,9 @@
 <div align="center">
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![KiCad](https://img.shields.io/badge/KiCad-7.0+-blue.svg)](https://www.kicad.org/)
+[![KiCad](https://img.shields.io/badge/KiCad-5.1.9-blue.svg)](https://www.kicad.org/)
 [![ATARI Ready](https://img.shields.io/badge/ATARI-Ready-red.svg)](https://atari.com)
-[![ESP32](https://img.shields.io/badge/ESP32-PICO--D4-green.svg)](https://www.espressif.com/)
+[![ESP32](https://img.shields.io/badge/ESP32-PICO--D4-yellow.svg)](https://www.espressif.com/)
 
 *🌐 English | [🌐 Italiano](#vera-module-rbl-xe-italiano)*
 
@@ -40,7 +40,7 @@
 
 ## 🔍 Overview
 
-The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansion card designed specifically for **ATARI XE/XL** computers. This module brings modern graphics and audio capabilities to classic ATARI systems through the **PBI (Parallel Bus Interface)** connector.
+The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansion card designed specifically for **ATARI XE** computers. This module brings modern graphics and audio capabilities to classic ATARI systems through the **PBI (Parallel Bus Interface)** connector.
 
 ### What is VERA?
 
@@ -49,7 +49,7 @@ The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansi
 - **Advanced Graphics**: Multiple video layers, sprites, and high-resolution modes
 - **Enhanced Audio**: Multi-channel digital audio with PCM and PSG capabilities  
 - **Modern Connectivity**: VGA output, SD card storage, and USB programming
-- **Retro Compatibility**: Seamless integration with classic ATARI software
+- **Retro Compatibility**: Integration with ATARI software with simple drivers
 
 </div>
 
@@ -77,7 +77,7 @@ The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansi
 ### 🔗 System Integration
 
 #### ATARI Compatibility
-- **PBI Interface**: Direct connection to ATARI XE/XL systems
+- **PBI Interface**: Direct connection to ATARI XE systems
 - **Memory Mapping**: $D1XX-$DFXX address space
 - **Bus Decoder**: Intelligent address decoding with ESP32
 - **Power Management**: Efficient 5V to 3.3V/1.2V conversion
@@ -148,7 +148,7 @@ The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansi
 
 #### Audio System
 - **Codec**: WM8524CGEDT (24-bit, 192kHz)
-- **Interface**: I2S digital audio
+- **Interface**: From FPGA digital audio bus
 - **Output**: 3.5mm stereo jack
 - **SNR**: >100dB
 
@@ -185,8 +185,8 @@ The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansi
 - **Length**: TBD mm
 - **Width**: TBD mm  
 - **Thickness**: 1.6mm (4-layer PCB)
-- **Mounting**: Compatible with ATARI XE/XL PBI slot
-- **Connectors**: Right-angle for space efficiency
+- **Mounting**: Compatible with ATARI XE CART + ECI slots
+- **Connectors**: Flat for space efficiency. It needs a custom 3D printed case
 
 </div>
 
@@ -224,9 +224,9 @@ The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansi
 
 ### External Connections
 
-#### ATARI Interface
-- **PBI Connector**: 50-pin edge connector
-- **ECI Slot**: Enhanced Cartridge Interface
+#### ATARI XE Interface
+- **Cartridge Connector**: Classic Cartridge Edge Connector 30 pin 
+- **ECI Slot**: Enhanced Cartridge Interface 14 pin 
 - **Address Range**: $D1XX-$DFXX
 - **Signals**: Data bus, address bus, control signals
 
@@ -325,7 +325,7 @@ The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansi
 1. **FPGA Programming**: Load test bitstream
 2. **Video Output**: Verify VGA signal generation
 3. **Audio Output**: Test audio codec functionality
-4. **ATARI Interface**: Confirm PBI communication
+4. **ATARI Interface**: Confirm PBI communication protocol
 
 </div>
 
@@ -391,7 +391,7 @@ The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansi
 # Install icestorm toolchain
 sudo apt install fpga-icestorm
 
-# Program FPGA via USB
+# Program FPGA via USB (The FPGA bitstream is not provided!)
 iceprog vera_module.bin
 
 # Verify programming
@@ -503,7 +503,7 @@ Vera-Module-RBL-XE/
 - **Software**: Host applications and tools
 
 #### Design Goals
-- **Compatibility**: Maintain ATARI XE/XL compatibility
+- **Compatibility**: Maintain ATARI XE compatibility
 - **Performance**: Optimize for speed and efficiency
 - **Reliability**: Ensure robust operation
 - **Manufacturability**: Design for production
@@ -602,7 +602,7 @@ If you find this project useful, please consider:
 
 ## 🔍 Panoramica
 
-Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video basata su FPGA, progettata specificamente per i computer **ATARI XE/XL**. Questo modulo porta capacità grafiche e audio moderne ai sistemi ATARI classici attraverso il connettore **PBI (Parallel Bus Interface)**.
+Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video basata su FPGA, progettata specificamente per i computer **ATARI XE**. Questo modulo porta capacità grafiche e audio moderne ai sistemi ATARI classici attraverso il connettore **PBI (Parallel Bus Interface)**.
 
 ### Cos'è VERA?
 
@@ -611,7 +611,7 @@ Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video 
 - **Grafica Avanzata**: Livelli video multipli, sprite e modalità ad alta risoluzione
 - **Audio Migliorato**: Audio digitale multicanale con capacità PCM e PSG
 - **Connettività Moderna**: Uscita VGA, storage su scheda SD e programmazione USB
-- **Compatibilità Retro**: Integrazione perfetta con il software ATARI classico
+- **Compatibilità Retro**: Integrazione con il software ATARI classico tramite semplici drivers
 
 </div>
 
@@ -710,7 +710,7 @@ Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video 
 
 #### Sistema Audio
 - **Codec**: WM8524CGEDT (24-bit, 192kHz)
-- **Interfaccia**: Audio digitale I2S
+- **Interfaccia**: Audio digitale dalla FPGA con bus dedicato
 - **Uscita**: Jack stereo 3.5mm
 - **SNR**: >100dB
 
@@ -747,8 +747,8 @@ Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video 
 - **Lunghezza**: TBD mm
 - **Larghezza**: TBD mm  
 - **Spessore**: 1.6mm (PCB 4-layer)
-- **Montaggio**: Compatibile con slot PBI ATARI XE/XL
-- **Connettori**: Ad angolo retto per efficienza spazio
+- **Montaggio**: Compatibile con slot ATARI XE CART + ECI
+- **Connettori**: Piatti per efficienza spazio. Necessita di case stampato in 3D
 
 </div>
 
@@ -887,7 +887,7 @@ Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video 
 1. **Programmazione FPGA**: Caricare bitstream di test
 2. **Uscita Video**: Verificare generazione segnale VGA
 3. **Uscita Audio**: Testare funzionalità codec audio
-4. **Interfaccia ATARI**: Confermare comunicazione PBI
+4. **Interfaccia ATARI**: Confermare comunicazione con protocollo PBI
 
 </div>
 
@@ -953,7 +953,7 @@ Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video 
 # Installare toolchain icestorm
 sudo apt install fpga-icestorm
 
-# Programmare FPGA via USB
+# Programmare FPGA via USB (Il bitstream FPGA non e' fornito!)
 iceprog vera_module.bin
 
 # Verificare programmazione
