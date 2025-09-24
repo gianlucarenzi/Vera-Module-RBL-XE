@@ -3,9 +3,9 @@
 <div align="center">
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![KiCad](https://img.shields.io/badge/KiCad-7.0+-blue.svg)](https://www.kicad.org/)
+[![KiCad](https://img.shields.io/badge/KiCad-5.1.9-blue.svg)](https://www.kicad.org/)
 [![ATARI Ready](https://img.shields.io/badge/ATARI-Ready-red.svg)](https://atari.com)
-[![ESP32](https://img.shields.io/badge/ESP32-PICO--D4-green.svg)](https://www.espressif.com/)
+[![ESP32](https://img.shields.io/badge/ESP32-PICO--D4-yellow.svg)](https://www.espressif.com/)
 
 *🌐 English | [🌐 Italiano](#-vera-module-rbl-xe-italiano)*
 
@@ -634,7 +634,7 @@ Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video 
 ## ◆ Caratteristiche
 
 <details>
-<summary>▼ <strong>Capacità Grafiche</strong></summary>
+<summary>▼ <strong>Capacità Grafi▼che</strong></summary>
 
 ### ▶ Uscita Video
 - **Uscita VGA**: 640x480 @ 60Hz con segnali RGB analogici
