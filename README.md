@@ -386,7 +386,7 @@ Commander X16 computer but has been adapted for ATARI systems. It provides:
 ### FPGA Programming
 
 #### Programming Methods
-1. **USB/Serial**: Using CH340 interface with iceprog
+1. **USB/Serial**: Using FTDI 232H adapter interface with iceprog
 2. **SPI Direct**: Direct SPI flash programming
 3. **JTAG**: Hardware debugging interface
 
@@ -414,7 +414,7 @@ iceprog -c
 The ESP32 handles:
 - **Bus Decoding**: ATARI address space management
 - **Configuration**: FPGA and system setup
-- **Communication**: USB, Wi-Fi, Bluetooth interfaces
+- **Communication**: USB CH340 interface
 - **Debugging**: System monitoring and diagnostics
 
 #### Programming ESP32
@@ -952,7 +952,7 @@ computer Commander X16 ma è stato adattato per i sistemi ATARI. Fornisce:
 ### Programmazione FPGA
 
 #### Metodi Programmazione
-1. **USB/Seriale**: Usando interfaccia CH340 con iceprog
+1. **USB/Seriale**: Usando interfaccia FTDI 232H per SPI USB con iceprog
 2. **SPI Diretto**: Programmazione flash SPI diretta
 3. **JTAG**: Interfaccia debug hardware
 
@@ -980,7 +980,7 @@ iceprog -c
 L'ESP32 gestisce:
 - **Decodifica Bus**: Gestione spazio indirizzi ATARI
 - **Configurazione**: Setup FPGA e sistema
-- **Comunicazione**: Interfacce USB, Wi-Fi, Bluetooth
+- **Comunicazione**: Interfaccia USB CH340
 - **Debug**: Monitoraggio sistema e diagnostica
 
 #### Programmazione ESP32
