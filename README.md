@@ -40,11 +40,15 @@
 
 ## 🔍 Overview
 
-The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video expansion card designed specifically for **ATARI XE** computers. This module brings modern graphics and audio capabilities to classic ATARI systems through the **PBI (Parallel Bus Interface)** connector.
+The **VERA Module RBL-XE** is a sophisticated FPGA-based audio and video 
+expansion card designed specifically for **ATARI XE** computers. 
+This module brings modern graphics and audio capabilities to classic ATARI systems 
+through the **PBI (Parallel Bus Interface)** protocol connectors.
 
 ### What is VERA?
 
-**VERA** (Video Enhanced Retro Adapter) is originally designed for the Commander X16 computer but has been adapted for ATARI systems. It provides:
+**VERA** (Video Enhanced Retro Adapter) is originally designed for the 
+Commander X16 computer but has been adapted for ATARI systems. It provides:
 
 - **Advanced Graphics**: Multiple video layers, sprites, and high-resolution modes
 - **Enhanced Audio**: Multi-channel digital audio with PCM and PSG capabilities  
@@ -602,11 +606,15 @@ If you find this project useful, please consider:
 
 ## 🔍 Panoramica
 
-Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video basata su FPGA, progettata specificamente per i computer **ATARI XE**. Questo modulo porta capacità grafiche e audio moderne ai sistemi ATARI classici attraverso il connettore **PBI (Parallel Bus Interface)**.
+Il **VERA Module RBL-XE** è una sofisticata scheda di espansione audio e video 
+basata su FPGA, progettata specificamente per i computer **ATARI XE**. 
+Questo modulo porta capacità grafiche e audio moderne ai sistemi ATARI classici 
+attraverso i connettori cartuccia ed ECI per il supporto del protocollo **PBI (Parallel Bus Interface)**.
 
 ### Cos'è VERA?
 
-**VERA** (Video Enhanced Retro Adapter) è originariamente progettato per il computer Commander X16 ma è stato adattato per i sistemi ATARI. Fornisce:
+**VERA** (Video Enhanced Retro Adapter) è originariamente progettato per il 
+computer Commander X16 ma è stato adattato per i sistemi ATARI. Fornisce:
 
 - **Grafica Avanzata**: Livelli video multipli, sprite e modalità ad alta risoluzione
 - **Audio Migliorato**: Audio digitale multicanale con capacità PCM e PSG
