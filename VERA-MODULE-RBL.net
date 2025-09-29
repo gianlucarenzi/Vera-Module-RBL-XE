@@ -1,7 +1,7 @@
 (export (version D)
   (design
     (source /home/gianluca/Progetti-CVS/ATARI/Vera-Module-RBL-XE/VERA-MODULE-RBL.sch)
-    (date "Tue 23 Sep 2025 03:32:32 PM CEST")
+    (date "Mon 29 Sep 2025 04:30:24 PM CEST")
     (tool "Eeschema 5.1.9+dfsg1-1+deb11u1")
     (sheet (number 1) (name /) (tstamps /)
       (title_block
@@ -629,10 +629,10 @@
     (comp (ref R32)
       (value 330R)
       (footprint Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder)
-      (datasheet https://www.lcsc.com/datasheet/C2759157.pdf)
+      (datasheet https://www.lcsc.com/datasheet/C114944.pdf)
       (fields
-        (field (name LCSC) C2759157))
-      (libsource (lib CRES1206) (part 330R) (description "500mW Thick Film Resistor 200V ±100ppm/℃ ±1% 330Ω 1206 Chip Resistor - Surface Mount ROHS"))
+        (field (name LCSC) C114944))
+      (libsource (lib CRES1206) (part 330R) (description "250mW 330Ω 200V ±100ppm/℃ Thick Film Resistor ±1% 1206 Chip Resistor - Surface Mount ROHS"))
       (sheetpath (names /BusDecoder/) (tstamps /68821BC9/))
       (tstamp 68E612BE))
     (comp (ref C25)
@@ -773,10 +773,10 @@
     (comp (ref R61)
       (value 330R)
       (footprint Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder)
-      (datasheet https://www.lcsc.com/datasheet/C2759157.pdf)
+      (datasheet https://www.lcsc.com/datasheet/C114944.pdf)
       (fields
-        (field (name LCSC) C2759157))
-      (libsource (lib CRES1206) (part 330R) (description "500mW Thick Film Resistor 200V ±100ppm/℃ ±1% 330Ω 1206 Chip Resistor - Surface Mount ROHS"))
+        (field (name LCSC) C114944))
+      (libsource (lib CRES1206) (part 330R) (description "250mW 330Ω 200V ±100ppm/℃ Thick Film Resistor ±1% 1206 Chip Resistor - Surface Mount ROHS"))
       (sheetpath (names /BusDecoder/) (tstamps /68821BC9/))
       (tstamp 68BB4EA4))
     (comp (ref L1)
@@ -1995,13 +1995,13 @@
         (pin (num 1) (name ~) (type passive))
         (pin (num 2) (name ~) (type passive))))
     (libpart (lib CRES1206) (part 330R)
-      (description "500mW Thick Film Resistor 200V ±100ppm/℃ ±1% 330Ω 1206 Chip Resistor - Surface Mount ROHS")
-      (docs https://www.lcsc.com/datasheet/C2759157.pdf)
+      (description "250mW 330Ω 200V ±100ppm/℃ Thick Film Resistor ±1% 1206 Chip Resistor - Surface Mount ROHS")
+      (docs https://www.lcsc.com/datasheet/C114944.pdf)
       (fields
         (field (name Reference) R)
         (field (name Value) 330R)
         (field (name Footprint) Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder)
-        (field (name LCSC) C2759157))
+        (field (name LCSC) C114944))
       (pins
         (pin (num 1) (name ~) (type passive))
         (pin (num 2) (name ~) (type passive))))
