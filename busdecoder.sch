@@ -578,8 +578,8 @@ P 2020 8015
 F 0 "R32" H 2079 8056 50  0000 L CNN
 F 1 "330R" H 2079 7965 50  0000 L CNN
 F 2 "Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder" H 2020 8015 50  0001 C CNN
-F 3 "https://www.lcsc.com/datasheet/C2759157.pdf" H 2020 8015 50  0001 C CNN
-F 4 "C2759157" H 2020 8015 50  0001 C CNN "LCSC"
+F 3 "https://www.lcsc.com/datasheet/C114944.pdf" H 2020 8015 50  0001 C CNN
+F 4 "C114944" H 2020 8015 50  0001 C CNN "LCSC"
 	1    2020 8015
 	1    0    0    -1  
 $EndComp
@@ -828,8 +828,8 @@ P 3260 8025
 F 0 "R61" H 3319 8066 50  0000 L CNN
 F 1 "330R" H 3319 7975 50  0000 L CNN
 F 2 "Resistor_SMD:R_1206_3216Metric_Pad1.30x1.75mm_HandSolder" H 3260 8025 50  0001 C CNN
-F 3 "https://www.lcsc.com/datasheet/C2759157.pdf" H 3260 8025 50  0001 C CNN
-F 4 "C2759157" H 3260 8025 50  0001 C CNN "LCSC"
+F 3 "https://www.lcsc.com/datasheet/C114944.pdf" H 3260 8025 50  0001 C CNN
+F 4 "C114944" H 3260 8025 50  0001 C CNN "LCSC"
 	1    3260 8025
 	1    0    0    -1  
 $EndComp
