@@ -191,4 +191,6 @@ U 68F956C0
 F0 "VGA Analog" 50
 F1 "vga-analog.sch" 50
 $EndSheet
+Text Notes 8355 4225 0    197  ~ 39
+VGA ANALOG
 $EndSCHEMATC
