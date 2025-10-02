@@ -1,4 +1,4 @@
-# Analisi del Progetto: Vera-Module-RBL-XE Firmware
+# Progetto: Vera-Module-RBL-XE Firmware
 
 ## 1. Introduzione
 
