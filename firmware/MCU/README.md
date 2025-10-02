@@ -2,14 +2,20 @@
 
 ## 1. Introduzione
 
-Questo repository contiene il firmware per il `Vera-Module-RBL-XE`, un modulo di espansione hardware custom per i computer **ATARI della serie XE**.
+Questo repository contiene il firmware per il `Vera-Module-RBL-XE`, un 
+modulo di espansione hardware custom per i computer **ATARI della serie XE**.
 
-L'analisi del codice e della struttura dei file suggerisce che questo progetto implementa un'interfaccia hardware che si collega alla **Parallel Bus Interface (PBI)** dell'ATARI. Il sistema è composto da due parti principali che lavorano in sinergia:
+L'analisi del codice e della struttura dei file suggerisce che questo 
+progetto implementa un'interfaccia hardware che si collega alla **Parallel Bus Interface (PBI)** 
+dell'ATARI. Il sistema è composto da due parti principali che lavorano in sinergia:
 
-1.  Un **firmware per un microcontrollore moderno** (Raspberry Pi Pico).
+1.  Un **firmware per un microcontrollore moderno** (ESP32-PICO-D4).
 2.  Un **driver in assembly 6502** che gira sull'ATARI per comunicare con il modulo.
 
-L'obiettivo del modulo è probabilmente quello di estendere le capacità dell'ATARI, offloadando compiti complessi o fornendo nuove funzionalità hardware (come grafica avanzata, storage, connettività di rete, ecc.) gestite dal potente microcontrollore.
+L'obiettivo del modulo è probabilmente quello di estendere le capacità 
+dell'ATARI, offloadando compiti complessi o fornendo nuove funzionalità 
+hardware (come grafica avanzata, storage, connettività di rete, ecc.) 
+gestite dal potente microcontrollore ed una FPGA.
 
 ---
 
@@ -21,13 +27,18 @@ Il progetto ha un'architettura ibrida, con due codebase distinte.
 
 Questa è la parte principale del progetto, gestita con **PlatformIO**.
 
--   **Scheda:** Il file `platformio.ini` specifica che il microcontrollore target è un **ESP32-PICO-D4**.
--   **Codice Sorgente:** Il file `src/main.cpp` è il punto di ingresso del firmware. Questo codice C++ gestisce la logica principale del modulo.
--   **Interfaccia:** Il file `include/pbi-driver.h` definisce le strutture dati, le costanti e le firme delle funzioni che l'MCU usa per comunicare con il driver 6502 sull'ATARI.
+-   **Scheda:** Il file `platformio.ini` specifica che il microcontrollore 
+    target è un **ESP32-PICO-D4**.
+-   **Codice Sorgente:** Il file `src/main.cpp` è il punto di ingresso del 
+    firmware. Questo codice C++ gestisce la logica principale del modulo.
+-   **Interfaccia:** Il file `include/pbi-driver.h` definisce le strutture 
+    dati, le costanti e le firme delle funzioni che l'MCU usa per comunicare 
+    con il driver 6502 sull'ATARI.
 
 La logica in `main.cpp` è responsabile di:
 -   Inizializzare l'hardware del Pico.
--   Mettersi in ascolto di comandi provenienti dall'ATARI attraverso la PBI.
+-   Mettersi in ascolto di comandi provenienti dall'ATARI attraverso la 
+    comunicazione tramite protocollo PBI.
 -   Eseguire le operazioni richieste.
 -   Restituire i risultati all'ATARI.
 
@@ -45,7 +56,7 @@ Questa parte del progetto risiede nella cartella `6502/`.
 
 ```
 /
-├── platformio.ini            # File di configurazione di PlatformIO (target: RPi Pico)
+├── platformio.ini            # File di configurazione di PlatformIO (target: ESP32-PICO-D4)
 ├── 6502/
 │   ├── Makefile              # Makefile per compilare il driver 6502
 │   └── src/
@@ -62,8 +73,8 @@ Questa parte del progetto risiede nella cartella `6502/`.
 
 -   **Linguaggi:** C++, Assembly 6502
 -   **Piattaforma Embedded:** PlatformIO
--   **Hardware MCU:** Raspberry Pi Pico (RP2040)
--   **Hardware Host:** ATARI XE (con interfaccia PBI)
+-   **Hardware MCU:** ESP32-PICO-D4
+-   **Hardware Host:** ATARI XE (con interfaccia per protocollo PBI)
 -   **Build System:** `make` (per il codice 6502)
 
 ---
@@ -77,7 +88,7 @@ Per compilare le due parti del progetto, sono necessari due approcci diversi.
 È necessario avere **PlatformIO Core** installato.
 
 ```bash
-# Compila il progetto per il Raspberry Pi Pico
+# Compila il progetto per il ESP32-PICO-D4
 platformio run
 
 # Carica il firmware sulla scheda (in modalità bootloader)
