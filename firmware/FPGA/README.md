@@ -82,29 +82,29 @@ Il seguente diagramma mostra il flusso di esecuzione del processo principale nel
 
 ```mermaid
 flowchart TD
-    Start([🔄 PHI2 Rising Edge]) --> Reset[🔧 Reset Control Signals<br/>MPD = '1', EXTSEL = '1'<br/>d_drive_enable = '0']
+    Start(["🔄 PHI2 Rising Edge"]) --> Reset["🔧 Reset Control Signals<br/>MPD = 1, EXTSEL = 1<br/>d_drive_enable = 0"]
     
-    Reset --> Check1{📝 Scrittura Latch?<br/>RNW_='0' AND A=$D1FF}
+    Reset --> Check1{"📝 Scrittura Latch?<br/>RNW=0 AND A=D1FF"}
     
-    Check1 -->|✅ Sì| Latch[🎛️ Aggiorna VERA_CS Latch<br/>bit_index = DIP_SEL<br/>vera_cs_latch = NOT D[bit_index]]
-    Check1 -->|❌ No| Check2
+    Check1 -->|"✅ Sì"| Latch["🎛️ Aggiorna VERA_CS Latch<br/>bit_index = DIP_SEL<br/>vera_cs_latch = NOT D[bit_index]"]
+    Check1 -->|"❌ No"| Check2
     
-    Latch --> Check2{💾 Accesso RAM?<br/>A in $D600-$D7FF<br/>AND VERA_CS='0'}
+    Latch --> Check2{"💾 Accesso RAM?<br/>A in D600-D7FF<br/>AND VERA_CS=0"}
     
-    Check2 -->|✅ Sì| RAMAccess[🔽 EXTSEL = '0']
-    Check2 -->|❌ No| Check3{📚 Accesso ROM?<br/>A in $D800-$DFFF<br/>AND RNW_='1'}
+    Check2 -->|"✅ Sì"| RAMAccess["🔽 EXTSEL = 0"]
+    Check2 -->|"❌ No"| Check3{"📚 Accesso ROM?<br/>A in D800-DFFF<br/>AND RNW=1"}
     
-    RAMAccess --> RAMOp{📝 Operazione RAM}
-    RAMOp -->|RNW_='0'<br/>Scrittura| WriteRAM[✍️ Scrivi in RAM Interna<br/>internal_ram[offset] = D]
-    RAMOp -->|RNW_='1'<br/>Lettura| ReadRAM[📖 Leggi da RAM Interna<br/>d_out_drive = internal_ram[offset]<br/>d_drive_enable = '1']
+    RAMAccess --> RAMOp{"📝 Operazione RAM"}
+    RAMOp -->|"RNW=0<br/>Scrittura"| WriteRAM["✍️ Scrivi in RAM Interna<br/>internal_ram[offset] = D"]
+    RAMOp -->|"RNW=1<br/>Lettura"| ReadRAM["📖 Leggi da RAM Interna<br/>d_out_drive = internal_ram[offset]<br/>d_drive_enable = 1"]
     
-    WriteRAM --> End([🏁 Fine Processo])
+    WriteRAM --> End(["🏁 Fine Processo"])
     ReadRAM --> End
     
-    Check3 -->|✅ Sì| ROMAccess[🔽 MPD = '0']
-    Check3 -->|❌ No| End
+    Check3 -->|"✅ Sì"| ROMAccess["🔽 MPD = 0"]
+    Check3 -->|"❌ No"| End
     
-    ROMAccess --> ReadROM[📖 Leggi da ROM Interna<br/>d_out_drive = pbi_driver[offset]<br/>d_drive_enable = '1']
+    ROMAccess --> ReadROM["📖 Leggi da ROM Interna<br/>d_out_drive = pbi_driver[offset]<br/>d_drive_enable = 1"]
     ReadROM --> End
     
     style Start fill:#e1f5fe
