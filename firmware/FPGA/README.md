@@ -53,6 +53,8 @@ L'interfaccia gestisce le seguenti aree di memoria/I/O:
 
 ## 🏗️ Architettura
 
+### Diagramma di Sistema
+
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   6502 CPU      │    │  iCE40UP5K      │    │  Memoria        │
@@ -73,6 +75,70 @@ L'interfaccia gestisce le seguenti aree di memoria/I/O:
                        │  [2:0]          │
                        └─────────────────┘
 ```
+
+### Flowchart del Processo Logico
+
+Il seguente diagramma mostra il flusso di esecuzione del processo principale nell'FPGA:
+
+```mermaid
+flowchart TD
+    Start([🔄 PHI2 Rising Edge]) --> Reset[🔧 Reset Control Signals<br/>MPD = '1', EXTSEL = '1'<br/>d_drive_enable = '0']
+    
+    Reset --> Check1{📝 Scrittura Latch?<br/>RNW_='0' AND A=$D1FF}
+    
+    Check1 -->|✅ Sì| Latch[🎛️ Aggiorna VERA_CS Latch<br/>bit_index = DIP_SEL<br/>vera_cs_latch = NOT D[bit_index]]
+    Check1 -->|❌ No| Check2
+    
+    Latch --> Check2{💾 Accesso RAM?<br/>A in $D600-$D7FF<br/>AND VERA_CS='0'}
+    
+    Check2 -->|✅ Sì| RAMAccess[🔽 EXTSEL = '0']
+    Check2 -->|❌ No| Check3{📚 Accesso ROM?<br/>A in $D800-$DFFF<br/>AND RNW_='1'}
+    
+    RAMAccess --> RAMOp{📝 Operazione RAM}
+    RAMOp -->|RNW_='0'<br/>Scrittura| WriteRAM[✍️ Scrivi in RAM Interna<br/>internal_ram[offset] = D]
+    RAMOp -->|RNW_='1'<br/>Lettura| ReadRAM[📖 Leggi da RAM Interna<br/>d_out_drive = internal_ram[offset]<br/>d_drive_enable = '1']
+    
+    WriteRAM --> End([🏁 Fine Processo])
+    ReadRAM --> End
+    
+    Check3 -->|✅ Sì| ROMAccess[🔽 MPD = '0']
+    Check3 -->|❌ No| End
+    
+    ROMAccess --> ReadROM[📖 Leggi da ROM Interna<br/>d_out_drive = pbi_driver[offset]<br/>d_drive_enable = '1']
+    ReadROM --> End
+    
+    style Start fill:#e1f5fe
+    style Reset fill:#fff3e0
+    style Latch fill:#f3e5f5
+    style RAMAccess fill:#e8f5e8
+    style ROMAccess fill:#fff8e1
+    style End fill:#ffebee
+    style Check1 fill:#e3f2fd
+    style Check2 fill:#e3f2fd
+    style Check3 fill:#e3f2fd
+```
+
+### Legenda del Flowchart
+
+| Simbolo | Significato |
+|---------|-------------|
+| 🔄 | Evento di clock (PHI2 rising edge) |
+| 🔧 | Inizializzazione/Reset |
+| 📝 | Operazione di scrittura |
+| 📖 | Operazione di lettura |
+| 💾 | Accesso alla RAM |
+| 📚 | Accesso alla ROM |
+| 🎛️ | Controllo del latch |
+| 🔽 | Attivazione segnale di controllo |
+| 🏁 | Fine del processo |
+
+### Mappatura Indirizzi
+
+| Range | Tipo | Funzione | Segnale Controllo |
+|-------|------|----------|-------------------|
+| `$D1FF` | Scrittura | Controllo latch VERA_CS | - |
+| `$D600-$D7FF` | R/W | RAM interna (512 byte) | EXTSEL = '0' |
+| `$D800-$DFFF` | Lettura | ROM interna (2 KB) | MPD = '0' |
 
 ## 🛠️ Toolchain Open-Source
 
