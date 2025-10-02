@@ -5,16 +5,17 @@
 Questo repository contiene il firmware per il `Vera-Module-RBL-XE`, un 
 modulo di espansione hardware custom per i computer **ATARI della serie XE**.
 
-L'analisi del codice e della struttura dei file suggerisce che questo 
-progetto implementa un'interfaccia hardware che si collega alla **Parallel Bus Interface (PBI)** 
-dell'ATARI. Il sistema è composto da due parti principali che lavorano in sinergia:
+Questo progetto implementa un'interfaccia hardware che si collega 
+alla **Parallel Bus Interface (PBI)** dell'ATARI. 
+Il sistema è composto da due parti principali che lavorano in sinergia:
 
 1.  Un **firmware per un microcontrollore moderno** (ESP32-PICO-D4).
-2.  Un **driver in assembly 6502** che gira sull'ATARI per comunicare con il modulo.
+2.  Una FPGA **programmata con il bitstream VERA** (Commander X16).
+3.  Un **driver in assembly 6502** che gira sull'ATARI per comunicare con il modulo.
 
 L'obiettivo del modulo è probabilmente quello di estendere le capacità 
 dell'ATARI, offloadando compiti complessi o fornendo nuove funzionalità 
-hardware (come grafica avanzata, storage, connettività di rete, ecc.) 
+hardware (come grafica avanzata, storage, audio a 16 bit, ecc.) 
 gestite dal potente microcontrollore ed una FPGA.
 
 ---
@@ -46,9 +47,15 @@ La logica in `main.cpp` è responsabile di:
 
 Questa parte del progetto risiede nella cartella `6502/`.
 
--   **Codice Sorgente:** Il file `6502/src/pbi-driver.s` è un driver scritto in **assembly 6502**. Questo codice viene eseguito direttamente dalla CPU dell'ATARI.
--   **Scopo:** La sua funzione è quella di gestire la comunicazione a basso livello con il modulo hardware attraverso la PBI. Inizializza il bus, invia comandi al modulo MCU e legge le risposte.
--   **Compilazione:** Il `Makefile` presente nella cartella `6502/` suggerisce che il driver viene compilato utilizzando un toolchain custom (probabilmente `ca65` o simili) per creare un file binario eseguibile dall'ATARI.
+-   **Codice Sorgente:** Il file `6502/src/pbi-driver.s` è un driver scritto 
+    in **assembly 6502**. Questo codice viene eseguito direttamente 
+    dalla CPU dell'ATARI.
+-   **Scopo:** La sua funzione è quella di gestire la comunicazione a basso 
+    livello con il modulo hardware attraverso la PBI. Inizializza il bus, 
+    invia comandi al modulo MCU e legge le risposte.
+-   **Compilazione:** Il `Makefile` presente nella cartella `6502/` fa si 
+    che il driver viene compilato utilizzando un toolchain custom (`ca65` o simili) 
+    per creare un file binario eseguibile dall'ATARI.
 
 ---
 
@@ -97,7 +104,8 @@ platformio run --target upload
 
 ### Compilazione Driver 6502
 
-È necessario avere una toolchain di sviluppo per 6502 (es. `cc65`) installata e configurata nel proprio `PATH`.
+È necessario avere una toolchain di sviluppo per 6502 (es. `cc65`) installata
+e configurata nel proprio `PATH`.
 
 ```bash
 # Entra nella cartella del driver
