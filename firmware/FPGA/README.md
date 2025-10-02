@@ -1,22 +1,28 @@
-🚀 Interfaccia 6502 per FPGA Lattice iCE40UP5K (Open-Source Toolchain)
+🚀 **Interfaccia 6502 per FPGA Lattice iCE40UP5K** (Open-Source Toolchain)
 
-Questo progetto implementa una logica di interfaccia per un microprocessore 6502 (o compatibile) utilizzando la FPGA Lattice iCE40 UltraPlus (iCE40UP5K).
+Questo progetto implementa una logica di interfaccia per un microprocessore 
+6502 (o compatibile) utilizzando la FPGA Lattice iCE40 UltraPlus (iCE40UP5K).
 
-Il progetto è ottimizzato per l'uso della toolchain open-source su Linux (Project IceStorm, Yosys, nextpnr), sfruttando le Block RAM (BRAM) del chip per la memoria interna.
+Il progetto è ottimizzato per l'uso della toolchain open-source su Linux (Project IceStorm, Yosys, nextpnr), 
+sfruttando le Block RAM (BRAM) del chip per la memoria interna.
 
 📋 Requisiti Funzionali
 
 L'interfaccia gestisce le seguenti aree di memoria/I/O:
 
-    Latch VERA_CS: Scrittura all'indirizzo $D1FF. Il bit di controllo per il latch è selezionato da 3 DIP switch esterni (DIP_SEL[2:0]).
+    **Latch VERA_CS**: Scrittura all'indirizzo $D1FF. Il bit di controllo 
+    per il latch è selezionato da 3 DIP switch esterni (DIP_SEL[2:0]).
 
-    RAM Esterna (512 Byte): Accesso in lettura/scrittura all'area $D600-$D7FF (gestita da una RAM interna all'FPGA). L'accesso è condizionato dallo stato del latch (VERA_CS = '0'). Il pin EXTSEL viene abbassato per disabilitare la ROM/RAM interna del 6502 su questo range.
+    **RAM Esterna (512 Byte)**: Accesso in lettura/scrittura all'area $D600-$D7FF 
+    (gestita da una RAM interna all'FPGA). L'accesso è condizionato dallo 
+    stato del latch (VERA_CS = '0'). Il **pin EXTSEL** viene abbassato per 
+    disabilitare la ROM/RAM interna del 6502 su questo range.
 
-    ROM Interna (2 KB): Sola lettura all'area $D800-$DFFF.
+    **ROM Interna (2 KB)**: Sola lettura all'area $D800-$DFFF.
 
-    Pin Select MPD: Abbassato ('0') durante l'accesso alla ROM.
+    **Pin Select MPD**: Abbassato ('0') durante l'accesso alla ROM.
 
-🛠️ Toolchain Open-Source (Linux)
+🛠️ **Toolchain Open-Source** (Linux)
 
 Questo progetto richiede la toolchain open-source per iCE40:
 Strumento	Funzione
@@ -25,13 +31,14 @@ Yosys	Sintesi RTL (converte VHDL in netlist logica).
 nextpnr-ice40	Place & Route (mappa la netlist sulle risorse del chip, leggendo il file PCF).
 IceStorm Tools	icepack (crea il bitstream .bin) e iceprog (carica il bitstream).
 
-Si raccomanda l'installazione tramite la suite YosysHQ OSS-CAD Suite per un ambiente già configurato con supporto GHDL/VHDL.
+Si raccomanda l'installazione tramite la suite YosysHQ OSS-CAD Suite per 
+un ambiente già configurato con supporto GHDL/VHDL.
 
-📂 Struttura dei File VHDL
+📂 **Struttura dei File VHDL**
 
 I file VHDL implementano la logica descritta:
 
-1. custom_types.vhd
+1. *custom_types.vhd*
 
 Definisce i tipi di array per la memoria.
 VHDL
@@ -48,17 +55,18 @@ package custom_types is
     type ram_512_array is array (0 to 511) of std_logic_vector(7 downto 0);
 end package custom_types;
 
-2. C6502_Interface.vhd
+2. *C6502_Interface.vhd*
 
 Contiene l'entità principale, la logica di controllo e l'implementazione delle memorie BRAM.
 
 N.B.: L'inizializzazione dei segnali pbi_driver (ROM) e internal_ram (RAM) nel codice è il metodo corretto per forzare Yosys a usare la Block RAM (BRAM) dedicata dell'iCE40UP5K.
 
-(Inserire qui il codice VHDL completo di C6502_Interface.vhd)
 
-📍 Assegnazione dei Pin (File PCF)
+📍 **Assegnazione dei Pin** (File PCF)
 
-Per connettere i segnali VHDL ai pin fisici della FPGA, è necessario creare un file PCF (Pin Constraint File). Il nome del file deve essere specificato a nextpnr (es. scheda.pcf).
+Per connettere i segnali VHDL ai pin fisici della FPGA, è necessario creare 
+un file PCF (Pin Constraint File). Il nome del file deve essere specificato 
+a nextpnr (es. scheda.pcf).
 
 Esempio di scheda.pcf (i Pin devono essere adattati alla TUA scheda):
 Snippet di codice
@@ -93,7 +101,7 @@ set_io A[1]     41
 # ... A[2] - A[14] ...
 set_io A[15]    55
 
-⚙️ Processo di Compilazione su Linux
+⚙️ **Processo di Compilazione su Linux**
 
 Una volta installata la toolchain e creati i file .vhd e il file .pcf (es. scheda.pcf):
 
