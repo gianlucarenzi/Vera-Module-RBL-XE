@@ -21,7 +21,7 @@ Il progetto ha un'architettura ibrida, con due codebase distinte.
 
 Questa è la parte principale del progetto, gestita con **PlatformIO**.
 
--   **Scheda:** Il file `platformio.ini` specifica che il microcontrollore target è un **Raspberry Pi Pico** (basato sul chip RP2040).
+-   **Scheda:** Il file `platformio.ini` specifica che il microcontrollore target è un **ESP32-PICO-D4**.
 -   **Codice Sorgente:** Il file `src/main.cpp` è il punto di ingresso del firmware. Questo codice C++ gestisce la logica principale del modulo.
 -   **Interfaccia:** Il file `include/pbi-driver.h` definisce le strutture dati, le costanti e le firme delle funzioni che l'MCU usa per comunicare con il driver 6502 sull'ATARI.
 
