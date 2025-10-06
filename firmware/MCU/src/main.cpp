@@ -372,16 +372,16 @@ static inline uint8_t read_data_bus(void)
 
 static inline void set_data_bus_direction(gpio_mode_t mode)
 {
-    gpio_config_t io_conf;
-    io_conf.pin_bit_mask = (
+    const uint32_t pin_mask = (
         (1ULL << PIN_D0) | (1ULL << PIN_D1) | (1ULL << PIN_D2) | (1ULL << PIN_D3) |
         (1ULL << PIN_D4) | (1ULL << PIN_D5) | (1ULL << PIN_D6) | (1ULL << PIN_D7)
     );
-    io_conf.mode = mode;
-    io_conf.intr_type = GPIO_INTR_DISABLE;
-    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
-    io_conf.pull_up_en = (mode == GPIO_MODE_INPUT) ? GPIO_PULLUP_ENABLE : GPIO_PULLUP_DISABLE;
-    gpio_config(&io_conf);
+
+    if (mode == GPIO_MODE_OUTPUT) {
+        GPIO.enable_w1ts = pin_mask;
+    } else {
+        GPIO.enable_w1tc = pin_mask;
+    }
 }
 
 static inline void write_data_bus(uint8_t value)
