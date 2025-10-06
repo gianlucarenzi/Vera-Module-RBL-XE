@@ -1,0 +1,246 @@
+\documentclass[12pt, a4paper]{article}
+
+% --- PACHETTI ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern} % Font più moderno rispetto al default
+\usepackage[italian]{babel}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{tikz}
+\usepackage{tikz-timing}
+\usepackage{verbatim} % Aggiunto per commentare blocchi
+\usepackage{float}
+
+% --- CONFIGURAZIONE GEOMETRIA PAGINA ---
+\geometry{a4paper, top=3cm, bottom=3cm, left=2.5cm, right=2.5cm}
+
+% --- CONFIGURAZIONE HYPERREF ---
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue!50!black,
+    urlcolor=blue!80!black,
+    citecolor=green!50!black,
+    pdftitle={Analisi Progetto Vera-Module-RBL-XE},
+    pdfauthor={RetroBit Lab},
+}
+
+% --- CONFIGURAZIONE TIKZ ---
+\usetikzlibrary{shapes.geometric, arrows, positioning, chains, shapes.misc}
+
+% --- CONFIGURAZIONE LISTINGS (per il codice) ---
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.98,0.98,0.98}
+
+\lstdefinestyle{cppstyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\footnotesize\ttfamily,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2,
+    language=C++
+}
+
+% --- TITOLO ---
+\title{
+    \vspace{2cm}
+    \hrule
+    \vspace{0.5cm}
+    {\Huge \bfseries Analisi Tecnica del Firmware}\\
+    \vspace{0.2cm}
+    {\Large Progetto \textit{Vera-Module-RBL-XE}}\\
+    \vspace{0.5cm}
+    \hrule
+}
+\author{Analisi del progetto a cura di RetroBit Lab}
+\date{\today}
+
+% --- INIZIO DOCUMENTO ---
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+
+\newpage
+\tableofcontents
+\thispagestyle{empty}
+
+\newpage
+\setcounter{page}{1}
+
+% --- SEZIONE 1: INTRODUZIONE ---
+\section{Introduzione}
+Questo documento presenta un'analisi tecnica del firmware per il progetto \textit{Vera-Module-RBL-XE}. L'obiettivo del firmware, eseguito su un microcontrollore ESP32, è di interfacciarsi con il bus di un processore 6502 per emulare un dispositivo PBI (Parallel Bus Interface) per computer ATARI.
+
+L'analisi si concentra sulla fattibilità temporale (timing) dell'interazione tra la MCU moderna e la CPU vintage, illustrando la logica di funzionamento tramite diagrammi di flusso e temporali.
+
+% --- SEZIONE 2: ARCHITETTURA DEL SISTEMA ---
+\section{Architettura del Sistema}
+Il sistema si basa sull'interazione di due componenti principali.
+
+\subsection{Componenti Chiave}
+\begin{itemize}
+    \item {\bfseries CPU 6502:} Il processore centrale dell'Atari, operante a una frequenza di clock di \textbf{1.79 MHz}.
+    \item {\bfseries MCU ESP32-S3:} Un moderno microcontrollore dual-core con una frequenza di clock di \textbf{240 MHz}, responsabile del monitoraggio del bus e dell'emulazione della periferica.
+\end{itemize}
+
+\subsection{Interfacciamento Bus}
+L'ESP32 è collegato direttamente alle seguenti linee del bus del 6502:
+\begin{itemize}
+    \item {\bfseries Bus Indirizzi (A0-A15):} Per determinare a quale locazione di memoria la CPU vuole accedere.
+    \item {\bfseries Bus Dati (D0-D7):} Per leggere o scrivere dati.
+    \item {\bfseries Segnali di Controllo:} Principalmente \texttt{PHI2} (il clock principale della CPU) e \texttt{R/W} (indica un'operazione di lettura o scrittura).
+\end{itemize}
+
+% --- SEZIONE 3: ANALISI DELLE TEMPISTICHE ---
+\section{Analisi delle Tempistiche}
+Una delle principali preoccupazioni in un progetto di questo tipo è la capacità della MCU di rispondere entro la finestra temporale definita dal ciclo di clock della CPU 6502.
+
+\begin{itemize}
+    \item {\bfseries Ciclo Clock 6502 (1.79 MHz):} $T_{6502} = 1 / (1.79 \times 10^6) \approx 558 \text{ ns}$
+    \item {\bfseries Ciclo Clock ESP32 (240 MHz):} $T_{ESP32} = 1 / (240 \times 10^6) \approx 4.17 \text{ ns}$
+\end{itemize}
+
+Il rapporto tra i due periodi di clock è di circa \textbf{134:1}. Questo significa che l'ESP32 ha a disposizione oltre 130 dei suoi cicli di clock per ogni singolo ciclo del 6502. Questo margine è eccezionalmente ampio e garantisce che tutte le operazioni di lettura dei pin, elaborazione logica e scrittura sul bus possano essere completate con largo anticipo.
+
+\subsection{Diagramma Temporale di un Ciclo di Lettura}
+Il diagramma seguente illustra un tipico ciclo di lettura gestito dall'ESP32. L'asse X rappresenta il tempo, mentre l'asse Y mostra lo stato logico dei segnali.
+
+\begin{figure}[h!]
+\centering
+\begin{tikztimingtable}[timing/slope=0.1, timing/coldist=2pt, xscale=1.2, yscale=1.5]
+    PHI2 & L H L H L H L H L H L H \\
+    Address Bus & U 2D{Addr} 8D{Addr} 2U \\
+    R/W Line & U H H H H H H H H H 2U \\
+    Data Bus & Z Z Z Z Z Z 4D{Data} 2Z \\
+    \extracode
+    \begin{pgfonlayer}{background}
+        % Griglia temporale
+        \vertlines[help lines, step=1]{0,1,...,12}
+        % Annotazioni
+        \node[below, font=\tiny, text=blue] at (3,-0.5) {CPU presenta indirizzo};
+        \node[below, font=\tiny, text=blue] at (8,-0.5) {ESP32 fornisce dati};
+        \node[below, font=\tiny, text=blue] at (11,-0.5) {CPU legge dati};
+    \end{pgfonlayer}
+\end{tikztimingtable}
+\caption{Diagramma temporale di un ciclo di lettura del 6502 gestito dall'ESP32.}
+\label{fig:timing_diagram}
+\end{figure}
+
+% --- SEZIONE 4: CODICE SORGENTE ---
+\section{Frammento di Codice Sorgente}
+Di seguito è riportato un estratto significativo del file \texttt{main.cpp}, che implementa la logica descritta nel diagramma di flusso. L'uso di accesso diretto ai registri (\texttt{read\_gpio\_level}, \texttt{read\_address\_bus}) e di un task dedicato (\texttt{MonitorTask}) è fondamentale per le prestazioni.
+
+\begin{lstlisting}[style=cppstyle, caption={Estratto dal MonitorTask in main.cpp}, label=code:monitor_task]
+void MonitorTask(void *pvParameters)
+{
+    serialPrintQueue(ANSI_BLUE "6502 Bus Monitor Ready on Core 1\n" ANSI_RESET);
+
+    for (;;)
+    {
+        // Attesa del fronte di salita di PHI2
+        while (!read_gpio_level(PIN_PHI2))
+            ;;
+
+        uint16_t address = read_address_bus();
+        bool rw = read_gpio_level(PIN_RW);
+
+        // Esempio: gestione dell\'area di memoria CCTL ($D5xx)
+        if (address >= 0xD500 && address <= 0xD5FF)
+        {
+            if (rw) // La CPU sta leggendo
+            {
+                uint8_t data = d500[address & 0x00FF];
+                set_data_bus_direction(GPIO_MODE_OUTPUT);
+                write_data_bus(data);
+                
+                // Attendi che il ciclo di clock finisca
+                while (read_gpio_level(PIN_PHI2))
+                    ;;
+                
+                set_data_bus_direction(GPIO_MODE_INPUT);
+            }
+            else // La CPU sta scrivendo
+            {
+                set_data_bus_direction(GPIO_MODE_INPUT);
+                uint8_t data = read_data_bus();
+                d500[address & 0x00FF] = data;
+            }
+        }
+        // ... altre condizioni per PBI I/O, ROM, etc.
+    }
+}
+\end{lstlisting}
+
+% --- SEZIONE 5: DIAGRAMMA DI FLUSSO ---
+\section{Diagramma di Flusso del Firmware}
+La logica principale del firmware è contenuta nel \texttt{MonitorTask}, che viene eseguito sul secondo core dell'ESP32 per garantire prestazioni in tempo reale.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    scale=0.7, transform shape,
+    node distance=2cm and 1.5cm, % Aumenta la spaziatura
+    base/.style={draw, text width=4.5cm, align=center, minimum height=1cm},
+    proc/.style={base, rectangle, fill=blue!10},
+    test/.style={base, diamond, aspect=1.5, text width=3.5cm, fill=orange!15},
+    term/.style={base, rounded rectangle, fill=green!20},
+    arrow/.style={-latex, thick}
+]
+    % Nodi del diagramma
+    \node[term] (start) {Inizio \texttt{MonitorTask}};
+    \node[proc, below=of start] (wait_phi2) {Attesa fronte di salita di PHI2};
+    \node[proc, below=of wait_phi2] (read_bus) {Lettura Address Bus e segnale R/W};
+    \node[test, below=of read_bus] (check_range) {L'indirizzo è in un'area di interesse? (es. \$D1xx, \$D5xx)};
+    
+    \node[proc, below=of check_range] (handle_rw) {Gestisci Lettura/Scrittura};
+    \node[proc, below=of handle_rw] (wait_phi2_low) {Attesa fronte di discesa di PHI2};
+    \node[proc, below=of wait_phi2_low] (release_bus) {Rilascia il Data Bus (imposta come Input)};
+    
+    \node[proc, left=of check_range, xshift=-2cm] (do_nothing) {Ignora (ciclo per memoria interna Atari)};
+
+    % Connessioni
+    \draw[arrow] (start) -- (wait_phi2);
+    \draw[arrow] (wait_phi2) -- (read_bus);
+    \draw[arrow] (read_bus) -- (check_range);
+    
+    % Ramo "Sì"
+    \draw[arrow] (check_range) -- node[right, pos=0.4] {Sì} (handle_rw);
+    \draw[arrow] (handle_rw) -- (wait_phi2_low);
+    \draw[arrow] (wait_phi2_low) -- (release_bus);
+    
+    % Ramo "No"
+    \draw[arrow] (check_range) -- node[above, pos=0.5] {No} (do_nothing);
+    
+    % Loop di ritorno
+    \coordinate (loop_point) at ([xshift=-1.5cm]do_nothing.west);
+    \draw[arrow] (do_nothing.west) -| (loop_point) |- (wait_phi2);
+    \draw[arrow] (release_bus.west) -| (loop_point);
+
+\end{tikzpicture}
+\caption{Diagramma di flusso semplificato del \texttt{MonitorTask}.}
+\label{fig:flowchart}
+\end{figure}
+
+% --- SEZIONE 6: CONCLUSIONE ---
+\section{Conclusione}
+L'analisi conferma che l'architettura hardware e software del progetto è solida e performante. L'uso di un microcontrollore ESP32 a 240 MHz fornisce un margine di elaborazione più che sufficiente per interfacciarsi con un bus 6502 a 1.79 MHz (o anche 2 MHz) senza incorrere in alcun problema di tempistica. Le tecniche di programmazione a basso livello, come l'accesso diretto ai registri GPIO e l'uso di task dedicati, sono state implementate correttamente per garantire la massima efficienza.
+
+\end{document}
