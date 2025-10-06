@@ -850,7 +850,7 @@ Text GLabel 10625 755  2    50   BiDi ~ 0
 3V3
 Text GLabel 10960 1820 2    50   BiDi ~ 0
 3V3
-Text GLabel 11025 2730 2    50   BiDi ~ 0
+Text GLabel 10985 2730 2    50   BiDi ~ 0
 3V3
 Wire Wire Line
 	10625 755  10450 755 
@@ -861,7 +861,7 @@ Wire Wire Line
 Wire Wire Line
 	10800 1820 10800 2055
 Wire Wire Line
-	11025 2730 10950 2730
+	10985 2730 10950 2730
 Wire Wire Line
 	10950 2730 10950 2855
 Text GLabel 6635 4880 2    50   BiDi ~ 0
