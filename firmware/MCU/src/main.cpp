@@ -9,10 +9,13 @@
 
 /* ANSI Eye-Candy ;-)
  */
-#define ANSI_RED    "\x1b[31m"
-#define ANSI_GREEN  "\x1b[32m"
-#define ANSI_YELLOW "\x1b[1;33m"
-#define ANSI_BLUE   "\x1b[1;34m"
+#define ANSI_RED     "\x1b[31m"
+#define ANSI_GREEN   "\x1b[32m"
+#define ANSI_YELLOW  "\x1b[1;33m"
+#define ANSI_BLUE    "\x1b[1;34m"
+#define ANSI_MAGENTA "\x1b[1;35m"
+#define ANSI_CYAN    "\x1b[1;36m"
+#define ANSI_WHITE   "\x1b[1;37m"
 #define ANSI_RESET  "\x1b[0m"
 
 #define SERIAL_QUEUE_LENGTH 32 // Length of the serial queue
@@ -107,7 +110,7 @@ void MonitorTask(void *pvParameters);
 void SerialTask(void *pvParameters)
 {
 	char msg[SERIAL_MSG_SIZE];
-	Serial.println(ANSI_BLUE "Serial Task Started on Core 0" ANSI_RESET);
+	Serial.println(ANSI_GREEN "Serial Task Started on Core 0" ANSI_RESET);
 
 	while (true)
 	{
@@ -132,7 +135,7 @@ void serialPrintQueue(const char* fmt, ...)
 	}
 	else
 	{
-		Serial.println("Serial queue not initialized!");
+		Serial.println(ANSI_RESET "Serial queue not initialized!");
 	}
 }
 
@@ -332,14 +335,14 @@ void MonitorTask(void *pvParameters)
 			if (addressLSB == 0xFF) // Device selection address $D1FF
 			{
 				// Accessing the Device Selection Register $D1FF
-				serialPrintQueue(ANSI_BLUE "PBI I/O: Accessing Device Selection Register $D1FF\n" ANSI_RESET);
+				serialPrintQueue(ANSI_MAGENTA "PBI I/O: Accessing Device Selection Register $D1FF\n" ANSI_RESET);
 				// 6502 CPU writes to PBI I/O to select device
 				if (!rw)
 				{
 					uint8_t device = read_data_bus(gpio_low);
 					if (device == DEVICE_ID)
 					{
-						serialPrintQueue(ANSI_BLUE "PBI I/O: Device $\%02X selected\n" ANSI_RESET, device);
+						serialPrintQueue(ANSI_MAGENTA "PBI I/O: Device $\%02X selected\n" ANSI_RESET, device);
 						cardselected = 1;
 						fast_gpio_set_level(PIN_CS, 0); // Set CS low for PBI I/O
 					}
@@ -364,7 +367,7 @@ void MonitorTask(void *pvParameters)
 					while (PHI2_IS_HIGH) ;;
 
 					set_data_bus_direction(GPIO_MODE_INPUT);
-					serialPrintQueue(ANSI_GREEN "PBI I/O: Sent $\%02X to CPU from $D1FF\n" ANSI_RESET, data);
+					serialPrintQueue(ANSI_MAGENTA "PBI I/O: Sent $\%02X to CPU from $D1FF\n" ANSI_RESET, data);
 				}
 			}
 			else
@@ -380,7 +383,7 @@ void MonitorTask(void *pvParameters)
 					if (addressLSB >= 00 && addressLSB <= 0xF0)
 					{
 						// Sniffing I/O Space registers
-						serialPrintQueue(ANSI_YELLOW "PBI Device Registers: Read or Write @ $\%04X address\n" ANSI_RESET, address);
+						serialPrintQueue(ANSI_MAGENTA "PBI Device Registers: Read or Write @ $\%04X address\n" ANSI_RESET, address);
 					}
 					else
 					{
@@ -403,11 +406,11 @@ void MonitorTask(void *pvParameters)
 			if (cardselected)
 			{
 				fast_gpio_set_level(PIN_MPD, 0); // Set MPD low to indicate Math Pack ROM Disable
-				serialPrintQueue(ANSI_YELLOW "MPD: Disabled" ANSI_RESET);
+				serialPrintQueue(ANSI_CYAN "MPD: Disabled" ANSI_RESET);
 				// ROM (READ ONLY) from $D800-$D8FF (256 bytes for device driver)
 				if (address >= 0xD800 && address <= 0xD8FF)
 				{
-					serialPrintQueue(ANSI_YELLOW "PBI ROM Driver: Area $\%04X Accessing\n" ANSI_RESET, address);
+					serialPrintQueue(ANSI_CYAN "PBI ROM Driver: Area $\%04X Accessing\n" ANSI_RESET, address);
 					if (rw)
 					{
 						// $D800-$DFFF: CPU read from PBI Driver and lower MPD
@@ -419,7 +422,7 @@ void MonitorTask(void *pvParameters)
 						while (PHI2_IS_HIGH) ;;
 
 						set_data_bus_direction(GPIO_MODE_INPUT);
-						serialPrintQueue(ANSI_YELLOW "PBI ROM Driver: Sent $\%02X from $\%04X to CPU\n" ANSI_RESET, data, address);
+						serialPrintQueue(ANSI_CYAN "PBI ROM Driver: Sent $\%02X from $\%04X to CPU\n" ANSI_RESET, data, address);
 					} // Read-Only
 					else
 					{
@@ -433,13 +436,13 @@ void MonitorTask(void *pvParameters)
 					// Accessing Math Pack Area but outside the pbi_driver (256 over)
 					// $D900-$DFFF: CPU try to writes/reads to shadow ROM MPD RAM space 
 					fast_gpio_set_level(PIN_EXSEL, 0); // Set EXSEL low for external memory
-					serialPrintQueue(ANSI_RED "MPD/EXSEL: Accessing DEVICE RAM\n" ANSI_RESET);
+					serialPrintQueue(ANSI_CYAN "MPD/EXSEL: Accessing DEVICE RAM\n" ANSI_RESET);
 					if (!rw)
 					{
 						// We store data into buffer space from $D900 to $DFFF
 						uint8_t data = read_data_bus(gpio_low);
 						ram_d800[address - 0xD800] = data;
-						serialPrintQueue(ANSI_YELLOW "PBI MPD/EXSEL Driver: Received $\%02X to $\%04X from CPU. Shadow RAM\n" ANSI_RESET, data, address);
+						serialPrintQueue(ANSI_CYAN "PBI MPD/EXSEL Driver: Received $\%02X to $\%04X from CPU. Shadow RAM\n" ANSI_RESET, data, address);
 					}
 					else
 					{
@@ -452,7 +455,7 @@ void MonitorTask(void *pvParameters)
 						while (PHI2_IS_HIGH) ;;
 						
 						set_data_bus_direction(GPIO_MODE_INPUT);
-						serialPrintQueue(ANSI_YELLOW "PBI MPD/EXSEL Driver SHADOW RAM: Sent $\%02X to $\%04X to CPU\n" ANSI_RESET, data, address);
+						serialPrintQueue(ANSI_CYAN "PBI MPD/EXSEL Driver SHADOW RAM: Sent $\%02X to $\%04X to CPU\n" ANSI_RESET, data, address);
 					}
 
 					// Restore all MPD and EXSEL pins...
@@ -475,7 +478,7 @@ void MonitorTask(void *pvParameters)
 				// only if a PBI card is connected and selected
 				// 6502 CPU writes to Shadow RAM D600-D7FF
 				fast_gpio_set_level(PIN_EXSEL, 0); // Set EXSEL low for accessing external PBI memory
-				serialPrintQueue(ANSI_RED "EXSEL $D600-$D7FF PBI Device Shadow RAM\n" ANSI_RESET);
+				serialPrintQueue(ANSI_WHITE "EXSEL $D600-$D7FF PBI Device Shadow RAM\n" ANSI_RESET);
 
 				// Shadow RAM D600-D6FF 256 bytes
 				if (rw)
@@ -491,7 +494,7 @@ void MonitorTask(void *pvParameters)
 						while (PHI2_IS_HIGH) ;;
 
 						set_data_bus_direction(GPIO_MODE_INPUT);
-						serialPrintQueue(ANSI_YELLOW "EXSEL $D600-$D6FF PBI Device Shadow RAM: Sent $\%02X from $\%04X to CPU\n" ANSI_RESET, data, address);
+						serialPrintQueue(ANSI_WHITE "EXSEL $D600-$D6FF PBI Device Shadow RAM: Sent $\%02X from $\%04X to CPU\n" ANSI_RESET, data, address);
 					}
 					else
 					{
@@ -503,7 +506,7 @@ void MonitorTask(void *pvParameters)
 						while (PHI2_IS_HIGH) ;;
 
 						set_data_bus_direction(GPIO_MODE_INPUT);
-						serialPrintQueue(ANSI_YELLOW "EXSEL $D700-$D7FF PBI Shadow RAM $D7xx: Sent $EA (NOP) from $\%04X to CPU????\n" ANSI_RESET, address);
+						serialPrintQueue(ANSI_WHITE "EXSEL $D700-$D7FF PBI Shadow RAM $D7xx: Sent $EA (NOP) from $\%04X to CPU????\n" ANSI_RESET, address);
 					}
 				}
 				else
@@ -512,7 +515,7 @@ void MonitorTask(void *pvParameters)
 					set_data_bus_direction(GPIO_MODE_INPUT);
 					uint8_t data = read_data_bus(gpio_low);
 					ram_d600[address - 0xD600] = data;
-					serialPrintQueue(ANSI_YELLOW "EXSEL Write to Shadow RAM: Received $\%02X to $\%04X from CPU\n" ANSI_RESET, data, address);
+					serialPrintQueue(ANSI_WHITE "EXSEL Write to Shadow RAM: Received $\%02X to $\%04X from CPU\n" ANSI_RESET, data, address);
 				}
 
 				// Restore EXSEL pin
