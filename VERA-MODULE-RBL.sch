@@ -5,7 +5,7 @@ $Descr A4 11693 8268
 encoding utf-8
 Sheet 1 7
 Title "VERA FPGA Audio & Video Board"
-Date "2025-09-30"
+Date "2025-10-17"
 Rev "1.0"
 Comp "RetroBit Lab"
 Comment1 "Gianluca Renzi"
@@ -193,4 +193,26 @@ F1 "vga-analog.sch" 50
 $EndSheet
 Text Notes 8355 4225 0    197  ~ 39
 VGA ANALOG
+$Comp
+L Mechanical:MountingHole H1
+U 1 1 68F52DE4
+P 1280 6665
+F 0 "H1" H 1400 6730 50  0000 L CNN
+F 1 "MountingHole" H 1400 6630 50  0000 L CNN
+F 2 "MountingHole:MountingHole_3.2mm_M3" H 1280 6665 50  0001 C CNN
+F 3 "~" H 1280 6665 50  0001 C CNN
+	1    1280 6665
+	1    0    0    -1  
+$EndComp
+$Comp
+L Mechanical:MountingHole H2
+U 1 1 68F533A5
+P 1280 6905
+F 0 "H2" H 1400 6960 50  0000 L CNN
+F 1 "MountingHole" H 1400 6860 50  0000 L CNN
+F 2 "MountingHole:MountingHole_3.2mm_M3" H 1280 6905 50  0001 C CNN
+F 3 "~" H 1280 6905 50  0001 C CNN
+	1    1280 6905
+	1    0    0    -1  
+$EndComp
 $EndSCHEMATC

@@ -5,7 +5,7 @@ $Descr A4 11693 8268
 encoding utf-8
 Sheet 4 7
 Title "CARTRIDGE INTEFACE AND BUS LEVEL SHIFTERS"
-Date "2025-09-30"
+Date "2025-10-17"
 Rev "1.0"
 Comp "RetroBit Lab"
 Comment1 "Gianluca Renzi"
