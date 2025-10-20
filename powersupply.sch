@@ -926,7 +926,7 @@ U 1 1 68B76068
 P 1065 5040
 F 0 "J5" H 955 4760 50  0000 C CNN
 F 1 "PJ-002AH-SMT-TR" H 1115 5310 50  0000 C CNN
-F 2 "CUI_PJ-002AH-SMT-TR" H 1065 5040 50  0001 L BNN
+F 2 "RetroBitLab:CUI_PJ-002AH-SMT-TR" H 1065 5040 50  0001 L BNN
 F 3 "https://www.lcsc.com/datasheet/C22434687.pdf" H 1065 5040 50  0001 L BNN
 F 4 "Same Sky" H 1065 5040 50  0001 L BNN "MF"
 F 5 "2.0 x 6.5 mm, 5.0 A, Horizontal, Surface Mount (SMT), Dc Power Jack Connector" H 1065 5040 50  0001 L BNN "Description"
