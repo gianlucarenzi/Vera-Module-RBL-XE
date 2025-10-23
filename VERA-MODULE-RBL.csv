@@ -1,5 +1,5 @@
 Comment,Designator,Footprint,LCSC
-"10uF","C13,C15,C17,C19,C21,C24","Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder","C6119892"
+"10uF","C13,C15,C17,C19,C21,C24","Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder","C440198"
 "100nF","C14,C16,C18,C20,C22,C23,C25,C27,C28,C29,C38,C40,C42,C44,C46,C49,C50,C52,C53,C54","Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder","C840116"
 "4.7uF","C26,C34,C35","Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder","C7393930"
 "2.2uF","C36","Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder","C7393943"
