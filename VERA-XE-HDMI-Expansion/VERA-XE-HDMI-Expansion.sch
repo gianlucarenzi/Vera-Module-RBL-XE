@@ -1915,17 +1915,6 @@ F 3 "~" H 705 7055 50  0001 C CNN
 	1    705  7055
 	1    0    0    -1  
 $EndComp
-$Comp
-L Mechanical:MountingHole H2
-U 1 1 690C946D
-P 710 7235
-F 0 "H2" H 810 7281 50  0000 L CNN
-F 1 "MountingHole" H 810 7190 50  0000 L CNN
-F 2 "MountingHole:MountingHole_3.2mm_M3" H 710 7235 50  0001 C CNN
-F 3 "~" H 710 7235 50  0001 C CNN
-	1    710  7235
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	3370 7055 3370 6955
 Wire Wire Line

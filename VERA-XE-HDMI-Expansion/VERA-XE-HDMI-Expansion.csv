@@ -3,7 +3,7 @@ Comment,Designator,Footprint,LCSC
 "470nF","C26,C27","Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder","C106843"
 "22uF","C1,C3,C5,C7,C9,C11,C13,C18,C20,C22,C24,C28,C31,C33","Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder","C86817"
 "100nF","C2,C4,C6,C8,C10,C12,C14,C15,C17,C19,C21,C23,C25,C29,C30,C32,C34","Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder","C840116"
-"MountingHole","H1,H2","MountingHole:MountingHole_3.2mm_M3",""
+"MountingHole","H1","MountingHole:MountingHole_3.2mm_M3",""
 "CONN_HDMI_A","J1","RetroBitLab:CONN_HDMI-A","C720616"
 "CONN_SMD_HEADER_02x08_Odd_Even_2.54mm","J2","Connector_PinHeader_2.54mm:PinHeader_2x08_P2.54mm_Vertical_SMD","C32713288"
 "FB080590R100MHZ850mA","L1,L2,L3,L4","Inductor_SMD:L_0805_2012Metric_Pad1.15x1.40mm_HandSolder","C50325938"

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <export version="D">
   <design>
-    <source>/home/debian/Progetti/Vera-Module-RBL-XE/VERA-XE-HDMI-Expansion/VERA-XE-HDMI-Expansion.sch</source>
-    <date>Fri 17 Oct 2025 07:08:27 PM CEST</date>
+    <source>/home/gianluca/Progetti-CVS/ATARI/Vera-Module-RBL-XE/VERA-XE-HDMI-Expansion/VERA-XE-HDMI-Expansion.sch</source>
+    <date>Thu 23 Oct 2025 09:38:17 AM CEST</date>
     <tool>Eeschema 5.1.9+dfsg1-1+deb11u1</tool>
     <sheet number="1" name="/" tstamps="/">
       <title_block>
@@ -661,14 +661,6 @@
       <sheetpath names="/" tstamps="/"/>
       <tstamp>690C5489</tstamp>
     </comp>
-    <comp ref="H2">
-      <value>MountingHole</value>
-      <footprint>MountingHole:MountingHole_3.2mm_M3</footprint>
-      <datasheet>~</datasheet>
-      <libsource lib="Mechanical" part="MountingHole" description="Mounting Hole without connection"/>
-      <sheetpath names="/" tstamps="/"/>
-      <tstamp>690C946D</tstamp>
-    </comp>
     <comp ref="LD1">
       <value>GREEN</value>
       <footprint>LED_SMD:LED_0805_2012Metric_Pad1.15x1.40mm_HandSolder</footprint>
@@ -1063,16 +1055,16 @@
   </libparts>
   <libraries>
     <library logical="CCAP0805">
-      <uri>/home/debian/Progetti/RetroBitLab-Library/CCAP0805.lib</uri>
+      <uri>/home/gianluca/Progetti/RetroBitLab-Library/CCAP0805.lib</uri>
     </library>
     <library logical="CLED0805">
-      <uri>/home/debian/Progetti/RetroBitLab-Library/CLED0805.lib</uri>
+      <uri>/home/gianluca/Progetti-CVS/RetroBitLab-Library/CLED0805.lib</uri>
     </library>
     <library logical="CRES0603">
-      <uri>/home/debian/Progetti/RetroBitLab-Library/CRES0603.lib</uri>
+      <uri>/home/gianluca/Progetti/RetroBitLab-Library/CRES0603.lib</uri>
     </library>
     <library logical="CRES0805">
-      <uri>/home/debian/Progetti/RetroBitLab-Library/CRES0805.lib</uri>
+      <uri>/home/gianluca/Progetti/RetroBitLab-Library/CRES0805.lib</uri>
     </library>
     <library logical="Connector">
       <uri>/usr/share/kicad/library/Connector.lib</uri>
@@ -1081,10 +1073,10 @@
       <uri>/usr/share/kicad/library/Mechanical.lib</uri>
     </library>
     <library logical="RetroBitLab">
-      <uri>/home/debian/Progetti/RetroBitLab-Library/AmigaComponents.lib</uri>
+      <uri>/home/gianluca/Progetti/RetroBitLab-Library/AmigaComponents.lib</uri>
     </library>
     <library logical="TCAP3528">
-      <uri>/home/debian/Progetti/RetroBitLab-Library/TCAP3528.lib</uri>
+      <uri>/home/gianluca/Progetti/RetroBitLab-Library/TCAP3528.lib</uri>
     </library>
   </libraries>
   <nets>
