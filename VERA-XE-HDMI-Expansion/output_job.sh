@@ -3,6 +3,7 @@
 PCBNAME=VERA-XE-HDMI-Expansion
 PCBNAMEOUT=${PCBNAME}-XE
 KICADSCRIPT=${HOME}/.kicad/bom
+PDFOUTPUT=${PCBNAME}.pdf
 ARGS_NUM=$#
 # Lanciare con la versione del PCB!!
 
@@ -42,6 +43,9 @@ else
 		exit 1
 	fi
 fi
+
+echo "Creating PDF..."
+kicad-cli sch export pdf -o ${PDFOUTPUT} --no-background-color ${PCBNAME}.sch 
 
 # Remove the existing
 rm ${PCBNAMEOUT}.zip 2>/dev/null
