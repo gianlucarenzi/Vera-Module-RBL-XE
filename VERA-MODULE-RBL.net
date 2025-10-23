@@ -1,7 +1,7 @@
 (export (version D)
   (design
     (source /home/gianluca/Progetti-CVS/ATARI/Vera-Module-RBL-XE/VERA-MODULE-RBL.sch)
-    (date "Thu 23 Oct 2025 08:28:22 AM CEST")
+    (date "Thu 23 Oct 2025 10:36:22 AM CEST")
     (tool "Eeschema 5.1.9+dfsg1-1+deb11u1")
     (sheet (number 1) (name /) (tstamps /)
       (title_block
@@ -152,13 +152,6 @@
       (libsource (lib Mechanical) (part MountingHole) (description "Mounting Hole without connection"))
       (sheetpath (names /) (tstamps /))
       (tstamp 68F52DE4))
-    (comp (ref H2)
-      (value MountingHole)
-      (footprint MountingHole:MountingHole_3.2mm_M3)
-      (datasheet ~)
-      (libsource (lib Mechanical) (part MountingHole) (description "Mounting Hole without connection"))
-      (sheetpath (names /) (tstamps /))
-      (tstamp 68F533A5))
     (comp (ref R5)
       (value 10K)
       (footprint Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder)
