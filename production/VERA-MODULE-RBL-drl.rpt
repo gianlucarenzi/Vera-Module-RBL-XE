@@ -1,5 +1,5 @@
 Drill report for /home/gianluca/Progetti-CVS/ATARI/Vera-Module-RBL-XE/VERA-MODULE-RBL.kicad_pcb
-Created on Wed 22 Oct 2025 04:24:12 PM CEST
+Created on Thu 23 Oct 2025 11:05:41 AM CEST
 
 Copper Layer Stackup:
     =============================================================
@@ -30,6 +30,6 @@ Drill file 'VERA-MODULE-RBL-NPTH.drl' contains
     T3  1.60mm  0.063"  (2 holes)
     T4  1.70mm  0.067"  (1 hole)
     T5  1.80mm  0.071"  (1 hole)
-    T6  3.20mm  0.126"  (2 holes)
+    T6  3.20mm  0.126"  (1 hole)
 
-    Total unplated holes count 9
+    Total unplated holes count 8

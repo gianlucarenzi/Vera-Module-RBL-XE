@@ -1,12 +1,12 @@
 %TF.GenerationSoftware,KiCad,Pcbnew,5.1.9+dfsg1-1+deb11u1*%
-%TF.CreationDate,2025-10-22T16:24:07+02:00*%
+%TF.CreationDate,2025-10-23T11:05:37+02:00*%
 %TF.ProjectId,VERA-MODULE-RBL,56455241-2d4d-44f4-9455-4c452d52424c,1.0*%
 %TF.SameCoordinates,Original*%
 %TF.FileFunction,Soldermask,Top*%
 %TF.FilePolarity,Negative*%
 %FSLAX46Y46*%
 G04 Gerber Fmt 4.6, Leading zero omitted, Abs format (unit mm)*
-G04 Created by KiCad (PCBNEW 5.1.9+dfsg1-1+deb11u1) date 2025-10-22 16:24:07*
+G04 Created by KiCad (PCBNEW 5.1.9+dfsg1-1+deb11u1) date 2025-10-23 11:05:37*
 %MOMM*%
 %LPD*%
 G01*
@@ -9576,10 +9576,7 @@ G37*
 %TD*%
 D22*
 %TO.C,H1*%
-X187910000Y-54290000D03*
-%TD*%
-%TO.C,H2*%
-X239910000Y-50290000D03*
+X181500000Y-63500000D03*
 %TD*%
 %TO.C,C2*%
 G36*
