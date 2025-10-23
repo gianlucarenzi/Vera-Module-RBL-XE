@@ -1,5 +1,5 @@
 Drill report for /home/gianluca/Progetti-CVS/ATARI/Vera-Module-RBL-XE/VERA-XE-HDMI-Expansion/VERA-XE-HDMI-Expansion.kicad_pcb
-Created on Fri 17 Oct 2025 01:47:29 PM CEST
+Created on Thu 23 Oct 2025 09:37:20 AM CEST
 
 Copper Layer Stackup:
     =============================================================
@@ -13,15 +13,15 @@ Drill file 'VERA-XE-HDMI-Expansion-PTH.drl' contains
     plated through holes:
     =============================================================
     T1  0.20mm  0.008"  (25 holes)
-    T2  0.40mm  0.016"  (82 holes)
+    T2  0.40mm  0.016"  (81 holes)
     T3  0.90mm  0.035"  (4 holes)  (with 4 slots)
 
-    Total plated holes count 111
+    Total plated holes count 110
 
 
 Drill file 'VERA-XE-HDMI-Expansion-NPTH.drl' contains
     unplated through holes:
     =============================================================
-    T1  3.20mm  0.126"  (2 holes)
+    T1  3.20mm  0.126"  (1 hole)
 
-    Total unplated holes count 2
+    Total unplated holes count 1
