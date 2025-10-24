@@ -196,12 +196,45 @@ VGA ANALOG
 $Comp
 L Mechanical:MountingHole H1
 U 1 1 68F52DE4
-P 1280 6665
-F 0 "H1" H 1400 6730 50  0000 L CNN
-F 1 "MountingHole" H 1400 6630 50  0000 L CNN
-F 2 "MountingHole:MountingHole_3.2mm_M3" H 1280 6665 50  0001 C CNN
-F 3 "~" H 1280 6665 50  0001 C CNN
-	1    1280 6665
+P 1145 6790
+F 0 "H1" H 1265 6855 50  0000 L CNN
+F 1 "MountingHole" H 1265 6755 50  0000 L CNN
+F 2 "MountingHole:MountingHole_3.2mm_M3" H 1145 6790 50  0001 C CNN
+F 3 "~" H 1145 6790 50  0001 C CNN
+	1    1145 6790
+	1    0    0    -1  
+$EndComp
+$Comp
+L Mechanical:MountingHole H2
+U 1 1 68FB49D3
+P 1155 7025
+F 0 "H2" H 1275 7090 50  0000 L CNN
+F 1 "MountingHole" H 1275 6990 50  0000 L CNN
+F 2 "MountingHole:MountingHole_3.2mm_M3" H 1155 7025 50  0001 C CNN
+F 3 "~" H 1155 7025 50  0001 C CNN
+	1    1155 7025
+	1    0    0    -1  
+$EndComp
+$Comp
+L Mechanical:MountingHole H3
+U 1 1 68FB4BE9
+P 1160 7220
+F 0 "H3" H 1280 7285 50  0000 L CNN
+F 1 "MountingHole" H 1280 7185 50  0000 L CNN
+F 2 "MountingHole:MountingHole_3.2mm_M3" H 1160 7220 50  0001 C CNN
+F 3 "~" H 1160 7220 50  0001 C CNN
+	1    1160 7220
+	1    0    0    -1  
+$EndComp
+$Comp
+L Mechanical:MountingHole H4
+U 1 1 68FB4D44
+P 1170 7420
+F 0 "H4" H 1290 7485 50  0000 L CNN
+F 1 "MountingHole" H 1290 7385 50  0000 L CNN
+F 2 "MountingHole:MountingHole_3.2mm_M3" H 1170 7420 50  0001 C CNN
+F 3 "~" H 1170 7420 50  0001 C CNN
+	1    1170 7420
 	1    0    0    -1  
 $EndComp
 $EndSCHEMATC

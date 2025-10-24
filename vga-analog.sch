@@ -174,19 +174,11 @@ Wire Wire Line
 Wire Wire Line
 	3990 3290 4165 3290
 Wire Wire Line
-	5450 5415 5725 5415
-Wire Wire Line
 	4950 5515 4625 5515
-Wire Wire Line
-	5450 5515 5725 5515
-Wire Wire Line
-	5450 5615 5725 5615
 Wire Wire Line
 	4950 5415 4625 5415
 Wire Wire Line
 	4625 5815 4950 5815
-Wire Wire Line
-	5450 5815 5700 5815
 Wire Wire Line
 	5725 5415 5725 5515
 Connection ~ 5725 5515
@@ -231,8 +223,6 @@ Wire Wire Line
 	4625 5215 4950 5215
 Wire Wire Line
 	4950 5315 4625 5315
-Wire Wire Line
-	5450 5215 5700 5215
 Text Notes 5680 6120 2    39   ~ 0
 EXTERNAL DISPLAY WITH AUDIO
 $Comp
@@ -559,20 +549,6 @@ F 4 "C17667" H 5345 1890 50  0001 C CNN "LCSC"
 	1    5345 1890
 	0    1    1    0   
 $EndComp
-$Comp
-L RetroBitLab:CONN_SMD_02x08_Odd_Even_2.54mm J?
-U 1 1 68F9D95F
-P 5150 5515
-AR Path="/68821B60/68F9D95F" Ref="J?"  Part="1" 
-AR Path="/68F956C0/68F9D95F" Ref="J1"  Part="1" 
-F 0 "J1" H 5200 5940 50  0000 C CNN
-F 1 "CONN_SMD_02x08_Odd_Even_2.54mm" H 5200 5015 50  0001 C CNN
-F 2 "RetroBitLab:PinSocket_2x08_P2.54mm_Vertical_SMD" H 5150 5515 50  0001 C CNN
-F 3 "https://www.lcsc.com/datasheet/C3975153.pdf" H 5150 5515 50  0001 C CNN
-F 4 "C3975153" H 5150 5515 50  0001 C CNN "LCSC"
-	1    5150 5515
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	6640 3140 6640 3615
 $Comp
@@ -666,17 +642,11 @@ AUDIOL
 Text GLabel 5510 5715 2    39   Input ~ 0
 AUDIOR
 Wire Wire Line
-	5450 5715 5510 5715
-Wire Wire Line
 	4890 5715 4950 5715
 Text GLabel 4875 5615 0    50   BiDi ~ 0
 5V
 Text GLabel 5505 5315 2    50   BiDi ~ 0
 3V3
-Wire Wire Line
-	5450 5315 5505 5315
-Wire Wire Line
-	5450 5915 5495 5915
 Text GLabel 5495 5915 2    50   BiDi ~ 0
 3V3
 Wire Wire Line
@@ -757,4 +727,32 @@ Text GLabel 2390 2365 0    39   Input ~ 0
 VGA_B2
 Text GLabel 2390 2590 0    39   Input ~ 0
 VGA_B3
+Wire Wire Line
+	5450 5515 5725 5515
+Wire Wire Line
+	5450 5415 5725 5415
+Wire Wire Line
+	5450 5315 5505 5315
+Wire Wire Line
+	5450 5215 5700 5215
+Wire Wire Line
+	5450 5915 5495 5915
+Wire Wire Line
+	5450 5815 5700 5815
+Wire Wire Line
+	5450 5715 5510 5715
+Wire Wire Line
+	5450 5615 5725 5615
+$Comp
+L RetroBitLab:CONN_SMD_HEADER_BOX_02x08_Odd_Even_2.54mm J1
+U 1 1 68FBAA9C
+P 5150 5515
+F 0 "J1" H 5200 5940 50  0000 C CNN
+F 1 "CONN_SMD_HEADER_BOX_02x08_Odd_Even_2.54mm" H 5200 5015 50  0001 C CNN
+F 2 "RetroBitLab:PinHeader_BOX_2x08_P2.54mm_Vertical_SMD" H 5150 5515 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C2685064.pdf" H 5150 5515 50  0001 C CNN
+F 4 "C2685064" H 5150 5515 50  0001 C CNN "LCSC"
+	1    5150 5515
+	1    0    0    -1  
+$EndComp
 $EndSCHEMATC

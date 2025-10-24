@@ -7,7 +7,7 @@
       "Application": "Pcbnew",
       "Version":     "5.1.9+dfsg1-1+deb11u1"
     },
-    "CreationDate":  "2025-10-23T09:37:16+02:00"
+    "CreationDate":  "2025-10-24T14:32:27+02:00"
   },
   "GeneralSpecs":
   {
@@ -15,12 +15,12 @@
     {
       "Name": "VERA-XE-HDMI-Expansion",
       "GUID": "56455241-2d58-4452-9d48-444d492d4578",
-      "Revision": "rev?"
+      "Revision": "1.1"
     },
     "Size":
     {
       "X": 89.050,
-      "Y": 35.050
+      "Y": 37.050
     },
     "LayerNumber": 4,
     "BoardThickness":  1.600

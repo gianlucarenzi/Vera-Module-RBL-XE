@@ -5,8 +5,8 @@ $Descr A4 11693 8268
 encoding utf-8
 Sheet 1 1
 Title "VERA XE HDMI Card"
-Date "2025-10-17"
-Rev "1.0"
+Date "2025-10-24"
+Rev "1.1"
 Comp "RetroBitLab"
 Comment1 "Gianluca Renzi"
 Comment2 ""
@@ -591,8 +591,8 @@ $Comp
 L CRES0805:100R R2
 U 1 1 69986675
 P 4465 3780
-F 0 "R2" V 4540 3700 50  0000 C CNN
-F 1 "100R" V 4545 3850 50  0000 C CNN
+F 0 "R2" V 4615 3775 50  0000 C CNN
+F 1 "100R" V 4540 3775 50  0000 C CNN
 F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" H 4465 3780 50  0001 C CNN
 F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2411221126_UNI-ROYAL-0805W8F1000T5E_C17408.pdf" H 4465 3780 50  0001 C CNN
 F 4 "C17408" H 4465 3780 50  0001 C CNN "LCSC"
@@ -603,8 +603,8 @@ $Comp
 L CRES0805:100R R1
 U 1 1 699856F5
 P 4460 3655
-F 0 "R1" V 4264 3650 50  0000 C CNN
-F 1 "100R" V 4355 3650 50  0000 C CNN
+F 0 "R1" V 4315 3650 50  0000 C CNN
+F 1 "100R" V 4385 3650 50  0000 C CNN
 F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" H 4460 3655 50  0001 C CNN
 F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2411221126_UNI-ROYAL-0805W8F1000T5E_C17408.pdf" H 4460 3655 50  0001 C CNN
 F 4 "C17408" H 4460 3655 50  0001 C CNN "LCSC"
@@ -1735,10 +1735,6 @@ Text GLabel 4470 7055 2    50   BiDi ~ 0
 Wire Wire Line
 	3635 7155 3695 7155
 Wire Wire Line
-	3695 6755 3370 6755
-Wire Wire Line
-	3370 6655 3695 6655
-Wire Wire Line
 	4470 6955 4595 6955
 $Comp
 L power:GND #PWR?
@@ -1777,13 +1773,7 @@ Wire Wire Line
 Connection ~ 4470 6955
 Wire Wire Line
 	4470 6855 4470 6955
-Wire Wire Line
-	3370 7255 3695 7255
 Connection ~ 3370 6855
-Wire Wire Line
-	3695 6855 3370 6855
-Wire Wire Line
-	3695 6955 3370 6955
 Text GLabel 3370 6655 0    39   Input ~ 0
 VGAGREEN
 Text GLabel 3635 7155 0    39   Input ~ 0
@@ -1907,21 +1897,19 @@ POWER SUPPLY 1V8
 $Comp
 L Mechanical:MountingHole H1
 U 1 1 690C5489
-P 705 7055
-F 0 "H1" H 805 7101 50  0000 L CNN
-F 1 "MountingHole" H 805 7010 50  0000 L CNN
-F 2 "MountingHole:MountingHole_3.2mm_M3" H 705 7055 50  0001 C CNN
-F 3 "~" H 705 7055 50  0001 C CNN
-	1    705  7055
+P 755 7025
+F 0 "H1" H 855 7071 50  0000 L CNN
+F 1 "MountingHole" H 855 6980 50  0000 L CNN
+F 2 "MountingHole:MountingHole_3.2mm_M3" H 755 7025 50  0001 C CNN
+F 3 "~" H 755 7025 50  0001 C CNN
+	1    755  7025
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
 	3370 7055 3370 6955
-Wire Wire Line
-	3370 7055 3695 7055
 Connection ~ 3370 6955
-Text Notes 3360 7600 0    59   ~ 12
-IT NEEDS TO BE SWAPPED!!
+Text Notes 3125 7585 0    59   ~ 12
+10cm / 4 inches IDC F/F flat cable
 $Comp
 L CLED0805:GREEN LD1
 U 1 1 68FF3C97
@@ -2000,31 +1988,76 @@ F 3 "" H 5260 6760 59  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L RetroBitLab:CONN_SMD_HEADER_02x08_Odd_Even_2.54mm J2
-U 1 1 68FD9EAF
-P 3895 6955
-F 0 "J2" H 3945 7380 50  0000 C CNN
-F 1 "CONN_SMD_HEADER_02x08_Odd_Even_2.54mm" H 3945 6455 50  0001 C CNN
-F 2 "Connector_PinHeader_2.54mm:PinHeader_2x08_P2.54mm_Vertical_SMD" H 3895 6955 50  0001 C CNN
-F 3 "https://www.lcsc.com/datasheet/C32713288.pdf" H 3895 6955 50  0001 C CNN
-F 4 "C32713288" H 3895 6955 50  0001 C CNN "LCSC"
-	1    3895 6955
+L Mechanical:MountingHole H2
+U 1 1 69091EC1
+P 760 7215
+F 0 "H2" H 860 7261 50  0000 L CNN
+F 1 "MountingHole" H 860 7170 50  0000 L CNN
+F 2 "MountingHole:MountingHole_3.2mm_M3" H 760 7215 50  0001 C CNN
+F 3 "~" H 760 7215 50  0001 C CNN
+	1    760  7215
+	1    0    0    -1  
+$EndComp
+$Comp
+L Mechanical:MountingHole H3
+U 1 1 69092450
+P 765 7385
+F 0 "H3" H 865 7431 50  0000 L CNN
+F 1 "MountingHole" H 865 7340 50  0000 L CNN
+F 2 "MountingHole:MountingHole_3.2mm_M3" H 765 7385 50  0001 C CNN
+F 3 "~" H 765 7385 50  0001 C CNN
+	1    765  7385
+	1    0    0    -1  
+$EndComp
+$Comp
+L Mechanical:MountingHole H4
+U 1 1 69092752
+P 775 7560
+F 0 "H4" H 875 7606 50  0000 L CNN
+F 1 "MountingHole" H 875 7515 50  0000 L CNN
+F 2 "MountingHole:MountingHole_3.2mm_M3" H 775 7560 50  0001 C CNN
+F 3 "~" H 775 7560 50  0001 C CNN
+	1    775  7560
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	4195 6655 4445 6655
-Wire Wire Line
-	4195 6755 4445 6755
-Wire Wire Line
-	4195 6855 4470 6855
-Wire Wire Line
-	4195 6955 4470 6955
-Wire Wire Line
-	4195 7055 4470 7055
-Wire Wire Line
-	4195 7155 4255 7155
+	4195 7355 4240 7355
 Wire Wire Line
 	4195 7255 4445 7255
 Wire Wire Line
-	4195 7355 4240 7355
+	4195 7155 4255 7155
+Wire Wire Line
+	4195 7055 4470 7055
+Wire Wire Line
+	4195 6955 4470 6955
+Wire Wire Line
+	4195 6855 4470 6855
+Wire Wire Line
+	4195 6755 4445 6755
+Wire Wire Line
+	4195 6655 4445 6655
+$Comp
+L RetroBitLab:CONN_SMD_HEADER_BOX_02x08_Odd_Even_2.54mm J2
+U 1 1 690D0597
+P 3995 6955
+F 0 "J2" H 4045 7380 50  0000 C CNN
+F 1 "CONN_SMD_HEADER_BOX_02x08_Odd_Even_2.54mm" H 4045 6455 50  0001 C CNN
+F 2 "RetroBitLab:PinHeader_BOX_2x08_P2.54mm_Vertical_SMD" H 3995 6955 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C2685064.pdf" H 3995 6955 50  0001 C CNN
+F 4 "C2685064" H 3995 6955 50  0001 C CNN "LCSC"
+	1    3995 6955
+	-1   0    0    -1  
+$EndComp
+Wire Wire Line
+	3370 6655 3695 6655
+Wire Wire Line
+	3370 6755 3695 6755
+Wire Wire Line
+	3370 6855 3695 6855
+Wire Wire Line
+	3370 6955 3695 6955
+Wire Wire Line
+	3370 7055 3695 7055
+Wire Wire Line
+	3370 7255 3695 7255
 $EndSCHEMATC
