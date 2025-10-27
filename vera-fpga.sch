@@ -5,7 +5,7 @@ $Descr A4 11693 8268
 encoding utf-8
 Sheet 2 7
 Title "VERA MODULE AND PROGRAMMING CONNECTOR"
-Date "2025-10-17"
+Date "2025-10-27"
 Rev "1.0"
 Comp "RetroBit Lab"
 Comment1 "Gianluca Renzi"
