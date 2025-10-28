@@ -5,3 +5,4 @@
 /VERA-MODULE-RBL-backups/
 *.kicad_pcb.backup_*
 *.csv.backup_*
+*cleanup_report_*.txt
