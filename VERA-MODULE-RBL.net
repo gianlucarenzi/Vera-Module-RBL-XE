@@ -1,7 +1,7 @@
 (export (version D)
   (design
     (source /home/gianluca/Progetti-CVS/ATARI/Vera-Module-RBL-XE/VERA-MODULE-RBL.sch)
-    (date "Mon 27 Oct 2025 01:27:00 PM CET")
+    (date "Tue 28 Oct 2025 08:25:47 AM CET")
     (tool "Eeschema 5.1.9+dfsg1-1+deb11u1")
     (sheet (number 1) (name /) (tstamps /)
       (title_block
