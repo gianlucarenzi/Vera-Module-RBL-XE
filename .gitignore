@@ -3,3 +3,5 @@
 *.zip
 /VERA-MODULE-RBL.xml
 /VERA-MODULE-RBL-backups/
+*.kicad_pcb.backup_*
+*.csv.backup_*
