@@ -2,7 +2,7 @@
 
 PCBNAME=VERA-XE-HDMI-Expansion
 PCBNAMEOUT=${PCBNAME}-XE
-KICADSCRIPT=${HOME}/.kicad/bom
+KICADBOMSCRIPT=${HOME}/.kicad/bom
 PDFOUTPUT=${PCBNAME}.pdf
 ARGS_NUM=$#
 # Lanciare con la versione del PCB!!
@@ -12,30 +12,53 @@ if [ ${ARGS_NUM} -lt 1 ]; then
 	exit 1
 fi
 
+# Need KiCAD CLI from a v7+ version installed
+KICADCLI=$(which kicad-cli)
+if [ "${KICADCLI}" == "" ]; then
+	echo "Need to install kicad-cli from a version of KiCAD v7 or greater"
+	exit 1
+fi
+
 # La versione e' il primo argomento
 PCBVER=$1
 PCBNAMEOUT=${PCBNAMEOUT}-v${PCBVER}
 
-# Occorre da eeschema generare la BOM per JLCPCB
-# Occorre da pcbnew generare la CPL con il plugin
+# La prima volta va generato il file xml!
+if [ ! -f ${PCBNAME}.xml ]; then
+	echo "Need to run once the BOM Generator from EESCHEMA / Schematic Designer"
+	exit 1
+fi
+
+# Creiamo la BOM per JLCPCB
+xsltproc -o ${PCBNAME}.csv ${KICADBOMSCRIPT}/bom2grouped_csv_jlcpcb.xsl ${PCBNAME}.xml
 
 echo "Creating JLCPCB BOM"
 python3 jlcpcb-check-bom.py ${PCBNAME}.csv ${PCBNAMEOUT}-JLCPCB-BOM.csv
+
+# Generiamo la CPL con uno script simile al plugin di PCBNEW!!!!
+./run_generate_cpl.sh ${PCBNAME}.kicad_pcb
+if [ $? -ne 0 ]; then
+	echo "Error on generating CPL files."
+	exit 1
+fi
 
 echo "Creating JLCPCB CPL"
 if [ -f ${PCBNAME}_cpl_top.csv ]; then
 	# Verify if the bot is present
 	if [ -f ${PCBNAME}_cpl_bot.csv ]; then
 		# We are 2 side board
+		./clean_virtual.sh ${PCBNAME}_cpl_top.csv ${PCBNAME}_cpl_bot.csv ${PCBNAME}.kicad_pcb
 		cat ${PCBNAME}_cpl_top.csv <(tail -n +2 ${PCBNAME}_cpl_bot.csv) > ${PCBNAMEOUT}-JLCPCB-CPL.csv
 	else
 		# We have only TOP Side components!
+		./clean_virtual.sh ${PCBNAME}_cpl_top.csv ${PCBNAME}.kicad_pcb
 		cp ${PCBNAME}_cpl_top.csv ${PCBNAMEOUT}-JLCPCB-CPL.csv
 	fi
 else
 	# Verify if the bot is present
 	if [ -f ${PCBNAME}_cpl_bot.csv ]; then
 		# We have only BOT side components
+		./clean_virtual.sh ${PCBNAME}_cpl_bot.csv ${PCBNAME}.kicad_pcb
 		cp ${PCBNAME}_cpl_bot.csv ${PCBNAMEOUT}-JLCPCB-CPL.csv
 	else
 		# There is no top and no bottom!
@@ -45,7 +68,13 @@ else
 fi
 
 echo "Creating PDF..."
-kicad-cli sch export pdf -o ${PDFOUTPUT} --no-background-color ${PCBNAME}.sch 
+${KICADCLI} sch export pdf -o ${PDFOUTPUT} --no-background-color ${PCBNAME}.sch 
+
+echo "Creating STEP 3D object..."
+${KICADCLI} pcb export step -o images/${PCBNAME}.step --force --grid-origin --no-dnp --subst-models ${PCBNAME}.kicad_pcb
+
+echo "Creating VRML 3D object..."
+${KICADCLI} pcb export vrml -o images/${PCBNAME}.wrl --force --no-dnp ${PCBNAME}.kicad_pcb
 
 # Remove the existing
 rm ${PCBNAMEOUT}.zip 2>/dev/null
