@@ -6,6 +6,7 @@
 # --- Configuration ---
 # Path to the directory containing the KiCad Python modules
 PYTHON_MODULE_PATH="/usr/lib/python3/dist-packages"
+PYTHON3=$(which python3)
 
 # Get the directory where this script is located
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
@@ -29,7 +30,7 @@ echo "► Processing file: $KICAD_PCB_FILE"
 echo "--------------------------------------------------"
 
 # Set the environment variable and run the python script
-PYTHONPATH=$PYTHON_MODULE_PATH python3 "$PYTHON_SCRIPT" "$KICAD_PCB_FILE"
+PYTHONPATH=$PYTHON_MODULE_PATH ${PYTHON3} "$PYTHON_SCRIPT" "$KICAD_PCB_FILE"
 
 echo "--------------------------------------------------"
 echo "✔ Script execution finished."
