@@ -16,6 +16,8 @@ fi
 KICADCLI=$(which kicad-cli)
 if [ "${KICADCLI}" == "" ]; then
 	echo "Need to install kicad-cli from a version of KiCAD v7 or greater"
+	echo "(on Debian 11 I am using the flatpak option). Put the script"
+	echo "into a path available for shell..."
 	exit 1
 fi
 
