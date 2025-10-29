@@ -12,9 +12,22 @@ if [ ${ARGS_NUM} -lt 1 ]; then
 	exit 1
 fi
 
+# Need KiCAD CLI from a v7+ version installed
+KICADCLI=$(which kicad-cli)
+if [ "${KICADCLI}" == "" ]; then
+	echo "Need to install kicad-cli from a version of KiCAD v7 or greater"
+	exit 1
+fi
+
 # La versione e' il primo argomento
 PCBVER=$1
 PCBNAMEOUT=${PCBNAMEOUT}-v${PCBVER}
+
+# La prima volta va generato il file xml!
+if [ ! -f ${PCBNAME}.xml ]; then
+	echo "Need to run once the BOM Generator from EESCHEMA / Schematic Designer"
+	exit 1
+fi
 
 # Creiamo la BOM per JLCPCB
 xsltproc -o ${PCBNAME}.csv ${KICADBOMSCRIPT}/bom2grouped_csv_jlcpcb.xsl ${PCBNAME}.xml
@@ -55,13 +68,13 @@ else
 fi
 
 echo "Creating PDF..."
-kicad-cli sch export pdf -o ${PDFOUTPUT} --no-background-color ${PCBNAME}.sch 
+${KICADCLI} sch export pdf -o ${PDFOUTPUT} --no-background-color ${PCBNAME}.sch 
 
 echo "Creating STEP 3D object..."
-kicad-cli pcb export step -o images/${PCBNAME}.step --force --grid-origin --no-dnp --subst-models ${PCBNAME}.kicad_pcb
+${KICADCLI} pcb export step -o images/${PCBNAME}.step --force --grid-origin --no-dnp --subst-models ${PCBNAME}.kicad_pcb
 
 echo "Creating VRML 3D object..."
-kicad-cli pcb export vrml -o images/${PCBNAME}.wrl --force --no-dnp ${PCBNAME}.kicad_pcb
+${KICADCLI} pcb export vrml -o images/${PCBNAME}.wrl --force --no-dnp ${PCBNAME}.kicad_pcb
 
 # Remove the existing
 rm ${PCBNAMEOUT}.zip 2>/dev/null
