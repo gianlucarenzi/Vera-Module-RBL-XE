@@ -4,6 +4,9 @@ PCBNAME=VERA-XE-HDMI-Expansion
 PCBNAMEOUT=${PCBNAME}-XE
 KICADBOMSCRIPT=${HOME}/.kicad/bom
 PDFOUTPUT=${PCBNAME}.pdf
+XSLTPROC=$(which xsltproc)
+PYTHON3=$(which python3)
+
 ARGS_NUM=$#
 # Lanciare con la versione del PCB!!
 
@@ -16,6 +19,8 @@ fi
 KICADCLI=$(which kicad-cli)
 if [ "${KICADCLI}" == "" ]; then
 	echo "Need to install kicad-cli from a version of KiCAD v7 or greater"
+	echo "(on Debian 11 I am using the flatpak option). Put the script"
+	echo "into a path available for shell..."
 	exit 1
 fi
 
@@ -30,10 +35,10 @@ if [ ! -f ${PCBNAME}.xml ]; then
 fi
 
 # Creiamo la BOM per JLCPCB
-xsltproc -o ${PCBNAME}.csv ${KICADBOMSCRIPT}/bom2grouped_csv_jlcpcb.xsl ${PCBNAME}.xml
+${XSLTPROC} -o ${PCBNAME}.csv ${KICADBOMSCRIPT}/bom2grouped_csv_jlcpcb.xsl ${PCBNAME}.xml
 
 echo "Creating JLCPCB BOM"
-python3 jlcpcb-check-bom.py ${PCBNAME}.csv ${PCBNAMEOUT}-JLCPCB-BOM.csv
+${PYTHON3} jlcpcb-check-bom.py ${PCBNAME}.csv ${PCBNAMEOUT}-JLCPCB-BOM.csv
 
 # Generiamo la CPL con uno script simile al plugin di PCBNEW!!!!
 ./run_generate_cpl.sh ${PCBNAME}.kicad_pcb
