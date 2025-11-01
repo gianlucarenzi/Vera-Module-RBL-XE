@@ -3005,7 +3005,7 @@
     (library (logical Mechanical)
       (uri /usr/share/kicad/library/Mechanical.lib))
     (library (logical RetroBitLab)
-      (uri /home/gianluca/Progetti/RetroBitLab-Library/AmigaComponents.lib))
+      (uri /home/gianluca/Progetti/RetroBitLab-Library/RetroBitLab.lib))
     (library (logical TCAP3528)
       (uri /home/gianluca/Progetti/RetroBitLab-Library/TCAP3528.lib)))
   (nets
