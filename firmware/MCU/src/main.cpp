@@ -5,10 +5,9 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
-#include <pbi-driver.h> // Include PBI driver memory space
+#include <pbi-driver.h>
 
-/* ANSI Eye-Candy ;-)
- */
+/* ANSI Eye-Candy ;-) */
 #define ANSI_RED     "\x1b[31m"
 #define ANSI_GREEN   "\x1b[32m"
 #define ANSI_YELLOW  "\x1b[1;33m"
@@ -16,518 +15,225 @@
 #define ANSI_MAGENTA "\x1b[1;35m"
 #define ANSI_CYAN    "\x1b[1;36m"
 #define ANSI_WHITE   "\x1b[1;37m"
-#define ANSI_RESET  "\x1b[0m"
+#define ANSI_RESET   "\x1b[0m"
 
-#define SERIAL_QUEUE_LENGTH 32 // Length of the serial queue
-#define SERIAL_MSG_SIZE 128 // Size of the serial message buffer
+/* --- CONFIGURAZIONE PIN (Safe Mapping per PICO-D4) --- */
 
-// Pin Configuration 
+// Registro 1 (GPIO 32-39) - Indirizzi A0-A7
+constexpr gpio_num_t PIN_A0 = GPIO_NUM_36; // bit 4
+constexpr gpio_num_t PIN_A1 = GPIO_NUM_37; // bit 5
+constexpr gpio_num_t PIN_A2 = GPIO_NUM_38; // bit 6
+constexpr gpio_num_t PIN_A3 = GPIO_NUM_39; // bit 7
+constexpr gpio_num_t PIN_A4 = GPIO_NUM_34; // bit 2
+constexpr gpio_num_t PIN_A5 = GPIO_NUM_35; // bit 3
+constexpr gpio_num_t PIN_A6 = GPIO_NUM_32; // bit 0
+constexpr gpio_num_t PIN_A7 = GPIO_NUM_33; // bit 1
 
-// Pin Definitions for 6502 Bus Monitor
-// Address Bus A0-A15
+// Registro 0 (GPIO 0-31) - Dati D0-D7
+constexpr gpio_num_t PIN_D0 = GPIO_NUM_4;
+constexpr gpio_num_t PIN_D1 = GPIO_NUM_13;
+constexpr gpio_num_t PIN_D2 = GPIO_NUM_14;
+constexpr gpio_num_t PIN_D3 = GPIO_NUM_18;
+constexpr gpio_num_t PIN_D4 = GPIO_NUM_19;
+constexpr gpio_num_t PIN_D5 = GPIO_NUM_21;
+constexpr gpio_num_t PIN_D6 = GPIO_NUM_22;
+constexpr gpio_num_t PIN_D7 = GPIO_NUM_25;
 
-// LSB Address Pins
+#define MASK_DATA_BUS ((1ULL << PIN_D0) | (1ULL << PIN_D1) | (1ULL << PIN_D2) | (1ULL << PIN_D3) | \
+                       (1ULL << PIN_D4) | (1ULL << PIN_D5) | (1ULL << PIN_D6) | (1ULL << PIN_D7))
 
-// Decoded selection signals are only on the final revision board
-constexpr gpio_num_t PIN_EXSEL = GPIO_NUM_11;	// Pin 30 - When low, DEVICE memory is selected, when high ATARI memory is selected
-constexpr gpio_num_t PIN_D1XX = GPIO_NUM_10;	// Pin 29 - When accessing PBI I/O memory space
-constexpr gpio_num_t PIN_CCTL = GPIO_NUM_9;	// Pin 28 - When accessing Cartridge Control $D500 CCTL
-constexpr gpio_num_t PIN_MPD = GPIO_NUM_7;		// Pin 32 - Math Pack ROM Disable
+// Segnali di Controllo
+constexpr gpio_num_t PIN_PHI2   = GPIO_NUM_23;
+constexpr gpio_num_t PIN_RW     = GPIO_NUM_27;
+constexpr gpio_num_t PIN_D1XX   = GPIO_NUM_10;
+constexpr gpio_num_t PIN_CCTL   = GPIO_NUM_9;
+constexpr gpio_num_t PIN_VERA_CS= GPIO_NUM_26;
+constexpr gpio_num_t PIN_EXSEL  = GPIO_NUM_15;
+constexpr gpio_num_t PIN_MPD    = GPIO_NUM_5;
 
-// Common LSB Address Pins
-constexpr gpio_num_t PIN_A0 = GPIO_NUM_6;	// Pin 31
-constexpr gpio_num_t PIN_A1 = GPIO_NUM_8;	// Pin 33
-constexpr gpio_num_t PIN_A2 = GPIO_NUM_21;	// Pin 42
-constexpr gpio_num_t PIN_A3 = GPIO_NUM_27;	// Pin 16
-constexpr gpio_num_t PIN_A4 = GPIO_NUM_33;	// Pin 13
-constexpr gpio_num_t PIN_A5 = GPIO_NUM_32;	// Pin 12
-constexpr gpio_num_t PIN_A6 = GPIO_NUM_38;	// Pin 7
-constexpr gpio_num_t PIN_A7 = GPIO_NUM_37;	// Pin 6
+#define MASK_PHI2 (1UL << PIN_PHI2)
+#define MASK_RW   (1UL << PIN_RW)
+#define MASK_D1XX (1UL << PIN_D1XX)
+#define MASK_CCTL (1UL << PIN_CCTL)
 
-// MSB Address Pins
-constexpr gpio_num_t PIN_A8  = GPIO_NUM_2;	// Pin 22
-constexpr gpio_num_t PIN_A9  = GPIO_NUM_5;	// Pin 34
-constexpr gpio_num_t PIN_A10 = GPIO_NUM_12;	// Pin 18
-constexpr gpio_num_t PIN_A11 = GPIO_NUM_15;	// Pin 21
-constexpr gpio_num_t PIN_A12 = GPIO_NUM_34;	// Pin 10
-constexpr gpio_num_t PIN_A13 = GPIO_NUM_35;	// Pin 11
-constexpr gpio_num_t PIN_A14 = GPIO_NUM_36;	// Pin 5
-constexpr gpio_num_t PIN_A15 = GPIO_NUM_39;	// Pin 8
+/* --- LOGGING NON-BLOCKING --- */
+#define LOG_QUEUE_SIZE 64
+typedef struct {
+    uint32_t timestamp;
+    uint16_t addr;
+    uint8_t data;
+    char type; // 'R'ead, 'W'rite, 'C'CTL, 'P'BI
+} bus_log_t;
 
-// PHI2 and RW Pins
-// PHI2 is used for clocking the 6502 bus
-// RW is used to indicate read/write operations
-constexpr gpio_num_t PIN_PHI2 = GPIO_NUM_23;	// Pin 36
-constexpr gpio_num_t PIN_RW   = GPIO_NUM_25;	// Pin 14
+QueueHandle_t logQueue;
+volatile uint32_t droppedLogs = 0;
 
-// Data Bus D0-D7
-// Those pins are used for data transfer on the 6502 bus
-constexpr gpio_num_t PIN_D0 = GPIO_NUM_4;	// Pin 24
-constexpr gpio_num_t PIN_D1 = GPIO_NUM_13;	// Pin 20
-constexpr gpio_num_t PIN_D2 = GPIO_NUM_14;	// Pin 17
-constexpr gpio_num_t PIN_D3 = GPIO_NUM_16;	// Pin 25
-constexpr gpio_num_t PIN_D4 = GPIO_NUM_17;	// Pin 27
-constexpr gpio_num_t PIN_D5 = GPIO_NUM_18;	// Pin 35
-constexpr gpio_num_t PIN_D6 = GPIO_NUM_19;	// Pin 38
-constexpr gpio_num_t PIN_D7 = GPIO_NUM_22;	// Pin 39
-
-constexpr gpio_num_t PIN_CS = GPIO_NUM_26;	// Pin 15
-
-// Shadow RAM PBI Driver Memory Space
-static char ram_d800[2048] = {0};
-
-// Shadow RAM 512 Bytes ($D600-$D7FF) ONLY $D600-$D6FF are used
-static char ram_d600[512] = {0};
-
-static uint8_t d500[256] = {0}; // CCTL memory space
-static uint8_t cardselected = 0; // Flag to indicate if a card is selected
-static uint8_t DEVICE_ID = 0x01; // Example device ID for PBI I/O
-extern const uint8_t pbi_driver[]; // PBI driver memory space
-
-#define DBG_ERROR   0
-#define DBG_INFO    1
-#define DBG_VERBOSE 2
-#define DBG_NOISY   3
-
-static int debuglevel = DBG_INFO;
-
-#define CARTRIDGE_CONTROL (address >= 0xD500 && address <= 0xD5FF)
-#define PBI_IO            (address >= 0xD100 && address <= 0xD1FF)
-//#define CARTRIDGE_CONTROL !((gpio_low >> PIN_CCTL) & 1)
-//#define PBI_IO            !((gpio_low >> PIN_D1XX) & 1)
-
-// Checking functions for PHI2 Clock
-#define PHI2_IS_LOW !((REG_READ(GPIO_IN1_REG) >> PIN_PHI2) & 1)
-#define PHI2_IS_HIGH !(PHI2_IS_LOW)
-
-QueueHandle_t serialQueue;
-
-// Prototypes for functions
-void SerialTask(void *pvParameters);
-void MonitorTask(void *pvParameters);
-
-// This task will run on the second (1) core of the ESP32
-void SerialTask(void *pvParameters)
-{
-	char msg[SERIAL_MSG_SIZE];
-	Serial.println(ANSI_GREEN "Serial Task Started on Core 0" ANSI_RESET);
-
-	while (true)
-	{
-		if (xQueueReceive(serialQueue, msg, portMAX_DELAY) == pdTRUE)
-		{
-			Serial.println(msg);
-		}
-	}
+void IRAM_ATTR log_bus(uint16_t addr, uint8_t data, char type) {
+    bus_log_t log = { xTaskGetTickCountFromISR(), addr, data, type };
+    if (xQueueSendFromISR(logQueue, &log, NULL) != pdTRUE) {
+        droppedLogs++;
+    }
 }
 
-void serialPrintQueue(const char* fmt, ...)
-{
-	char buf[SERIAL_MSG_SIZE];
-	va_list args;
-	va_start(args, fmt);
-	vsnprintf(buf, SERIAL_MSG_SIZE, fmt, args);
-	va_end(args);
+/* --- LOOK-UP TABLE PER SCRITTURA DATI --- */
+static uint32_t data_set_lut[256];
 
-	if (serialQueue != NULL)
-	{
-		xQueueSend(serialQueue, buf, portMAX_DELAY);
-	}
-	else
-	{
-		Serial.println(ANSI_RESET "Serial queue not initialized!");
-	}
+static void precompute_data_lut() {
+    for (int v = 0; v < 256; v++) {
+        uint32_t m = 0;
+        if (v & 0x01) m |= (1 << PIN_D0);
+        if (v & 0x02) m |= (1 << PIN_D1);
+        if (v & 0x04) m |= (1 << PIN_D2);
+        if (v & 0x08) m |= (1 << PIN_D3);
+        if (v & 0x10) m |= (1 << PIN_D4);
+        if (v & 0x20) m |= (1 << PIN_D5);
+        if (v & 0x40) m |= (1 << PIN_D6);
+        if (v & 0x80) m |= (1 << PIN_D7);
+        data_set_lut[v] = m;
+    }
 }
 
-// Funzioni ottimizzate per lettura GPIO
-inline uint32_t read_gpio_low(void)
-{
-	return REG_READ(GPIO_IN1_REG);  // GPIO 0-31
+/* --- ACCESSO VELOCE AI BUS --- */
+
+// Legge A0-A7 tramite bit-shuffling del registro 1
+static inline uint8_t read_addr_low() {
+    uint32_t in1 = GPIO.in1.val;
+    // A0-A3 (bits 4-7) -> move to 0-3
+    // A4-A5 (bits 2-3) -> move to 4-5
+    // A6-A7 (bits 0-1) -> move to 6-7
+    return ((in1 & 0xF0) >> 4) | ((in1 & 0x0C) << 2) | ((in1 & 0x03) << 6);
 }
 
-inline uint32_t read_gpio_high(void)
-{
-	return REG_READ(GPIO_IN_REG);   // GPIO 32-39
+// Legge D0-D7 tramite campionamento sparse del registro 0
+static inline uint8_t read_data_bus() {
+    uint32_t in = GPIO.in;
+    uint8_t d = 0;
+    if (in & (1 << PIN_D0)) d |= 0x01;
+    if (in & (1 << PIN_D1)) d |= 0x02;
+    if (in & (1 << PIN_D2)) d |= 0x04;
+    if (in & (1 << PIN_D3)) d |= 0x08;
+    if (in & (1 << PIN_D4)) d |= 0x10;
+    if (in & (1 << PIN_D5)) d |= 0x20;
+    if (in & (1 << PIN_D6)) d |= 0x40;
+    if (in & (1 << PIN_D7)) d |= 0x80;
+    return d;
 }
 
-static inline uint16_t read_address_bus(uint32_t gpio_low, uint32_t gpio_high)
-{
-	// Read all 16 Address Lines at once
-	return (((gpio_low >> PIN_A0) & 1) << 0) |
-		   (((gpio_low >> PIN_A1) & 1) << 1) |
-		   (((gpio_low >> PIN_A2) & 1) << 2) |
-		   (((gpio_low >> PIN_A3) & 1) << 3) |
-		   (((gpio_high >> (PIN_A4 - 32)) & 1) << 4) |
-		   (((gpio_high >> (PIN_A5 - 32)) & 1) << 5) |
-		   (((gpio_high >> (PIN_A6 - 32)) & 1) << 6) |
-		   (((gpio_high >> (PIN_A7 - 32)) & 1) << 7) |
-		   (((gpio_low >> PIN_A8) & 1) << 8) |
-		   (((gpio_low >> PIN_A9) & 1) << 9) |
-		   (((gpio_low >> PIN_A10) & 1) << 10) |
-		   (((gpio_low >> PIN_A11) & 1) << 11) |
-		   (((gpio_high >> (PIN_A12 - 32)) & 1) << 12) |
-		   (((gpio_high >> (PIN_A13 - 32)) & 1) << 13) |
-		   (((gpio_high >> (PIN_A14 - 32)) & 1) << 14) |
-		   (((gpio_high >> (PIN_A15 - 32)) & 1) << 15);
+// Scrive D0-D7 usando la LUT (Massima velocità)
+static inline void write_data_bus(uint8_t val) {
+    uint32_t set_mask = data_set_lut[val];
+    GPIO.out_w1ts = set_mask;
+    GPIO.out_w1tc = MASK_DATA_BUS & ~set_mask;
 }
 
-static inline uint8_t read_data_bus(uint32_t gpio_low)
-{
-	// Read all Data Bus Lines at once
-	return (((gpio_low >> PIN_D0) & 1) << 0) |
-		   (((gpio_low >> PIN_D1) & 1) << 1) |
-		   (((gpio_low >> PIN_D2) & 1) << 2) |
-		   (((gpio_low >> PIN_D3) & 1) << 3) |
-		   (((gpio_low >> PIN_D4) & 1) << 4) |
-		   (((gpio_low >> PIN_D5) & 1) << 5) |
-		   (((gpio_low >> PIN_D6) & 1) << 6) |
-		   (((gpio_low >> PIN_D7) & 1) << 7);
+static inline void data_bus_mode(gpio_mode_t mode) {
+    if (mode == GPIO_MODE_OUTPUT) GPIO.enable_w1ts = (uint32_t)MASK_DATA_BUS;
+    else GPIO.enable_w1tc = (uint32_t)MASK_DATA_BUS;
 }
 
-static inline void set_data_bus_direction(gpio_mode_t mode)
-{
-	const uint32_t pin_mask = (
-		(1ULL << PIN_D0) | (1ULL << PIN_D1) | (1ULL << PIN_D2) | (1ULL << PIN_D3) |
-		(1ULL << PIN_D4) | (1ULL << PIN_D5) | (1ULL << PIN_D6) | (1ULL << PIN_D7)
-	);
+/* --- MEMORIA --- */
+static uint8_t d500_ram[256] = {0};
+static bool device_selected = false;
 
-	if (mode == GPIO_MODE_OUTPUT) {
-		GPIO.enable_w1ts = pin_mask;
-	} else {
-		GPIO.enable_w1tc = pin_mask;
-	}
+/* --- TASKS --- */
+
+void SerialTask(void *pvParameters) {
+    bus_log_t log;
+    uint32_t lastReport = 0;
+    while(1) {
+        if (xQueueReceive(logQueue, &log, pdMS_TO_TICKS(100))) {
+            Serial.printf("[%u] %c %04X -> %02X\n", log.timestamp, log.type, log.addr, log.data);
+        }
+
+        uint32_t now = millis();
+        if (now - lastReport > 1000) {
+            if (droppedLogs > 0) {
+                Serial.printf(ANSI_RED "!!! WARNING: Dropped %u logs due to slow serial !!!\n" ANSI_RESET, droppedLogs);
+                droppedLogs = 0; // Reset after reporting
+            }
+            lastReport = now;
+        }
+    }
 }
 
-static inline void write_data_bus(uint8_t value)
-{
-	const uint32_t mask = (1 << PIN_D0) | (1 << PIN_D1) | (1 << PIN_D2) | (1 << PIN_D3) |
-						  (1 << PIN_D4) | (1 << PIN_D5) | (1 << PIN_D6) | (1 << PIN_D7);
-	uint32_t set_mask = 0;
-	if ((value >> 0) & 1) set_mask |= (1 << PIN_D0);
-	if ((value >> 1) & 1) set_mask |= (1 << PIN_D1);
-	if ((value >> 2) & 1) set_mask |= (1 << PIN_D2);
-	if ((value >> 3) & 1) set_mask |= (1 << PIN_D3);
-	if ((value >> 4) & 1) set_mask |= (1 << PIN_D4);
-	if ((value >> 5) & 1) set_mask |= (1 << PIN_D5);
-	if ((value >> 6) & 1) set_mask |= (1 << PIN_D6);
-	if ((value >> 7) & 1) set_mask |= (1 << PIN_D7);
-	GPIO.out_w1ts = set_mask;
-	GPIO.out_w1tc = mask & ~set_mask;
+void IRAM_ATTR MonitorTask(void *pvParameters) {
+    while(1) {
+        // 1. Sincronizzazione PHI2 High
+        while (!(GPIO.in & MASK_PHI2));
+
+        uint32_t in_reg = GPIO.in;
+        uint8_t addr = read_addr_low();
+        bool is_read = (in_reg & MASK_RW);
+
+        // 2. Logica CCTL ($D5xx)
+        if (!(in_reg & MASK_CCTL)) {
+            if (is_read) {
+                uint8_t data = d500_ram[addr];
+                write_data_bus(data);
+                data_bus_mode(GPIO_MODE_OUTPUT);
+                while (GPIO.in & MASK_PHI2); // Attendi fine ciclo
+                data_bus_mode(GPIO_MODE_INPUT);
+                log_bus(0xD500 | addr, data, 'C');
+            } else {
+                while (GPIO.in & MASK_PHI2); // Campiona a fine ciclo
+                uint8_t data = read_data_bus();
+                d500_ram[addr] = data;
+                log_bus(0xD500 | addr, data, 'c');
+            }
+            continue;
+        }
+
+        // 3. Logica PBI I/O ($D1xx)
+        if (!(in_reg & MASK_D1XX)) {
+            if (addr == 0xFF && !is_read) {
+                while (GPIO.in & MASK_PHI2);
+                uint8_t dev = read_data_bus();
+                device_selected = (dev == 0x01);
+                GPIO.out_w1tc = (1 << PIN_VERA_CS); 
+                log_bus(0xD1FF, dev, 'P');
+            }
+            while (GPIO.in & MASK_PHI2);
+            continue;
+        }
+
+        // 4. Fine ciclo (Fallback)
+        while (GPIO.in & MASK_PHI2);
+    }
 }
 
-static inline void fast_gpio_set_level(gpio_num_t pin, uint32_t level)
-{
-	if (level)
-	{
-		if (pin < 32)
-		{
-			GPIO.out_w1ts = (1U << pin);
-		}
-		else
-		{
-			GPIO.out1_w1ts.val = (1U << (pin - 32));
-		}
-	}
-	else
-	{
-		if (pin < 32)
-		{
-			GPIO.out_w1tc = (1U << pin);
-		}
-		else
-		{
-			GPIO.out1_w1tc.val = (1U << (pin - 32));
-		}
-	}
+void setup() {
+    Serial.begin(115200);
+    precompute_data_lut();
+    logQueue = xQueueCreate(LOG_QUEUE_SIZE, sizeof(bus_log_t));
+
+    gpio_config_t io_conf = {};
+    
+    // Ingressi PHI2, RW, D1XX, CCTL
+    io_conf.mode = GPIO_MODE_INPUT;
+    io_conf.pin_bit_mask = MASK_PHI2 | MASK_RW | MASK_D1XX | MASK_CCTL;
+    gpio_config(&io_conf);
+
+    // Ingressi Indirizzi (Registro 1)
+    io_conf.pin_bit_mask = (1ULL << PIN_A0) | (1ULL << PIN_A1) | (1ULL << PIN_A2) | 
+                           (1ULL << PIN_A3) | (1ULL << PIN_A4) | (1ULL << PIN_A5) | 
+                           (1ULL << PIN_A6) | (1ULL << PIN_A7);
+    gpio_config(&io_conf);
+
+    // Dati (Input default)
+    io_conf.pin_bit_mask = MASK_DATA_BUS;
+    gpio_config(&io_conf);
+
+    // Uscite
+    io_conf.mode = GPIO_MODE_OUTPUT;
+    io_conf.pin_bit_mask = (1ULL << PIN_VERA_CS) | (1ULL << PIN_EXSEL) | (1ULL << PIN_MPD);
+    gpio_config(&io_conf);
+
+    gpio_set_level(PIN_VERA_CS, 1);
+    gpio_set_level(PIN_EXSEL, 1);
+    gpio_set_level(PIN_MPD, 1);
+
+    xTaskCreatePinnedToCore(SerialTask, "SerialTask", 4096, NULL, 1, NULL, 0);
+    xTaskCreatePinnedToCore(MonitorTask, "MonitorTask", 4096, NULL, 24, NULL, 1);
 }
 
-void setup(void)
-{
-	Serial.begin(115200);
-
-	serialQueue = xQueueCreate(SERIAL_QUEUE_LENGTH, SERIAL_MSG_SIZE);
-	xTaskCreatePinnedToCore(SerialTask, "SerialTask", 2048, NULL, 1, NULL, 0); // Create the serial task on core 0
-	xTaskCreatePinnedToCore(MonitorTask, "MonitorTask", 2048, NULL, 1, NULL, 1); // Create the monitor task on core 1
-
-	// Configurazione pin
-	gpio_config_t io_conf = {};
-
-	// ADDRESS BUS A0-A15
-	// Read Address Lines as possible LSB
-	io_conf.pin_bit_mask =
-		(1ULL << PIN_A0 ) | (1ULL << PIN_A1 ) | (1ULL << PIN_A2 ) | (1ULL << PIN_A3)  |
-		(1ULL << PIN_A4 ) | (1ULL << PIN_A5 ) | (1ULL << PIN_A6 ) | (1ULL << PIN_A7)  |
-		(1ULL << PIN_A8 ) | (1ULL << PIN_A9 ) | (1ULL << PIN_A10) | (1ULL << PIN_A11) |
-		(1ULL << PIN_A12) | (1ULL << PIN_A13) | (1ULL << PIN_A14) | (1ULL << PIN_A15);
-
-	// PHI2 & RW
-	io_conf.pin_bit_mask |= (1ULL << PIN_PHI2) | (1ULL << PIN_RW);
-
-	// DATA BUS input/output (default as input)
-	io_conf.pin_bit_mask |= (1ULL << PIN_D0) | (1ULL << PIN_D1) | (1ULL << PIN_D2) |
-						    (1ULL << PIN_D3) | (1ULL << PIN_D4) | (1ULL << PIN_D5) |
-						    (1ULL << PIN_D6) | (1ULL << PIN_D7);
-	io_conf.mode = GPIO_MODE_INPUT;
-	gpio_config(&io_conf);
-
-	// EXSEL, MPD and VERA_CS as output
-	io_conf.pin_bit_mask = (1ULL << PIN_EXSEL) | (1ULL << PIN_MPD) | (1ULL << PIN_CS);
-	io_conf.mode = GPIO_MODE_OUTPUT;
-	gpio_config(&io_conf);
-
-	// CCTL & D1XX as input (with a LED connected)
-	io_conf.pin_bit_mask = (1ULL << PIN_CCTL) | (1ULL << PIN_D1XX);
-	io_conf.mode = GPIO_MODE_INPUT;
-	gpio_config(&io_conf);
-
-	// VERA_CS not selected (high)
-	gpio_set_level(PIN_CS, 1);
-
-}
-
-void MonitorTask(void *pvParameters)
-{
-	serialPrintQueue(ANSI_BLUE "6502 Bus Monitor Ready on Core 1\n" ANSI_RESET);
-
-	for (;;)
-	{
-		// Wait the rising edge of PHI2
-		while (PHI2_IS_LOW) ;;
-
-		uint32_t gpio_low = read_gpio_low();
-		uint32_t gpio_high = read_gpio_high();
-
-		uint16_t address = read_address_bus(gpio_low, gpio_high);
-		bool rw = (gpio_low >> PIN_RW) & 1;
-
-		// Read all remaining signals here to minimize timing issues
-		// CCTL
-		if(CARTRIDGE_CONTROL)
-		{
-			if (rw)
-			{
-				// 6502 CPU is LD[X/Y/A] from memory @ $D5xx
-				uint8_t data = d500[address & 0x00FF];
-				set_data_bus_direction(GPIO_MODE_OUTPUT);
-				write_data_bus(data);
-
-				// wait for PHI2 low
-				while (PHI2_IS_HIGH) ;;
-
-				set_data_bus_direction(GPIO_MODE_INPUT);
-				serialPrintQueue(ANSI_YELLOW "CCTL: Send $\%02X from $\%04X to CPU\n" ANSI_RESET, data, address);
-			}
-			else
-			{
-				// 6502 CPU is asking to write to memory @ $D5xx ST[X/Y/A]
-				set_data_bus_direction(GPIO_MODE_INPUT);
-				uint8_t data = read_data_bus(gpio_low);
-				d500[address & 0x00FF] = data;
-				serialPrintQueue(ANSI_YELLOW "CCTL: Received $\%02X to $\%04X from CPU\n" ANSI_RESET, data, address);
-			}
-		}
-
-		// PBI I/O Management
-		if(PBI_IO)
-		{
-			uint8_t addressLSB = address & 0x00FF; // LSB of the address
-
-			if (addressLSB == 0xFF) // Device selection address $D1FF
-			{
-				// Accessing the Device Selection Register $D1FF
-				serialPrintQueue(ANSI_MAGENTA "PBI I/O: Accessing Device Selection Register $D1FF\n" ANSI_RESET);
-				// 6502 CPU writes to PBI I/O to select device
-				if (!rw)
-				{
-					uint8_t device = read_data_bus(gpio_low);
-					if (device == DEVICE_ID)
-					{
-						serialPrintQueue(ANSI_MAGENTA "PBI I/O: Device $\%02X selected\n" ANSI_RESET, device);
-						cardselected = 1;
-						fast_gpio_set_level(PIN_CS, 0); // Set CS low for PBI I/O
-					}
-					else
-					{
-						serialPrintQueue(ANSI_RED "PBI I/O: Invalid device $\%02X selected.\n" ANSI_RESET, device);
-						cardselected = 0;
-						fast_gpio_set_level(PIN_CS, 1); // Set CS high for no device selected
-					}
-				}
-				else
-				{
-					// CPU reads from PBI Device Selection Register $D1FF
-					// Return DEVICE_ID if device is selected, otherwise return 0
-
-					// Is it a valid read operation?
-					uint8_t data = cardselected ? DEVICE_ID : 0; // Return DEVICE_ID if device is selected, otherwise 0
-					set_data_bus_direction(GPIO_MODE_OUTPUT);
-					write_data_bus(data);
-
-					// wait for PHI2 low
-					while (PHI2_IS_HIGH) ;;
-
-					set_data_bus_direction(GPIO_MODE_INPUT);
-					serialPrintQueue(ANSI_MAGENTA "PBI I/O: Sent $\%02X to CPU from $D1FF\n" ANSI_RESET, data);
-				}
-			}
-			else
-			{
-				// ADDRESS REGISTER RANGE from $00 to $FE (LSB of Address BUS)
-				// should be directly connected to the real registers address lines of the PBI device
-				// and the Chip Select for that device should be already activated
-				if (cardselected)
-				{
-					// Accessing PBI I/O registers only if a device is selected
-					// Valid PBI I/O registers are $D100 to $D1F0
-					// $D1F1 to $D1FE are reserved/unknown
-					if (addressLSB >= 00 && addressLSB <= 0xF0)
-					{
-						// Sniffing I/O Space registers
-						serialPrintQueue(ANSI_MAGENTA "PBI Device Registers: Read or Write @ $\%04X address\n" ANSI_RESET, address);
-					}
-					else
-					{
-						// Someone is trying to access to $D1F1 up to $D1FE
-						serialPrintQueue(ANSI_RED "PBI Unknown Device Registers: Read or Write @ $\%04X address\n" ANSI_RESET, address);
-					}
-				}
-				else
-				{
-					// Someone is trying to access to $D1XX without selecting device first! Maybe
-					// another PBI device is connected and selected?
-					serialPrintQueue(ANSI_RED "PBI Read or Write @ $\%04X address. This Device must be selected first!\n" ANSI_RESET, address);
-				}
-			}
-		}
-
-		// EXSEL e MPD Management
-		if(address >= 0xD800 && address <= 0xDFFF)
-		{
-			if (cardselected)
-			{
-				fast_gpio_set_level(PIN_MPD, 0); // Set MPD low to indicate Math Pack ROM Disable
-				serialPrintQueue(ANSI_CYAN "MPD: Disabled" ANSI_RESET);
-				// ROM (READ ONLY) from $D800-$D8FF (256 bytes for device driver)
-				if (address >= 0xD800 && address <= 0xD8FF)
-				{
-					serialPrintQueue(ANSI_CYAN "PBI ROM Driver: Area $\%04X Accessing\n" ANSI_RESET, address);
-					if (rw)
-					{
-						// $D800-$DFFF: CPU read from PBI Driver and lower MPD
-						uint8_t data = pbi_driver[ address - 0xD800 ];
-						set_data_bus_direction(GPIO_MODE_OUTPUT);
-						write_data_bus(data);
-
-						// wait for PHI2 low
-						while (PHI2_IS_HIGH) ;;
-
-						set_data_bus_direction(GPIO_MODE_INPUT);
-						serialPrintQueue(ANSI_CYAN "PBI ROM Driver: Sent $\%02X from $\%04X to CPU\n" ANSI_RESET, data, address);
-					} // Read-Only
-					else
-					{
-						uint8_t data = read_data_bus(gpio_low);
-						// If some code try to write at the rom space from $D800-$D8FF
-						serialPrintQueue(ANSI_RED "PBI ROM Driver: Write $\%02X to ROM $\%04X IS DISABLED\n" ANSI_RESET, data, address);
-					}
-				}
-				else
-				{
-					// Accessing Math Pack Area but outside the pbi_driver (256 over)
-					// $D900-$DFFF: CPU try to writes/reads to shadow ROM MPD RAM space 
-					fast_gpio_set_level(PIN_EXSEL, 0); // Set EXSEL low for external memory
-					serialPrintQueue(ANSI_CYAN "MPD/EXSEL: Accessing DEVICE RAM\n" ANSI_RESET);
-					if (!rw)
-					{
-						// We store data into buffer space from $D900 to $DFFF
-						uint8_t data = read_data_bus(gpio_low);
-						ram_d800[address - 0xD800] = data;
-						serialPrintQueue(ANSI_CYAN "PBI MPD/EXSEL Driver: Received $\%02X to $\%04X from CPU. Shadow RAM\n" ANSI_RESET, data, address);
-					}
-					else
-					{
-						// Read from shadow RAM $D900-$DFFF (2K - 256bytes)
-						uint8_t data = ram_d800[ address - 0xD800 ];
-						set_data_bus_direction(GPIO_MODE_OUTPUT);
-						write_data_bus(data);
-						
-						// wait for PHI2 low
-						while (PHI2_IS_HIGH) ;;
-						
-						set_data_bus_direction(GPIO_MODE_INPUT);
-						serialPrintQueue(ANSI_CYAN "PBI MPD/EXSEL Driver SHADOW RAM: Sent $\%02X to $\%04X to CPU\n" ANSI_RESET, data, address);
-					}
-
-					// Restore all MPD and EXSEL pins...
-					fast_gpio_set_level(PIN_MPD, 1); // Set MPD high for normal operation
-					fast_gpio_set_level(PIN_EXSEL, 1); // Set EXSEL high for internal memory
-				}
-			}
-		}
-
-		// D600-D7FF Shadow RAM -- Official Area
-		// This is a special area for shadow RAM, used by the 6502 CPU
-		// only if there is a PBI card connected and initialized 
-		if (address >= 0xD600 && address <= 0xD7FF)
-		{
-			// Accessing the Shadow RAM Area D6xx-D7xx only if a device card is
-			// selected by PBI bus protocol
-			if (cardselected)
-			{
-				// the real hardware can drive the EXSEL pin to select external memory
-				// only if a PBI card is connected and selected
-				// 6502 CPU writes to Shadow RAM D600-D7FF
-				fast_gpio_set_level(PIN_EXSEL, 0); // Set EXSEL low for accessing external PBI memory
-				serialPrintQueue(ANSI_WHITE "EXSEL $D600-$D7FF PBI Device Shadow RAM\n" ANSI_RESET);
-
-				// Shadow RAM D600-D6FF 256 bytes
-				if (rw)
-				{
-					// CPU reads from shadow RAM
-					if ((address - 0xD600) <= 0xFF) // 256 bytes window
-					{
-						uint8_t data = ram_d600[address - 0xD600];
-						set_data_bus_direction(GPIO_MODE_OUTPUT);
-						write_data_bus(data);
-
-						// wait for PHI2 low
-						while (PHI2_IS_HIGH) ;;
-
-						set_data_bus_direction(GPIO_MODE_INPUT);
-						serialPrintQueue(ANSI_WHITE "EXSEL $D600-$D6FF PBI Device Shadow RAM: Sent $\%02X from $\%04X to CPU\n" ANSI_RESET, data, address);
-					}
-					else
-					{
-						// from $D700-$D7FF NOP AREA
-						set_data_bus_direction(GPIO_MODE_OUTPUT);
-						write_data_bus(0xEA); // 'NOP'
-
-						// wait for PHI2 low
-						while (PHI2_IS_HIGH) ;;
-
-						set_data_bus_direction(GPIO_MODE_INPUT);
-						serialPrintQueue(ANSI_WHITE "EXSEL $D700-$D7FF PBI Shadow RAM $D7xx: Sent $EA (NOP) from $\%04X to CPU????\n" ANSI_RESET, address);
-					}
-				}
-				else
-				{
-					// CPU writes to shadow RAM
-					set_data_bus_direction(GPIO_MODE_INPUT);
-					uint8_t data = read_data_bus(gpio_low);
-					ram_d600[address - 0xD600] = data;
-					serialPrintQueue(ANSI_WHITE "EXSEL Write to Shadow RAM: Received $\%02X to $\%04X from CPU\n" ANSI_RESET, data, address);
-				}
-
-				// Restore EXSEL pin
-				fast_gpio_set_level(PIN_EXSEL, 1); // Set EXSEL high for internal memory
-			}
-		}
-	} // for(;;)
-}
-
-void loop(void)
-{
-	// Main loop does nothing, all work is done in MonitorTask & SerialTask
-	// This is to keep the main loop responsive and free for other tasks
-	vTaskDelay(pdMS_TO_TICKS(1)); // Yield to other tasks every 1 ms
-}
+void loop() { vTaskDelay(pdMS_TO_TICKS(1000)); }

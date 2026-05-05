@@ -68,15 +68,18 @@ Questo documento definisce la mappatura dei segnali tra l'Atari XE (Bus PBI/ECI/
 
 ## 💡 PCB Design Hints & Best Practices
 
-### 1. Level Shifting (Fondamentale)
-Il bus ATARI lavora a **5V TTL**, mentre l'ESP32 lavora a **3.3V**.
-- **Input (Indirizzi/Controllo):** Usa dei buffer/transceiver (es. 74LVC245 o 74LVC8T245) alimentati a 3.3V sul lato ESP32. Molti buffer LVC sono *5V tolerant* sugli ingressi se alimentati a 3.3V.
-- **Bidirezionale (Dati):** È obbligatorio l'uso di transceiver bidirezionali (es. SN74LVC8T245) con doppia alimentazione (VCCA=3.3V, VCCB=5V). Il segnale **R/_W** dell'Atari deve pilotare il pin di direzione (DIR) dei transceiver del bus dati.
+### 1. Level Shifting (TXS0108EPW)
+Il bus ATARI lavora a **5V TTL**, mentre l'ESP32 lavora a **3.3V**. 
+L'uso dei **TXS0108EPW** è una scelta migliore rispetto ai TXB0108 per un bus retro:
+- **Pull-up integrati:** Il TXS0108E ha resistenze di pull-up interne (10kΩ), ideali per i segnali del 6502.
+- **Auto-Direction:** Non richiede un segnale DIR, ma è sensibile alla capacità delle tracce.
+- **Edge-Rate Accelerators:** Rileva i fronti di salita e "spinge" il segnale velocemente verso VCC. Per evitare falsi trigger (glitch), tieni le tracce del bus il più corte possibile.
+- **OE (Output Enable):** Il pin OE del TXS0108E deve essere collegato a VCCA (3.3V) per abilitare le uscite. Si consiglia una resistenza di pull-up da 10kΩ.
 
 ### 2. Integrità di Segnale
 Il bus ATARI XE non è terminato e può soffrire di riflessioni, specialmente con cavi flat lunghi.
-- **Resistenze di terminazione:** Inserisci delle resistenze serie da **22Ω - 47Ω** sulle linee PHI2, Data Bus e Address Bus vicino all'ESP32 per smorzare i ringing.
-- **PHI2 (Clock):** Questo segnale è il cuore del sistema. Assicurati che la traccia sia il più corta possibile e lontana da segnali rumorosi.
+- **Resistenze di terminazione:** Sebbene il TXS0108E abbia acceleratori di fronte, inserire delle resistenze serie da **22Ω** sulle linee PHI2 e Data Bus vicino all'ESP32 può aiutare a smorzare eventuali oscillazioni causate dagli acceleratori stessi su tracce lunghe.
+- **PHI2 (Clock):** È il segnale più critico. Assicurati che il TXS0108E dedicato a PHI2 abbia un percorso pulito e condensatori di disaccoppiamento immediati.
 
 ### 3. Power Supply & Decoupling
 L'ESP32-PICO-D4 può avere picchi di assorbimento di 500mA durante l'uso del Wi-Fi.
