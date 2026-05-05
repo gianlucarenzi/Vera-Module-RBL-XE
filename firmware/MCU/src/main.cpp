@@ -29,49 +29,49 @@
 // LSB Address Pins
 
 // Decoded selection signals are only on the final revision board
-constexpr gpio_num_t PIN_EXSEL = GPIO_NUM_11;	// When low, DEVICE memory is selected, when high ATARI memory is selected
-constexpr gpio_num_t PIN_D1XX = GPIO_NUM_10;	// When accessing PBI I/O memory space
-constexpr gpio_num_t PIN_CCTL = GPIO_NUM_20;	// When accessing Cartridge Control $D500 CCTL
-constexpr gpio_num_t PIN_MPD = GPIO_NUM_7;		// Math Pack ROM Disable
+constexpr gpio_num_t PIN_EXSEL = GPIO_NUM_11;	// Pin 30 - When low, DEVICE memory is selected, when high ATARI memory is selected
+constexpr gpio_num_t PIN_D1XX = GPIO_NUM_10;	// Pin 29 - When accessing PBI I/O memory space
+constexpr gpio_num_t PIN_CCTL = GPIO_NUM_9;	// Pin 28 - When accessing Cartridge Control $D500 CCTL
+constexpr gpio_num_t PIN_MPD = GPIO_NUM_7;		// Pin 32 - Math Pack ROM Disable
 
 // Common LSB Address Pins
-constexpr gpio_num_t PIN_A0 = GPIO_NUM_6;	// D6
-constexpr gpio_num_t PIN_A1 = GPIO_NUM_8;	// D8
-constexpr gpio_num_t PIN_A2 = GPIO_NUM_21;	// D21
-constexpr gpio_num_t PIN_A3 = GPIO_NUM_27;	// D27
-constexpr gpio_num_t PIN_A4 = GPIO_NUM_33;	// D33
-constexpr gpio_num_t PIN_A5 = GPIO_NUM_32;	// D32
-constexpr gpio_num_t PIN_A6 = GPIO_NUM_38;	// D38
-constexpr gpio_num_t PIN_A7 = GPIO_NUM_37;	// D37
+constexpr gpio_num_t PIN_A0 = GPIO_NUM_6;	// Pin 31
+constexpr gpio_num_t PIN_A1 = GPIO_NUM_8;	// Pin 33
+constexpr gpio_num_t PIN_A2 = GPIO_NUM_21;	// Pin 42
+constexpr gpio_num_t PIN_A3 = GPIO_NUM_27;	// Pin 16
+constexpr gpio_num_t PIN_A4 = GPIO_NUM_33;	// Pin 13
+constexpr gpio_num_t PIN_A5 = GPIO_NUM_32;	// Pin 12
+constexpr gpio_num_t PIN_A6 = GPIO_NUM_38;	// Pin 7
+constexpr gpio_num_t PIN_A7 = GPIO_NUM_37;	// Pin 6
 
 // MSB Address Pins
-constexpr gpio_num_t PIN_A8  = GPIO_NUM_2;	// D2
-constexpr gpio_num_t PIN_A9  = GPIO_NUM_5;	// D5
-constexpr gpio_num_t PIN_A10 = GPIO_NUM_12;	// D12
-constexpr gpio_num_t PIN_A11 = GPIO_NUM_15;	// D15
-constexpr gpio_num_t PIN_A12 = GPIO_NUM_34;	// D34
-constexpr gpio_num_t PIN_A13 = GPIO_NUM_35;	// D35
-constexpr gpio_num_t PIN_A14 = GPIO_NUM_36;	// D36 VP
-constexpr gpio_num_t PIN_A15 = GPIO_NUM_39;	// D39 VN
+constexpr gpio_num_t PIN_A8  = GPIO_NUM_2;	// Pin 22
+constexpr gpio_num_t PIN_A9  = GPIO_NUM_5;	// Pin 34
+constexpr gpio_num_t PIN_A10 = GPIO_NUM_12;	// Pin 18
+constexpr gpio_num_t PIN_A11 = GPIO_NUM_15;	// Pin 21
+constexpr gpio_num_t PIN_A12 = GPIO_NUM_34;	// Pin 10
+constexpr gpio_num_t PIN_A13 = GPIO_NUM_35;	// Pin 11
+constexpr gpio_num_t PIN_A14 = GPIO_NUM_36;	// Pin 5
+constexpr gpio_num_t PIN_A15 = GPIO_NUM_39;	// Pin 8
 
 // PHI2 and RW Pins
 // PHI2 is used for clocking the 6502 bus
 // RW is used to indicate read/write operations
-constexpr gpio_num_t PIN_PHI2 = GPIO_NUM_23;	// D23
-constexpr gpio_num_t PIN_RW   = GPIO_NUM_25;	// D25
+constexpr gpio_num_t PIN_PHI2 = GPIO_NUM_23;	// Pin 36
+constexpr gpio_num_t PIN_RW   = GPIO_NUM_25;	// Pin 14
 
 // Data Bus D0-D7
 // Those pins are used for data transfer on the 6502 bus
-constexpr gpio_num_t PIN_D0 = GPIO_NUM_4;	// D4
-constexpr gpio_num_t PIN_D1 = GPIO_NUM_13;	// D13
-constexpr gpio_num_t PIN_D2 = GPIO_NUM_14;	// D14
-constexpr gpio_num_t PIN_D3 = GPIO_NUM_16;	// D16 RX2
-constexpr gpio_num_t PIN_D4 = GPIO_NUM_17;	// D17 TX2
-constexpr gpio_num_t PIN_D5 = GPIO_NUM_18;	// D18
-constexpr gpio_num_t PIN_D6 = GPIO_NUM_19;	// D19
-constexpr gpio_num_t PIN_D7 = GPIO_NUM_22;	// D22
+constexpr gpio_num_t PIN_D0 = GPIO_NUM_4;	// Pin 24
+constexpr gpio_num_t PIN_D1 = GPIO_NUM_13;	// Pin 20
+constexpr gpio_num_t PIN_D2 = GPIO_NUM_14;	// Pin 17
+constexpr gpio_num_t PIN_D3 = GPIO_NUM_16;	// Pin 25
+constexpr gpio_num_t PIN_D4 = GPIO_NUM_17;	// Pin 27
+constexpr gpio_num_t PIN_D5 = GPIO_NUM_18;	// Pin 35
+constexpr gpio_num_t PIN_D6 = GPIO_NUM_19;	// Pin 38
+constexpr gpio_num_t PIN_D7 = GPIO_NUM_22;	// Pin 39
 
-constexpr gpio_num_t PIN_CS = GPIO_NUM_26;	// D26 Chip Select Pin for FPGA VERA VIDEO CARD
+constexpr gpio_num_t PIN_CS = GPIO_NUM_26;	// Pin 15
 
 // Shadow RAM PBI Driver Memory Space
 static char ram_d800[2048] = {0};
