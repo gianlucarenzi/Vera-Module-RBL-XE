@@ -56,6 +56,10 @@ constexpr gpio_num_t PIN_MPD    = GPIO_NUM_5;
 #define MASK_D1XX (1UL << PIN_D1XX)
 #define MASK_CCTL (1UL << PIN_CCTL)
 
+// Maschera one-hot del dispositivo PBI: deve coincidere con il byte $D803
+// della ROM 6502 (PBI Mandatory ID = $80 → bit 7).
+#define DEVICE_MASK 0x80u
+
 /* --- LOGGING NON-BLOCKING --- */
 #define LOG_QUEUE_SIZE 64
 typedef struct {
@@ -188,7 +192,7 @@ void IRAM_ATTR MonitorTask(void *pvParameters) {
             if (addr == 0xFF && !is_read) {
                 while (GPIO.in & MASK_PHI2);
                 uint8_t dev = read_data_bus();
-                device_selected = (dev == 0x01);
+                device_selected = (dev == DEVICE_MASK);
                 GPIO.out_w1tc = (1 << PIN_VERA_CS); 
                 log_bus(0xD1FF, dev, 'P');
             }
