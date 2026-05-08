@@ -5,3 +5,7 @@
 *.kicad_pcb.backup_*
 *.csv.backup_*
 *cleanup_report_*.txt
+/firmware/MCU/6502/pbi-driver.bin
+/firmware/MCU/6502/pbi-driver.h
+/firmware/MCU/6502/pbi-driver.l
+/firmware/MCU/6502/pbi-driver.o
