@@ -34,20 +34,12 @@ architecture Behavioral of C6502_Interface is
     constant ROM_END_ADDR    : std_logic_vector(15 downto 0) := x"DFFF";
 
     -- Segnali interni per la Gestione del Bus Dati (Tri-state)
-    signal d_out_drive    : std_logic_vector(7 downto 0); -- Dati da pilotare (RAM/ROM)
-    signal d_drive_enable : std_logic := '0';             -- Abilita il driver D
+    -- Usato solo per la RAM interna ($D600-$D7FF); la ROM è EEPROM esterna.
+    signal d_out_drive    : std_logic_vector(7 downto 0);
+    signal d_drive_enable : std_logic := '0';
 
-    -- Implementazione BRAM (ROM da 2KB) - Inizializzazione dati
-    -- il firmware driver PBI va compilato a parte con CC65 e poi
-    -- inserito qui, byte per byte
-    signal pbi_driver : rom_array := (
-        0      => x"01", -- Dati a offset 0 ($D800)
-        1      => x"02", 
-        others => x"EA"  -- Contenuto ROM NOP
-    );
-    
-    -- Implementazione RAM (512 Byte) - Inizializzazione a zero
-    signal internal_ram : ram_512_array := (others => x"00"); 
+    -- RAM interna (512 Byte, $D600-$D7FF)
+    signal internal_ram : ram_512_array := (others => x"00");
 
 begin
 
@@ -58,75 +50,51 @@ begin
     -- D viene messo in alta impedenza ('Z') quando l'FPGA non sta leggendo dalla RAM/ROM.
     D <= d_out_drive when d_drive_enable = '1' else (others => 'Z');
 
-    -- Logica Latch, RAM, ROM e Controllo I/O
+    -- Logica Latch, RAM e MPD
     process (PHI2)
-        -- Variabili per le conversioni indice
-        variable bit_index : integer range 0 to 7;
+        variable bit_index      : integer range 0 to 7;
         variable address_unsigned : unsigned(15 downto 0);
         variable ram_index_full : integer;
-        variable rom_offset : integer range 0 to 2047;
-        
-        -- Costanti unsigned per le sottrazioni
         constant RAM_START_UNSIGNED : unsigned(15 downto 0) := unsigned(RAM_START_ADDR);
-        constant ROM_START_UNSIGNED : unsigned(15 downto 0) := unsigned(ROM_START_ADDR);
-
     begin
         if rising_edge(PHI2) then
-            -- Reset di default dei segnali di controllo I/O
             d_drive_enable <= '0';
-            MPD <= '1';
+            MPD    <= '1';
             EXTSEL <= '1';
-            
+
             address_unsigned := unsigned(A);
-            
+
             -- ******************************************************
-            -- 1. Logica del LATCH VERA_CS (Scrittura a $D1FF$)
+            -- 1. Latch VERA_CS — scrittura a $D1FF
             -- ******************************************************
-            if (RNW_ = '0') and (A = REG_ADDR_MASK) then 
-                -- Calcola l'indice del bit D da controllare (0-7)
+            if (RNW_ = '0') and (A = REG_ADDR_MASK) then
                 bit_index := to_integer(unsigned(DIP_SEL));
-                
-                -- Aggiorna il latch in scrittura (Attivo Basso se D(index) = '1')
-                vera_cs_latch <= not D(bit_index); 
+                vera_cs_latch <= not D(bit_index);
             end if;
 
             -- ******************************************************
-            -- 2. Logica RAM (D600-D7FF) e EXTSEL
+            -- 2. RAM interna $D600-$D7FF + EXTSEL
+            --    Attiva solo quando il dispositivo è selezionato.
             -- ******************************************************
-            -- La RAM è selezionata solo se VERA_CS è attivo ('0') e l'indirizzo è nel range
-            if (A >= RAM_START_ADDR) and (A <= RAM_END_ADDR) and (vera_cs_latch = '0') then 
-                
-                EXTSEL <= '0'; -- Abilita l'accesso RAM esterno (richiesta dall'utente)
-                
-                -- Calcola l'indirizzo relativo alla RAM (offset 0-511)
+            if (A >= RAM_START_ADDR) and (A <= RAM_END_ADDR) and (vera_cs_latch = '0') then
+                EXTSEL <= '0';
                 ram_index_full := to_integer(address_unsigned - RAM_START_UNSIGNED);
-                
-                if RNW_ = '0' then -- **SCRITTURA** nella RAM
-                    internal_ram(ram_index_full) <= D; -- Scrive il dato D (che in scrittura è input)
-                
-                else -- RNW_ = '1' - **LETTURA** dalla RAM
-                    -- Legge il dato dalla RAM e lo mette nel driver
-                    d_out_drive <= internal_ram(ram_index_full);
-                    d_drive_enable <= '1'; -- Abilita il tri-state D (D pilota il bus)
+                if RNW_ = '0' then
+                    internal_ram(ram_index_full) <= D;
+                else
+                    d_out_drive    <= internal_ram(ram_index_full);
+                    d_drive_enable <= '1';
                 end if;
-            
-            -- ******************************************************
-            -- 3. Logica ROM (D800-DFFF) e MPD
-            -- ******************************************************
-            elsif (A >= ROM_START_ADDR) and (A <= ROM_END_ADDR) and (RNW_ = '1') then 
-                
-                MPD <= '0'; -- Seleziona ROM
-                
-                -- Calcola l'offset ROM (A - $D800)
-                rom_offset := to_integer(address_unsigned - ROM_START_UNSIGNED);
-                
-                -- Mette il dato della ROM nel driver
-                d_out_drive <= pbi_driver(rom_offset);
-                d_drive_enable <= '1'; -- Abilita il tri-state D (D pilota il bus)
-                
-            end if;
 
-            -- Se in lettura e nessuna periferica è selezionata, d_drive_enable rimane '0' (bus in 'Z').
+            -- ******************************************************
+            -- 3. EEPROM esterna $D800-$DFFF — solo MPD
+            --    L'EEPROM fisica guida il bus dati; l'FPGA rimane
+            --    in alta impedenza (d_drive_enable resta '0').
+            -- ******************************************************
+            elsif (A >= ROM_START_ADDR) and (A <= ROM_END_ADDR) then
+                MPD <= '0';
+
+            end if;
 
         end if;
     end process;
