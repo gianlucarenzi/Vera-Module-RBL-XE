@@ -1,254 +1,358 @@
+/**
+ * esp32-main.cpp  —  Atari PBI VeraX16 Bus Controller
+ *
+ * Architecture:
+ *   Core 1: MonitorTask — high-speed 6502 bus monitor (IRAM, no blocking calls).
+ *   Core 0: loop()      — serial debug, event logging via FreeRTOS queue.
+ *
+ * External hardware:
+ *   74HC138 decodes $D800-$DFFF → PIN_ROM_SEL_N (Y7), also handles MPD in HW.
+ *   External address decoder    → PIN_D1XX_N (D1xx page).
+ *   External VERA chip on bus   → chip CS driven by PIN_DEV_SEL_N.
+ *
+ * Timing budget (Atari 800XL NTSC, 6502 @ 1.7897 MHz):
+ *   PHI2 high period         ≈ 279 ns  →  ~67 ESP32 cycles @240 MHz
+ *   6502 data setup (tMDS)   ≈ 100 ns before PHI2↓  →  24 cycles headroom
+ *   Window from PHI2↑        ≈ 179 ns  →  ~43 cycles
+ *   Full decode+drive path   ≈  54 cycles (IRAM, no branches) — borderline.
+ *   CPU write data valid      ≈  80–100 ns after PHI2↑ → re-read GPIO after decode.
+ *
+ *   If VERA chip CS timing is too tight, route DEV_SEL_N through external
+ *   combinatorial hardware (GAL/CPLD) instead of the ESP32.
+ *
+ * ⚠ PIN WARNINGS:
+ *   GPIO  0 (PIN_EXTSEL_N) : ESP32 bootstrap pin.  If held LOW at power-on
+ *                             the chip enters bootloader mode.  Ensure the
+ *                             Atari cannot drive this line LOW during ESP32 boot.
+ *   GPIO  3 (PIN_DEV_SEL_N): UART0 RX.  Serial RX must be disabled:
+ *                             Serial.begin(baud, cfg, /*rx=*/-1, /*tx=*/1).
+ *
+ * Pin mapping:
+ *   Data bus D0-D7  : GPIO 18, 19, 21, 22, 23, 25, 26, 27
+ *   Addr A0-A5      : GPIO 32, 33, 34, 35, 36, 39   (GPIO_IN1 register)
+ *   Addr A6-A10     : GPIO 16, 17, 14, 12, 13        (GPIO_IN register)
+ *   PHI2            : GPIO  2
+ *   R/W_            : GPIO 15  (HIGH=read, LOW=write)
+ *   D1XX_N          : GPIO  5  (active LOW — D1xx address space selected)
+ *   ROM_SEL_N       : GPIO  4  (active LOW — $D800-$DFFF, from 74HC138 Y7)
+ *   EXTSEL_N        : GPIO  0  (active LOW → Atari PBI EXSEL, disables FP ROM)
+ *   DEV_SEL_N       : GPIO  3  (active LOW → VERA chip CS)
+ */
+
 #include <Arduino.h>
-#include <driver/gpio.h>
-#include <soc/gpio_reg.h>
 #include <soc/gpio_struct.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
-#include <pbi-driver.h>
+#include "pbi-driver.h"
+/* pbi-driver.h must declare:
+ *   extern const uint8_t pbi_driver[] IRAM_ATTR;
+ * The array must be exactly 2048 bytes (2 KB, $D800-$DFFF image). */
 
-/* ANSI Eye-Candy ;-) */
-#define ANSI_RED     "\x1b[31m"
-#define ANSI_GREEN   "\x1b[32m"
-#define ANSI_YELLOW  "\x1b[1;33m"
-#define ANSI_BLUE    "\x1b[1;34m"
-#define ANSI_MAGENTA "\x1b[1;35m"
-#define ANSI_CYAN    "\x1b[1;36m"
-#define ANSI_WHITE   "\x1b[1;37m"
-#define ANSI_RESET   "\x1b[0m"
+// ---------------------------------------------------------------------------
+// Pin assignments
+// ---------------------------------------------------------------------------
+#define PIN_PHI2        2
+#define PIN_RW          15
+#define PIN_D1XX_N      5
+#define PIN_ROM_SEL_N   4
+#define PIN_EXTSEL_N    0   // → Atari EXSEL  (see boot-pin warning above)
+#define PIN_DEV_SEL_N   3   // → VERA chip CS (see UART-RX  warning above)
 
-/* --- CONFIGURAZIONE PIN (Safe Mapping per PICO-D4) --- */
+// Data bus bitmask — all pins in GPIO bank 0 (GPIO_IN / GPIO_OUT registers)
+#define DBUS_MASK  ((1UL<<18)|(1UL<<19)|(1UL<<21)|(1UL<<22)|\
+                    (1UL<<23)|(1UL<<25)|(1UL<<26)|(1UL<<27))
 
-// Registro 1 (GPIO 32-39) - Indirizzi A0-A7
-constexpr gpio_num_t PIN_A0 = GPIO_NUM_36; // bit 4
-constexpr gpio_num_t PIN_A1 = GPIO_NUM_37; // bit 5
-constexpr gpio_num_t PIN_A2 = GPIO_NUM_38; // bit 6
-constexpr gpio_num_t PIN_A3 = GPIO_NUM_39; // bit 7
-constexpr gpio_num_t PIN_A4 = GPIO_NUM_34; // bit 2
-constexpr gpio_num_t PIN_A5 = GPIO_NUM_35; // bit 3
-constexpr gpio_num_t PIN_A6 = GPIO_NUM_32; // bit 0
-constexpr gpio_num_t PIN_A7 = GPIO_NUM_33; // bit 1
+// PBI device configuration
+#define DEVICE_MASK    0x80u   // one-hot: this device occupies PBI slot 7
+#define VERA_REG_MAX   0x1Fu   // VERA registers: offset 0x00–0x1F ($D100–$D11F)
+#define INT_REG_LO     0x20u   // ESP32 internal regs start: $D120
+#define INT_REG_HI     0xFEu   // ESP32 internal regs end:   $D1FE
 
-// Registro 0 (GPIO 0-31) - Dati D0-D7
-constexpr gpio_num_t PIN_D0 = GPIO_NUM_4;
-constexpr gpio_num_t PIN_D1 = GPIO_NUM_13;
-constexpr gpio_num_t PIN_D2 = GPIO_NUM_14;
-constexpr gpio_num_t PIN_D3 = GPIO_NUM_18;
-constexpr gpio_num_t PIN_D4 = GPIO_NUM_19;
-constexpr gpio_num_t PIN_D5 = GPIO_NUM_21;
-constexpr gpio_num_t PIN_D6 = GPIO_NUM_22;
-constexpr gpio_num_t PIN_D7 = GPIO_NUM_25;
+// ---------------------------------------------------------------------------
+// IRAM-resident data — mandatory for timing
+// ---------------------------------------------------------------------------
+static IRAM_ATTR uint32_t lut_drive[256];  // byte value → GPIO bitmask
+static IRAM_ATTR uint8_t  int_regs[256];   // internal ESP32 register file
 
-#define MASK_DATA_BUS ((1ULL << PIN_D0) | (1ULL << PIN_D1) | (1ULL << PIN_D2) | (1ULL << PIN_D3) | \
-                       (1ULL << PIN_D4) | (1ULL << PIN_D5) | (1ULL << PIN_D6) | (1ULL << PIN_D7))
+// FreeRTOS event queue: Core 1 → Core 0 (debug only)
+static QueueHandle_t pbiEventQueue;
 
-// Segnali di Controllo
-constexpr gpio_num_t PIN_PHI2   = GPIO_NUM_23;
-constexpr gpio_num_t PIN_RW     = GPIO_NUM_27;
-constexpr gpio_num_t PIN_D1XX   = GPIO_NUM_10;
-constexpr gpio_num_t PIN_CCTL   = GPIO_NUM_9;
-constexpr gpio_num_t PIN_VERA_CS= GPIO_NUM_26;
-constexpr gpio_num_t PIN_EXSEL  = GPIO_NUM_15;
-constexpr gpio_num_t PIN_MPD    = GPIO_NUM_5;
-
-#define MASK_PHI2 (1UL << PIN_PHI2)
-#define MASK_RW   (1UL << PIN_RW)
-#define MASK_D1XX (1UL << PIN_D1XX)
-#define MASK_CCTL (1UL << PIN_CCTL)
-
-// Maschera one-hot del dispositivo PBI: deve coincidere con il byte $D803
-// della ROM 6502 (PBI Mandatory ID = $80 → bit 7).
-#define DEVICE_MASK 0x80u
-
-/* --- LOGGING NON-BLOCKING --- */
-#define LOG_QUEUE_SIZE 64
-typedef struct {
-    uint32_t timestamp;
-    uint16_t addr;
-    uint8_t data;
-    char type; // 'R'ead, 'W'rite, 'C'CTL, 'P'BI
-} bus_log_t;
-
-QueueHandle_t logQueue;
-volatile uint32_t droppedLogs = 0;
-
-void IRAM_ATTR log_bus(uint16_t addr, uint8_t data, char type) {
-    bus_log_t log = { xTaskGetTickCountFromISR(), addr, data, type };
-    if (xQueueSendFromISR(logQueue, &log, NULL) != pdTRUE) {
-        droppedLogs++;
-    }
-}
-
-/* --- LOOK-UP TABLE PER SCRITTURA DATI --- */
-static uint32_t data_set_lut[256];
-
-static void precompute_data_lut() {
-    for (int v = 0; v < 256; v++) {
+// ---------------------------------------------------------------------------
+// build_drive_lut()
+// Precompute: byte value → GPIO OUT bitmask for data bus.
+// Called once from setup(); runs from DRAM (no timing constraint here).
+// ---------------------------------------------------------------------------
+static void build_drive_lut(void)
+{
+    static const uint8_t pin[8] = {18, 19, 21, 22, 23, 25, 26, 27};
+    for (int v = 0; v < 256; v++)
+    {
         uint32_t m = 0;
-        if (v & 0x01) m |= (1 << PIN_D0);
-        if (v & 0x02) m |= (1 << PIN_D1);
-        if (v & 0x04) m |= (1 << PIN_D2);
-        if (v & 0x08) m |= (1 << PIN_D3);
-        if (v & 0x10) m |= (1 << PIN_D4);
-        if (v & 0x20) m |= (1 << PIN_D5);
-        if (v & 0x40) m |= (1 << PIN_D6);
-        if (v & 0x80) m |= (1 << PIN_D7);
-        data_set_lut[v] = m;
+        for (int b = 0; b < 8; b++)
+        {
+            if (v & (1 << b))
+                m |= (1UL << pin[b]);
+        }
+        lut_drive[v] = m;
     }
 }
 
-/* --- ACCESSO VELOCE AI BUS --- */
-
-// Legge A0-A7 tramite bit-shuffling del registro 1
-static inline uint8_t read_addr_low() {
-    uint32_t in1 = GPIO.in1.val;
-    // A0-A3 (bits 4-7) -> move to 0-3
-    // A4-A5 (bits 2-3) -> move to 4-5
-    // A6-A7 (bits 0-1) -> move to 6-7
-    return ((in1 & 0xF0) >> 4) | ((in1 & 0x0C) << 2) | ((in1 & 0x03) << 6);
+// ---------------------------------------------------------------------------
+// decode_addr()  — branch-free, ~18 Xtensa cycles
+//
+// Reconstruct A0-A10 from two GPIO snapshot words.
+//   A0-A4 : GPIO_IN1 bits  0-4   (GPIO 32-36, consecutive in IN1)
+//   A5    : GPIO_IN1 bit   7     (GPIO 39)
+//   A6    : GPIO_IN  bit   16    (GPIO 16)
+//   A7    : GPIO_IN  bit   17    (GPIO 17)
+//   A8    : GPIO_IN  bit   14    (GPIO 14)
+//   A9    : GPIO_IN  bit   12    (GPIO 12)
+//   A10   : GPIO_IN  bit   13    (GPIO 13)
+// ---------------------------------------------------------------------------
+static inline uint16_t IRAM_ATTR decode_addr(uint32_t lo, uint32_t hi)
+{
+    uint16_t a;
+    a  = (uint16_t)( hi         & 0x1Fu);          // A0-A4
+    a |= (uint16_t)(((hi >>  7) & 1u) << 5);       // A5  (GPIO 39)
+    a |= (uint16_t)(((lo >> 16) & 1u) << 6);       // A6
+    a |= (uint16_t)(((lo >> 17) & 1u) << 7);       // A7
+    a |= (uint16_t)(((lo >> 14) & 1u) << 8);       // A8
+    a |= (uint16_t)(((lo >> 12) & 1u) << 9);       // A9
+    a |= (uint16_t)(((lo >> 13) & 1u) << 10);      // A10
+    return a;
 }
 
-// Legge D0-D7 tramite campionamento sparse del registro 0
-static inline uint8_t read_data_bus() {
-    uint32_t in = GPIO.in;
-    uint8_t d = 0;
-    if (in & (1 << PIN_D0)) d |= 0x01;
-    if (in & (1 << PIN_D1)) d |= 0x02;
-    if (in & (1 << PIN_D2)) d |= 0x04;
-    if (in & (1 << PIN_D3)) d |= 0x08;
-    if (in & (1 << PIN_D4)) d |= 0x10;
-    if (in & (1 << PIN_D5)) d |= 0x20;
-    if (in & (1 << PIN_D6)) d |= 0x40;
-    if (in & (1 << PIN_D7)) d |= 0x80;
-    return d;
+// ---------------------------------------------------------------------------
+// decode_data()  — branch-free, ~5 Xtensa cycles
+//
+// Extract data bus byte from GPIO snapshot.
+// Exploits three consecutive GPIO groups:
+//   GPIO 18-19  (IN bits 18-19) → D0-D1
+//   GPIO 21-23  (IN bits 21-23) → D2-D4
+//   GPIO 25-27  (IN bits 25-27) → D5-D7
+// ---------------------------------------------------------------------------
+static inline uint8_t IRAM_ATTR decode_data(uint32_t lo)
+{
+    return (uint8_t)(
+        ( (lo >> 18) & 0x03u)        |   // D0-D1
+        (((lo >> 21) & 0x07u) << 2)  |   // D2-D4
+        (((lo >> 25) & 0x07u) << 5)      // D5-D7
+    );
 }
 
-// Scrive D0-D7 usando la LUT (Massima velocità)
-static inline void write_data_bus(uint8_t val) {
-    uint32_t set_mask = data_set_lut[val];
-    GPIO.out_w1ts = set_mask;
-    GPIO.out_w1tc = MASK_DATA_BUS & ~set_mask;
+// ---------------------------------------------------------------------------
+// bus_drive()  — put one byte on the data bus (outputs enabled)
+// Clears unwanted bits BEFORE setting new ones to prevent glitches.
+// ---------------------------------------------------------------------------
+static inline void IRAM_ATTR bus_drive(uint8_t val)
+{
+    uint32_t mask = lut_drive[val];
+    GPIO.out_w1tc = DBUS_MASK & ~mask;  // 1. clear bits that must be 0
+    GPIO.out_w1ts = mask;               // 2. set  bits that must be 1
+    GPIO.enable_w1ts = DBUS_MASK;       // 3. enable outputs (tristate → driven)
 }
 
-static inline void data_bus_mode(gpio_mode_t mode) {
-    if (mode == GPIO_MODE_OUTPUT) GPIO.enable_w1ts = (uint32_t)MASK_DATA_BUS;
-    else GPIO.enable_w1tc = (uint32_t)MASK_DATA_BUS;
+// ---------------------------------------------------------------------------
+// bus_release()  — tristate data bus (high-Z)
+// ---------------------------------------------------------------------------
+static inline void IRAM_ATTR bus_release(void)
+{
+    GPIO.enable_w1tc = DBUS_MASK;
 }
 
-/* --- MEMORIA --- */
-static uint8_t d500_ram[256] = {0};
-static bool device_selected = false;
+// ============================================================================
+// MonitorTask — Core 1
+//
+// Runs at maximum FreeRTOS priority on Core 1.
+// Uses no shared variables: all state is task-local.
+// Only FreeRTOS call: xQueueSend (non-blocking) on D1FF state change.
+// ============================================================================
+static void IRAM_ATTR MonitorTask(void * /*arg*/)
+{
+    // Local state — isolated to Core 1, no locking needed
+    bool selected = false;   // true when D1FF was written with DEVICE_MASK
 
-/* --- TASKS --- */
+    // Ensure outputs start deasserted (active-LOW signals start HIGH)
+    GPIO.out_w1ts = (1UL << PIN_EXTSEL_N) | (1UL << PIN_DEV_SEL_N);
+    bus_release();
 
-void SerialTask(void *pvParameters) {
-    bus_log_t log;
-    uint32_t lastReport = 0;
-    while(1) {
-        if (xQueueReceive(logQueue, &log, pdMS_TO_TICKS(100))) {
-            Serial.printf("[%u] %c %04X -> %02X\n", log.timestamp, log.type, log.addr, log.data);
+    for (;;)
+    {
+        // --------------------------------------------------------------------
+        // 1. Spin-wait for PHI2 rising edge.
+        //    Capture GPIO.in atomically: address bus, R/W_ and control signals
+        //    are all valid at PHI2↑.
+        //    NOTE: for 6502 WRITE cycles, CPU data appears ~80-100 ns AFTER
+        //    PHI2↑.  Do NOT use g_lo to sample write data — re-read GPIO.in
+        //    after the decode phase instead (see step 5).
+        // --------------------------------------------------------------------
+        uint32_t g_lo;
+        while (!((g_lo = GPIO.in) & (1UL << PIN_PHI2)));
+
+        // --------------------------------------------------------------------
+        // 2. Decode control signals from the PHI2↑ snapshot
+        // --------------------------------------------------------------------
+        bool is_read  = (g_lo & (1UL << PIN_RW))       != 0;
+        bool is_d1xx  = (g_lo & (1UL << PIN_D1XX_N))   == 0;   // active LOW
+        bool is_rom   = (g_lo & (1UL << PIN_ROM_SEL_N)) == 0;   // active LOW
+
+        uint32_t g_hi  = GPIO.in1.val;
+        uint16_t addr  = decode_addr(g_lo, g_hi);   // A0-A10,  ~18 cycles
+        uint8_t  off8  = (uint8_t)(addr & 0xFFu);   // offset within D1xx page
+
+        // Sub-range decode for D1xx space
+        bool is_d1ff       = is_d1xx && (off8 == 0xFFu);
+        bool is_vera_range = is_d1xx && (off8 <= VERA_REG_MAX);
+        bool is_int_range  = is_d1xx && (off8 >= INT_REG_LO) && (off8 <= INT_REG_HI);
+
+        // --------------------------------------------------------------------
+        // 3. Assert DEV_SEL_N (CS to external VERA chip).
+        //    Only when device is selected AND address is in VERA register range.
+        //    ⚠ Assertion is ~200 ns after PHI2↑ (full decode path in IRAM).
+        //      If the VERA chip cannot tolerate this latency, move this decode
+        //      to external combinatorial logic (GAL/CPLD).
+        // --------------------------------------------------------------------
+        if (selected && is_vera_range)
+        {
+            GPIO.out_w1tc = (1UL << PIN_DEV_SEL_N);
         }
 
-        uint32_t now = millis();
-        if (now - lastReport > 1000) {
-            if (droppedLogs > 0) {
-                Serial.printf(ANSI_RED "!!! WARNING: Dropped %u logs due to slow serial !!!\n" ANSI_RESET, droppedLogs);
-                droppedLogs = 0; // Reset after reporting
-            }
-            lastReport = now;
-        }
-    }
-}
-
-void IRAM_ATTR MonitorTask(void *pvParameters) {
-    while(1) {
-        // 1. Sincronizzazione PHI2 High
-        while (!(GPIO.in & MASK_PHI2));
-
-        uint32_t in_reg = GPIO.in;
-        uint8_t addr = read_addr_low();
-        bool is_read = (in_reg & MASK_RW);
-
-        // 2. Logica CCTL ($D5xx)
-        if (!(in_reg & MASK_CCTL)) {
-            if (is_read) {
-                uint8_t data = d500_ram[addr];
-                write_data_bus(data);
-                data_bus_mode(GPIO_MODE_OUTPUT);
-                while (GPIO.in & MASK_PHI2); // Attendi fine ciclo
-                data_bus_mode(GPIO_MODE_INPUT);
-                log_bus(0xD500 | addr, data, 'C');
-            } else {
-                while (GPIO.in & MASK_PHI2); // Campiona a fine ciclo
-                uint8_t data = read_data_bus();
-                d500_ram[addr] = data;
-                log_bus(0xD500 | addr, data, 'c');
-            }
-            continue;
-        }
-
-        // 3. Logica PBI I/O ($D1xx)
-        if (!(in_reg & MASK_D1XX)) {
-            if (addr == 0xFF && !is_read) {
-                while (GPIO.in & MASK_PHI2);
-                uint8_t dev = read_data_bus();
-                bool new_sel = (dev == DEVICE_MASK);
-                if (new_sel != device_selected) {
-                    device_selected = new_sel;
-                    if (device_selected)
-                        GPIO.out_w1tc = (1u << PIN_EXSEL);  // FP ROM off
-                    else
-                        GPIO.out_w1ts = (1u << PIN_EXSEL);  // FP ROM on
+        // --------------------------------------------------------------------
+        // 4. Bus transaction — READ
+        // --------------------------------------------------------------------
+        if (is_read)
+        {
+            if (selected)
+            {
+                if (is_rom)
+                {
+                    // $D800-$DFFF: serve 2 KB ROM image from IRAM.
+                    // addr is A0-A10 (0x000-0x7FF) — direct ROM index.
+                    bus_drive(pbi_driver[addr & 0x7FFu]);
                 }
-                log_bus(0xD1FF, dev, 'P');
-            } else if (addr <= 0x1Fu && device_selected) {
-                GPIO.out_w1tc = (1u << PIN_VERA_CS);
-                while (GPIO.in & MASK_PHI2);
-                GPIO.out_w1ts = (1u << PIN_VERA_CS);
-            } else {
-                while (GPIO.in & MASK_PHI2);
+                else if (is_int_range)
+                {
+                    // $D120-$D1FE: ESP32 internal register file
+                    bus_drive(int_regs[off8]);
+                }
+                // is_vera_range: DEV_SEL_N already asserted; the external
+                //   VERA chip drives the data bus autonomously.
+                // is_d1ff read: no IRQ pending → do not drive the bus.
+                //   (open-drain protocol: only assert if IRQ bit is set)
             }
-            continue;
         }
 
-        // 4. Fine ciclo (Fallback)
-        while (GPIO.in & MASK_PHI2);
+        // --------------------------------------------------------------------
+        // 5. Bus transaction — WRITE
+        //    Re-read GPIO.in here (~200 ns after PHI2↑): by now the 6502
+        //    write data is guaranteed stable (tMDS satisfied).
+        // --------------------------------------------------------------------
+        else
+        {
+            uint8_t data = decode_data(GPIO.in);   // fresh read, data now valid
+
+            if (is_d1ff)
+            {
+                // $D1FF: PBI device select — one-hot byte (0x00 = all off).
+                // Only recognise our own mask; anything else deselects us.
+                bool new_sel = (data == DEVICE_MASK);
+                if (new_sel != selected)
+                {
+                    selected = new_sel;
+
+                    // EXTSEL_N is a LEVEL signal: assert while selected,
+                    // deassert when deselected.  Must be stable before the
+                    // next PHI2↑ so the Atari sees the correct FP ROM state.
+                    if (selected)
+                        GPIO.out_w1tc = (1UL << PIN_EXTSEL_N);  // FP ROM off
+                    else
+                        GPIO.out_w1ts = (1UL << PIN_EXTSEL_N);  // FP ROM on
+
+                    // Notify Core 0 (non-blocking; drop if queue full)
+                    xQueueSend(pbiEventQueue, &selected, 0);
+                }
+            }
+            else if (selected && is_int_range)
+            {
+                // $D120-$D1FE: write to ESP32 internal register file
+                int_regs[off8] = data;
+            }
+            // is_vera_range: DEV_SEL_N is asserted (step 3); the VERA chip
+            //   will latch the write on PHI2↓ without ESP32 intervention.
+        }
+
+        // --------------------------------------------------------------------
+        // 6. End of PHI2 cycle: wait for PHI2↓, then release bus and CS.
+        //    EXTSEL_N is intentionally NOT touched here — it is a persistent
+        //    level signal that follows 'selected', not the cycle boundary.
+        // --------------------------------------------------------------------
+        while (GPIO.in & (1UL << PIN_PHI2));
+
+        bus_release();
+        GPIO.out_w1ts = (1UL << PIN_DEV_SEL_N);   // deassert VERA CS
     }
 }
 
-void setup() {
-    Serial.begin(115200);
-    precompute_data_lut();
-    logQueue = xQueueCreate(LOG_QUEUE_SIZE, sizeof(bus_log_t));
+// ============================================================================
+// setup()  — Core 0
+// ============================================================================
+void setup(void)
+{
+    // TX-only serial: disables UART RX on GPIO 3, freeing it for DEV_SEL_N
+    Serial.begin(115200, SERIAL_8N1, /*rx=*/-1, /*tx=*/1);
+    Serial.println("[VeraX16 PBI] Firmware starting");
 
-    gpio_config_t io_conf = {};
-    
-    // Ingressi PHI2, RW, D1XX, CCTL
-    io_conf.mode = GPIO_MODE_INPUT;
-    io_conf.pin_bit_mask = MASK_PHI2 | MASK_RW | MASK_D1XX | MASK_CCTL;
-    gpio_config(&io_conf);
+    memset(int_regs, 0x00, sizeof(int_regs));
+    build_drive_lut();
+    pbiEventQueue = xQueueCreate(8, sizeof(bool));
 
-    // Ingressi Indirizzi (Registro 1)
-    io_conf.pin_bit_mask = (1ULL << PIN_A0) | (1ULL << PIN_A1) | (1ULL << PIN_A2) | 
-                           (1ULL << PIN_A3) | (1ULL << PIN_A4) | (1ULL << PIN_A5) | 
-                           (1ULL << PIN_A6) | (1ULL << PIN_A7);
-    gpio_config(&io_conf);
+    gpio_config_t cfg = {};
+    cfg.intr_type    = GPIO_INTR_DISABLE;
+    cfg.pull_up_en   = GPIO_PULLUP_DISABLE;
+    cfg.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    cfg.mode         = GPIO_MODE_INPUT;
 
-    // Dati (Input default)
-    io_conf.pin_bit_mask = MASK_DATA_BUS;
-    gpio_config(&io_conf);
+    // Bank 0 inputs: data bus, PHI2, RW, D1XX_N, ROM_SEL_N, A6-A10
+    cfg.pin_bit_mask = (uint64_t)DBUS_MASK           |
+                       (1ULL << PIN_PHI2)             |
+                       (1ULL << PIN_RW)               |
+                       (1ULL << PIN_D1XX_N)           |
+                       (1ULL << PIN_ROM_SEL_N)        |
+                       (1ULL<<16)|(1ULL<<17)|(1ULL<<14)|
+                       (1ULL<<12)|(1ULL<<13);
+    gpio_config(&cfg);
 
-    // Uscite
-    io_conf.mode = GPIO_MODE_OUTPUT;
-    io_conf.pin_bit_mask = (1ULL << PIN_VERA_CS) | (1ULL << PIN_EXSEL) | (1ULL << PIN_MPD);
-    gpio_config(&io_conf);
+    // Bank 1 inputs: A0-A5 (GPIO 32-36, 39)
+    cfg.pin_bit_mask = (1ULL<<32)|(1ULL<<33)|(1ULL<<34)|
+                       (1ULL<<35)|(1ULL<<36)|(1ULL<<39);
+    gpio_config(&cfg);
 
-    gpio_set_level(PIN_VERA_CS, 1);
-    gpio_set_level(PIN_EXSEL, 1);
-    gpio_set_level(PIN_MPD, 1);
+    // Outputs: start deasserted (HIGH = inactive for active-LOW signals)
+    pinMode(PIN_EXTSEL_N,  OUTPUT); digitalWrite(PIN_EXTSEL_N,  HIGH);
+    pinMode(PIN_DEV_SEL_N, OUTPUT); digitalWrite(PIN_DEV_SEL_N, HIGH);
 
-    xTaskCreatePinnedToCore(SerialTask, "SerialTask", 4096, NULL, 1, NULL, 0);
-    xTaskCreatePinnedToCore(MonitorTask, "MonitorTask", 4096, NULL, 24, NULL, 1);
+    // Launch bus monitor on Core 1 at maximum FreeRTOS priority
+    xTaskCreatePinnedToCore(
+        MonitorTask, "PBI_Monitor",
+        4096, NULL,
+        configMAX_PRIORITIES - 1,
+        NULL, /*core=*/1
+    );
+
+    Serial.println("[VeraX16 PBI] Monitor active on Core 1");
 }
 
-void loop() { vTaskDelay(pdMS_TO_TICKS(1000)); }
+// ============================================================================
+// loop()  — Core 0: serial event reporting
+// ============================================================================
+void loop(void)
+{
+    bool state;
+    if (xQueueReceive(pbiEventQueue, &state, portMAX_DELAY))
+    {
+        Serial.printf("[PBI] D1FF → device %s (mask=0x%02X)\n",
+                      state ? "SELECTED  (FP ROM off)" : "DESELECTED (FP ROM on)",
+                      DEVICE_MASK);
+    }
+}
