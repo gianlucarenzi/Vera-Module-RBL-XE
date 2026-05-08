@@ -49,7 +49,7 @@ $(C_ARRAY_FILE): $(BIN_FILE)
 	@echo "" >> $@
 	@echo "#include <stdint.h>" >> $@
 	@echo "" >> $@
-	@echo "const uint8_t pbi_driver[] = {" >> $@
+	@echo "const uint8_t IRAM_ATTR pbi_driver[] = {" >> $@
 	hexdump -v -e '16/1 "0x%02x," "\n"' $<  >> $@
 	@echo "" >> $@
 	@echo "};" >> $@
