@@ -192,11 +192,22 @@ void IRAM_ATTR MonitorTask(void *pvParameters) {
             if (addr == 0xFF && !is_read) {
                 while (GPIO.in & MASK_PHI2);
                 uint8_t dev = read_data_bus();
-                device_selected = (dev == DEVICE_MASK);
-                GPIO.out_w1tc = (1 << PIN_VERA_CS); 
+                bool new_sel = (dev == DEVICE_MASK);
+                if (new_sel != device_selected) {
+                    device_selected = new_sel;
+                    if (device_selected)
+                        GPIO.out_w1tc = (1u << PIN_EXSEL);  // FP ROM off
+                    else
+                        GPIO.out_w1ts = (1u << PIN_EXSEL);  // FP ROM on
+                }
                 log_bus(0xD1FF, dev, 'P');
+            } else if (addr <= 0x1Fu && device_selected) {
+                GPIO.out_w1tc = (1u << PIN_VERA_CS);
+                while (GPIO.in & MASK_PHI2);
+                GPIO.out_w1ts = (1u << PIN_VERA_CS);
+            } else {
+                while (GPIO.in & MASK_PHI2);
             }
-            while (GPIO.in & MASK_PHI2);
             continue;
         }
 
