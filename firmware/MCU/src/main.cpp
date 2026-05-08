@@ -25,7 +25,7 @@
  *                             the chip enters bootloader mode.  Ensure the
  *                             Atari cannot drive this line LOW during ESP32 boot.
  *   GPIO  3 (PIN_DEV_SEL_N): UART0 RX.  Serial RX must be disabled:
- *                             Serial.begin(baud, cfg, /*rx=*/-1, /*tx=*/1).
+ *                             Serial.begin(baud, cfg, -1, 1).
  *
  * Pin mapping:
  *   Data bus D0-D7  : GPIO 18, 19, 21, 22, 23, 25, 26, 27
@@ -40,7 +40,9 @@
  */
 
 #include <Arduino.h>
+#include <driver/gpio.h>
 #include <soc/gpio_struct.h>
+#include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
