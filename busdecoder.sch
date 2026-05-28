@@ -198,8 +198,6 @@ Wire Wire Line
 Wire Wire Line
 	2740 3155 3075 3155
 Wire Wire Line
-	3075 3255 3000 3255
-Wire Wire Line
 	2745 3455 3075 3455
 Wire Wire Line
 	3075 3555 3000 3555
@@ -950,7 +948,6 @@ Wire Notes Line
 Wire Notes Line
 	8990 4440 8990 6390
 NoConn ~ 3000 1955
-NoConn ~ 3000 3255
 NoConn ~ 3000 3555
 NoConn ~ 3000 3655
 Text GLabel 9770 3355 2    33   BiDi ~ 0
@@ -977,4 +974,8 @@ Text GLabel 2875 2555 0    33   BiDi ~ 0
 VFPGA_DONE
 Wire Wire Line
 	2875 2555 3075 2555
+Text GLabel 2730 3255 0    39   BiDi ~ 0
+mA8
+Wire Wire Line
+	2730 3255 3075 3255
 $EndSCHEMATC
