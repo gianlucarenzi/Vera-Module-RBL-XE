@@ -3,9 +3,9 @@ EELAYER 30 0
 EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
-Sheet 2 7
+Sheet 2 8
 Title "VERA MODULE AND PROGRAMMING CONNECTOR"
-Date "2025-10-27"
+Date "2026-05-28"
 Rev "1.0"
 Comp "RetroBit Lab"
 Comment1 "Gianluca Renzi"
@@ -122,7 +122,7 @@ Wire Wire Line
 Wire Wire Line
 	4390 2200 3965 2200
 Wire Wire Line
-	3965 2200 3965 1900
+	3965 2200 3960 1940
 Wire Wire Line
 	8680 5180 8905 5180
 $Comp
@@ -345,13 +345,13 @@ Wire Wire Line
 $Comp
 L CRES0805:10K R5
 U 1 1 68C0234F
-P 3965 1795
-F 0 "R5" H 4024 1836 50  0000 L CNN
-F 1 "10K" H 4024 1745 50  0000 L CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" H 3965 1795 50  0001 C CNN
-F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2506161110_YAGEO-RC0805FR-0710KL_C84376.pdf" H 3965 1795 50  0001 C CNN
-F 4 "C84376" H 3965 1795 50  0001 C CNN "LCSC"
-	1    3965 1795
+P 3960 1835
+F 0 "R5" H 4019 1876 50  0000 L CNN
+F 1 "10K" H 4019 1785 50  0000 L CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" H 3960 1835 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2506161110_YAGEO-RC0805FR-0710KL_C84376.pdf" H 3960 1835 50  0001 C CNN
+F 4 "C84376" H 3960 1835 50  0001 C CNN "LCSC"
+	1    3960 1835
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -578,12 +578,8 @@ Text GLabel 2540 1625 0    50   BiDi ~ 0
 3V3
 Text GLabel 4815 1625 0    50   BiDi ~ 0
 3V3
-Text GLabel 3860 1550 0    50   BiDi ~ 0
-3V3
 Wire Wire Line
-	3860 1550 3965 1550
-Wire Wire Line
-	3965 1550 3965 1700
+	3965 1550 3960 1740
 Wire Wire Line
 	3415 4595 3515 4595
 Connection ~ 3515 4595
@@ -947,4 +943,19 @@ Text GLabel 4620 6320 0    39   Input ~ 0
 VFPGA_DONE
 Text GLabel 8680 5180 0    39   Input ~ 0
 VFPGA_DONE
+$Comp
+L power:GND #PWR?
+U 1 1 6A1AAD98
+P 3675 1695
+F 0 "#PWR?" H 3675 1445 50  0001 C CNN
+F 1 "GND" H 3680 1522 50  0000 C CNN
+F 2 "" H 3675 1695 50  0001 C CNN
+F 3 "" H 3675 1695 50  0001 C CNN
+	1    3675 1695
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3675 1695 3675 1550
+Wire Wire Line
+	3675 1550 3965 1550
 $EndSCHEMATC
