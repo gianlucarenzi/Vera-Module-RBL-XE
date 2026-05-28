@@ -1,0 +1,407 @@
+EESchema Schematic File Version 4
+EELAYER 30 0
+EELAYER END
+$Descr A4 11693 8268
+encoding utf-8
+Sheet 8 8
+Title ""
+Date "2026-05-28"
+Rev "1.0"
+Comp "RetroBit Lab"
+Comment1 "Gianluca Renzi"
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+$Comp
+L 74xx:74LS10 U19
+U 1 1 6A181516
+P 5800 1525
+F 0 "U19" H 5800 1850 50  0000 C CNN
+F 1 "74LS10" H 5800 1759 50  0000 C CNN
+F 2 "" H 5800 1525 50  0001 C CNN
+F 3 "http://www.ti.com/lit/gpn/sn74LS10" H 5800 1525 50  0001 C CNN
+	1    5800 1525
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74xx:74LS10 U19
+U 2 1 6A1830BD
+P 5800 2100
+F 0 "U19" H 6025 2250 50  0000 C CNN
+F 1 "74LS10" H 6050 1925 50  0000 C CNN
+F 2 "" H 5800 2100 50  0001 C CNN
+F 3 "http://www.ti.com/lit/gpn/sn74LS10" H 5800 2100 50  0001 C CNN
+	2    5800 2100
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74xx:74LS10 U19
+U 4 1 6A184A14
+P 3275 3225
+F 0 "U19" H 3505 3271 50  0000 L CNN
+F 1 "74LS10" H 3505 3180 50  0000 L CNN
+F 2 "" H 3275 3225 50  0001 C CNN
+F 3 "http://www.ti.com/lit/gpn/sn74LS10" H 3275 3225 50  0001 C CNN
+	4    3275 3225
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74xx:74LS138 U21
+U 1 1 6A186225
+P 5725 3550
+F 0 "U21" H 6000 4020 50  0000 C CNN
+F 1 "74LS138" H 5415 4025 50  0000 C CNN
+F 2 "" H 5725 3550 50  0001 C CNN
+F 3 "http://www.ti.com/lit/gpn/sn74LS138" H 5725 3550 50  0001 C CNN
+	1    5725 3550
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:+5V #PWR012
+U 1 1 6A187084
+P 5725 2900
+F 0 "#PWR012" H 5725 2750 50  0001 C CNN
+F 1 "+5V" H 5740 3073 50  0000 C CNN
+F 2 "" H 5725 2900 50  0001 C CNN
+F 3 "" H 5725 2900 50  0001 C CNN
+	1    5725 2900
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:+5V #PWR010
+U 1 1 6A1878CE
+P 3275 2675
+F 0 "#PWR010" H 3275 2525 50  0001 C CNN
+F 1 "+5V" H 3290 2848 50  0000 C CNN
+F 2 "" H 3275 2675 50  0001 C CNN
+F 3 "" H 3275 2675 50  0001 C CNN
+	1    3275 2675
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR017
+U 1 1 6A188A44
+P 5725 4300
+F 0 "#PWR017" H 5725 4050 50  0001 C CNN
+F 1 "GND" H 5730 4127 50  0000 C CNN
+F 2 "" H 5725 4300 50  0001 C CNN
+F 3 "" H 5725 4300 50  0001 C CNN
+	1    5725 4300
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR014
+U 1 1 6A1895E3
+P 3275 3775
+F 0 "#PWR014" H 3275 3525 50  0001 C CNN
+F 1 "GND" H 3280 3602 50  0000 C CNN
+F 2 "" H 3275 3775 50  0001 C CNN
+F 3 "" H 3275 3775 50  0001 C CNN
+	1    3275 3775
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74xx:74AHC04 U20
+U 1 1 6A189FA3
+P 6525 1525
+F 0 "U20" H 6525 1842 50  0000 C CNN
+F 1 "74AHC04" H 6525 1751 50  0000 C CNN
+F 2 "" H 6525 1525 50  0001 C CNN
+F 3 "https://assets.nexperia.com/documents/data-sheet/74AHC_AHCT04.pdf" H 6525 1525 50  0001 C CNN
+	1    6525 1525
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74xx:74AHC04 U20
+U 2 1 6A18AF29
+P 4775 2100
+F 0 "U20" H 4775 2417 50  0000 C CNN
+F 1 "74AHC04" H 4775 2326 50  0000 C CNN
+F 2 "" H 4775 2100 50  0001 C CNN
+F 3 "https://assets.nexperia.com/documents/data-sheet/74AHC_AHCT04.pdf" H 4775 2100 50  0001 C CNN
+	2    4775 2100
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74xx:74AHC04 U20
+U 3 1 6A18B906
+P 4500 3750
+F 0 "U20" H 4500 4067 50  0000 C CNN
+F 1 "74AHC04" H 4500 3976 50  0000 C CNN
+F 2 "" H 4500 3750 50  0001 C CNN
+F 3 "https://assets.nexperia.com/documents/data-sheet/74AHC_AHCT04.pdf" H 4500 3750 50  0001 C CNN
+	3    4500 3750
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74xx:74AHC04 U20
+U 4 1 6A18C37F
+P 4600 4925
+F 0 "U20" H 4600 5242 50  0000 C CNN
+F 1 "74AHC04" H 4600 5151 50  0000 C CNN
+F 2 "" H 4600 4925 50  0001 C CNN
+F 3 "https://assets.nexperia.com/documents/data-sheet/74AHC_AHCT04.pdf" H 4600 4925 50  0001 C CNN
+	4    4600 4925
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74xx:74AHC04 U20
+U 5 1 6A18DAE7
+P 4600 5425
+F 0 "U20" H 4600 5742 50  0000 C CNN
+F 1 "74AHC04" H 4600 5651 50  0000 C CNN
+F 2 "" H 4600 5425 50  0001 C CNN
+F 3 "https://assets.nexperia.com/documents/data-sheet/74AHC_AHCT04.pdf" H 4600 5425 50  0001 C CNN
+	5    4600 5425
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74xx:74AHC04 U20
+U 6 1 6A18E7B0
+P 4600 5975
+F 0 "U20" H 4600 6292 50  0000 C CNN
+F 1 "74AHC04" H 4600 6201 50  0000 C CNN
+F 2 "" H 4600 5975 50  0001 C CNN
+F 3 "https://assets.nexperia.com/documents/data-sheet/74AHC_AHCT04.pdf" H 4600 5975 50  0001 C CNN
+	6    4600 5975
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74xx:74AHC04 U20
+U 7 1 6A18F44D
+P 3300 5500
+F 0 "U20" H 3530 5546 50  0000 L CNN
+F 1 "74AHC04" H 3530 5455 50  0000 L CNN
+F 2 "" H 3300 5500 50  0001 C CNN
+F 3 "https://assets.nexperia.com/documents/data-sheet/74AHC_AHCT04.pdf" H 3300 5500 50  0001 C CNN
+	7    3300 5500
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	5725 2900 5725 2950
+Wire Wire Line
+	5725 4300 5725 4275
+$Comp
+L power:+5V #PWR019
+U 1 1 6A1B2982
+P 3300 4950
+F 0 "#PWR019" H 3300 4800 50  0001 C CNN
+F 1 "+5V" H 3315 5123 50  0000 C CNN
+F 2 "" H 3300 4950 50  0001 C CNN
+F 3 "" H 3300 4950 50  0001 C CNN
+	1    3300 4950
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3300 4950 3300 5000
+$Comp
+L power:GND #PWR021
+U 1 1 6A1B77CC
+P 3300 6050
+F 0 "#PWR021" H 3300 5800 50  0001 C CNN
+F 1 "GND" H 3305 5877 50  0000 C CNN
+F 2 "" H 3300 6050 50  0001 C CNN
+F 3 "" H 3300 6050 50  0001 C CNN
+	1    3300 6050
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3300 6000 3300 6050
+Wire Wire Line
+	3275 2675 3275 2725
+Wire Wire Line
+	3275 3775 3275 3725
+Text Label 5125 3250 2    50   ~ 0
+A9
+Text Label 5125 3350 2    50   ~ 0
+A10
+Text Label 5125 3450 2    50   ~ 0
+A11
+Wire Wire Line
+	5225 3250 5125 3250
+Wire Wire Line
+	5125 3350 5225 3350
+Wire Wire Line
+	5125 3450 5225 3450
+Wire Wire Line
+	5225 3850 5125 3850
+Wire Wire Line
+	5125 3850 5125 3950
+Wire Wire Line
+	5125 4275 5725 4275
+Connection ~ 5725 4275
+Wire Wire Line
+	5725 4275 5725 4250
+Wire Wire Line
+	5225 3950 5125 3950
+Connection ~ 5125 3950
+Wire Wire Line
+	5125 3950 5125 4275
+Wire Wire Line
+	4800 3750 5225 3750
+Wire Wire Line
+	6225 3350 7275 3350
+$Comp
+L 74xx:74LS10 U19
+U 3 1 6A183D3A
+P 7575 3450
+F 0 "U19" H 7575 3775 50  0000 C CNN
+F 1 "74LS10" H 7575 3684 50  0000 C CNN
+F 2 "" H 7575 3450 50  0001 C CNN
+F 3 "http://www.ti.com/lit/gpn/sn74LS10" H 7575 3450 50  0001 C CNN
+	3    7575 3450
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	6225 3550 6400 3550
+Text Label 6400 3550 0    50   ~ 0
+~dRAMSEL
+Text Label 6400 3650 0    50   ~ 0
+~dROMSEL
+Wire Wire Line
+	6225 3650 6400 3650
+Text Label 5400 1425 2    50   ~ 0
+A15
+Text Label 5400 1525 2    50   ~ 0
+A14
+Text Label 5400 1625 2    50   ~ 0
+A12
+Wire Wire Line
+	5500 1425 5400 1425
+Wire Wire Line
+	5400 1525 5500 1525
+Wire Wire Line
+	5400 1625 5500 1625
+Wire Wire Line
+	6100 1525 6225 1525
+Wire Wire Line
+	5500 2000 5350 2000
+Wire Wire Line
+	5350 2000 5350 1825
+Wire Wire Line
+	5350 1825 6900 1825
+Wire Wire Line
+	6900 1825 6900 1525
+Wire Wire Line
+	6900 1525 6825 1525
+Wire Wire Line
+	5500 2100 5075 2100
+$Comp
+L power:+5V #PWR09
+U 1 1 6A247967
+P 5275 2325
+F 0 "#PWR09" H 5275 2175 50  0001 C CNN
+F 1 "+5V" V 5290 2453 50  0000 L CNN
+F 2 "" H 5275 2325 50  0001 C CNN
+F 3 "" H 5275 2325 50  0001 C CNN
+	1    5275 2325
+	0    -1   -1   0   
+$EndComp
+Wire Wire Line
+	5275 2325 5350 2325
+Wire Wire Line
+	5350 2325 5350 2200
+Wire Wire Line
+	5350 2200 5500 2200
+Wire Wire Line
+	4200 3750 3925 3750
+Wire Wire Line
+	3925 3750 3925 2500
+Wire Wire Line
+	3925 2500 6325 2500
+Wire Wire Line
+	6325 2500 6325 2100
+Wire Wire Line
+	6325 2100 6100 2100
+Wire Wire Line
+	7275 3450 7075 3450
+Text Label 7075 3450 2    50   ~ 0
+A8
+$Comp
+L power:+5V #PWR013
+U 1 1 6A26D538
+P 7175 3550
+F 0 "#PWR013" H 7175 3400 50  0001 C CNN
+F 1 "+5V" V 7190 3678 50  0000 L CNN
+F 2 "" H 7175 3550 50  0001 C CNN
+F 3 "" H 7175 3550 50  0001 C CNN
+	1    7175 3550
+	0    -1   -1   0   
+$EndComp
+Wire Wire Line
+	7175 3550 7275 3550
+Wire Wire Line
+	7875 3450 8175 3450
+Text GLabel 6250 5125 2    50   Output ~ 0
+~dD1XX
+Text Label 8175 3450 0    50   ~ 0
+~dD1XX
+Text Label 5625 5125 2    50   ~ 0
+~dD1XX
+Text Label 5600 5300 2    50   ~ 0
+~dRAMSEL
+Text Label 5600 5475 2    50   ~ 0
+~dROMSEL
+Text GLabel 6250 5300 2    50   Output ~ 0
+~dRAMSEL
+Text GLabel 6250 5475 2    50   Output ~ 0
+~dROMSEL
+Text Label 4350 2100 2    50   ~ 0
+A13
+Wire Wire Line
+	4350 2100 4475 2100
+Wire Wire Line
+	4300 4925 4100 4925
+Wire Wire Line
+	4100 4925 4100 5425
+Wire Wire Line
+	4100 5975 4300 5975
+Wire Wire Line
+	4300 5425 4100 5425
+Connection ~ 4100 5425
+Wire Wire Line
+	4100 5425 4100 5975
+$Comp
+L power:GND #PWR022
+U 1 1 6A2B12A1
+P 4100 6125
+F 0 "#PWR022" H 4100 5875 50  0001 C CNN
+F 1 "GND" H 4105 5952 50  0000 C CNN
+F 2 "" H 4100 6125 50  0001 C CNN
+F 3 "" H 4100 6125 50  0001 C CNN
+	1    4100 6125
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4100 5975 4100 6125
+Connection ~ 4100 5975
+NoConn ~ 4900 4925
+NoConn ~ 4900 5425
+NoConn ~ 4900 5975
+NoConn ~ 6225 3250
+NoConn ~ 6225 3450
+NoConn ~ 6225 3750
+NoConn ~ 6225 3850
+NoConn ~ 6225 3950
+Text Notes 6665 5155 0    50   ~ 0
+Range $D100-$D1FF PBI I/O Space
+Text Notes 6665 5330 0    50   ~ 0
+Range $D600-$D7FF EXTERNAL RAM SELECT
+Text Notes 6665 5505 0    50   ~ 0
+Range $D800-$DFFF EXTERNAL ROM  SELECT
+Wire Wire Line
+	5625 5125 6250 5125
+Wire Notes Line
+	5200 5900 8475 5900
+Wire Notes Line
+	8475 5900 8475 4850
+Wire Notes Line
+	8475 4850 5200 4850
+Wire Notes Line
+	5200 4850 5200 5900
+Wire Wire Line
+	5600 5475 6250 5475
+Wire Wire Line
+	5600 5300 6250 5300
+$EndSCHEMATC
