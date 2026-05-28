@@ -3,9 +3,9 @@ EELAYER 30 0
 EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
-Sheet 1 7
+Sheet 1 8
 Title "VERA FPGA Audio & Video Board"
-Date "2025-10-27"
+Date "2026-05-28"
 Rev "1.0"
 Comp "RetroBit Lab"
 Comment1 "Gianluca Renzi"
@@ -13,46 +13,46 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
-Text Notes 1485 1740 0    197  ~ 39
+Text Notes 885  1640 0    197  ~ 39
 VERA FPGA
 $Sheet
-S 760  765  3075 1625
+S 760  765  1880 1570
 U 68821B60
 F0 "VeraModule" 79
 F1 "vera-fpga.sch" 79
 $EndSheet
 $Sheet
-S 4365 740  3200 1675
+S 4285 735  2325 1580
 U 68821BC9
 F0 "BusDecoder" 79
 F1 "busdecoder.sch" 79
 $EndSheet
-Text Notes 4890 1665 0    197  ~ 39
+Text Notes 4365 1620 0    197  ~ 39
 BUS DECODER
 $Sheet
-S 700  3220 3250 1800
+S 700  3220 1960 1740
 U 68821C2E
 F0 "CartridgeInterface" 79
 F1 "cartridgeInterface.sch" 79
 $EndSheet
-Text Notes 825  4195 0    177  ~ 35
-CARTRIDGE INTERFACE
+Text Notes 890  4290 0    177  ~ 35
+CARTRIDGE\nINTERFACE
 $Sheet
-S 8020 730  2900 1775
+S 7905 730  2900 1600
 U 68CF41D8
 F0 "Vera FPGA flash" 79
 F1 "vera-fpga-flash.sch" 79
 $EndSheet
-Text Notes 8145 1905 0    177  ~ 35
+Text Notes 8030 1905 0    177  ~ 35
 VERA SPI FLASH\nSD CARD INTERFACE
 $Sheet
-S 4345 3240 2825 1700
+S 3410 3215 1715 1760
 U 688FC286
 F0 "PowerSupply" 79
 F1 "powersupply.sch" 79
 $EndSheet
-Text Notes 4695 4140 0    197  ~ 39
-POWER SUPPLY
+Text Notes 3610 4305 0    197  ~ 39
+POWER\nSUPPLY
 $Comp
 L Mechanical:Fiducial FID3
 U 1 1 68BFDCEA
@@ -186,13 +186,13 @@ F 3 "" H 6540 6065 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Sheet
-S 7710 3275 2990 1745
+S 5895 3220 1720 1750
 U 68F956C0
 F0 "VGA Analog" 50
 F1 "vga-analog.sch" 50
 $EndSheet
-Text Notes 8355 4225 0    197  ~ 39
-VGA ANALOG
+Text Notes 6170 4250 0    197  ~ 39
+VGA\nANALOG
 $Comp
 L Mechanical:MountingHole H1
 U 1 1 68F52DE4
@@ -237,4 +237,12 @@ F 3 "~" H 1170 7420 50  0001 C CNN
 	1    1170 7420
 	1    0    0    -1  
 $EndComp
+$Sheet
+S 8335 3260 2200 1760
+U 6A201FBC
+F0 "Address Decoder" 50
+F1 "addressdecoder.sch" 50
+$EndSheet
+Text Notes 8740 4390 0    197  ~ 39
+ADDRESS\nDECODER
 $EndSCHEMATC
