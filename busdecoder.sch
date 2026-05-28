@@ -3,9 +3,9 @@ EELAYER 30 0
 EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
-Sheet 3 7
+Sheet 3 8
 Title "BUS DECODER"
-Date "2025-10-27"
+Date "2026-05-28"
 Rev "1.0"
 Comp "RetroBit Lab"
 Comment1 "Gianluca Renzi"
@@ -36,8 +36,8 @@ Wire Wire Line
 	5965 5475 6090 5475
 Text GLabel 6315 5475 2    39   Output ~ 0
 ~WE
-Text Notes 4870 6285 0    59   ~ 0
-R/~W\nAdapter for ~RE\nand ~WE\nas VERA MODULE wants
+Text Notes 4790 5990 0    79   Italic 0
+R/W Adapter for RE and WE signals as VERA MODULE wants
 $Comp
 L RetroBitLab:ESP32-PICO-D4 U7
 U 1 1 68883AD8
@@ -128,57 +128,41 @@ Wire Wire Line
 Wire Wire Line
 	2375 1830 2375 1755
 Connection ~ 2375 1755
-Text GLabel 9375 3255 2    39   BiDi ~ 0
+Text GLabel 9825 3255 2    39   BiDi ~ 0
 mA0
-Text GLabel 9375 3055 2    39   BiDi ~ 0
+Text GLabel 9820 3055 2    39   BiDi ~ 0
 mA1
-Text GLabel 9375 2155 2    39   BiDi ~ 0
+Text GLabel 9805 2155 2    39   BiDi ~ 0
 mA2
-Text GLabel 3000 3055 0    39   BiDi ~ 0
+Text GLabel 2730 3055 0    39   BiDi ~ 0
 mA3
-Text GLabel 3000 2755 0    39   BiDi ~ 0
+Text GLabel 2725 2755 0    39   BiDi ~ 0
 mA4
-Text GLabel 3000 2655 0    39   BiDi ~ 0
+Text GLabel 2720 2655 0    39   BiDi ~ 0
 mA5
-Text GLabel 3000 2155 0    39   BiDi ~ 0
+Text GLabel 2710 2155 0    39   BiDi ~ 0
 mA6
-Text GLabel 3000 2055 0    39   BiDi ~ 0
+Text GLabel 2710 2055 0    39   BiDi ~ 0
 mA7
-Text GLabel 2775 3655 0    39   BiDi ~ 0
-mA8
-Text GLabel 9375 2955 2    39   BiDi ~ 0
-mA9
-Text GLabel 3000 3255 0    39   BiDi ~ 0
-mA10
-Text GLabel 3000 3555 0    39   BiDi ~ 0
-mA11
-Text GLabel 3000 2455 0    39   BiDi ~ 0
-mA12
-Text GLabel 3000 2555 0    39   BiDi ~ 0
-mA13
-Text GLabel 3000 1955 0    39   BiDi ~ 0
-mA14
-Text GLabel 3000 2255 0    39   BiDi ~ 0
-mA15
-Text GLabel 2875 3855 0    39   BiDi ~ 0
+Text GLabel 2750 3855 0    39   BiDi ~ 0
 mD0
-Text GLabel 3000 3455 0    39   BiDi ~ 0
+Text GLabel 2745 3455 0    39   BiDi ~ 0
 mD1
-Text GLabel 3000 3155 0    39   BiDi ~ 0
+Text GLabel 2740 3155 0    39   BiDi ~ 0
 mD2
-Text GLabel 9375 3855 2    39   BiDi ~ 0
+Text GLabel 9825 3855 2    39   BiDi ~ 0
 mD3
-Text GLabel 9375 3655 2    39   BiDi ~ 0
+Text GLabel 9825 3655 2    39   BiDi ~ 0
 mD4
-Text GLabel 9375 2855 2    39   BiDi ~ 0
+Text GLabel 9815 2855 2    39   BiDi ~ 0
 mD5
-Text GLabel 9375 2555 2    39   BiDi ~ 0
+Text GLabel 9795 2555 2    39   BiDi ~ 0
 mD6
-Text GLabel 9375 2455 2    39   BiDi ~ 0
+Text GLabel 9795 2455 2    39   BiDi ~ 0
 mD7
-Text GLabel 9375 2755 2    39   BiDi ~ 0
+Text GLabel 9750 2755 2    39   BiDi ~ 0
 mPHI2
-Text GLabel 3000 2855 0    39   BiDi ~ 0
+Text GLabel 2715 2855 0    33   BiDi ~ 0
 mR~W
 Wire Wire Line
 	2375 1755 2925 1755
@@ -191,54 +175,50 @@ Wire Wire Line
 	9275 2255 9375 2255
 Wire Wire Line
 	9375 2355 9275 2355
-Text GLabel 3000 2355 0    39   BiDi ~ 0
+Text GLabel 2800 2355 0    39   BiDi ~ 0
 RST\EN
 Wire Wire Line
-	3000 2355 3075 2355
+	2800 2355 3075 2355
 Wire Wire Line
 	3000 1955 3075 1955
 Wire Wire Line
-	3075 2055 3000 2055
+	3075 2055 2710 2055
 Wire Wire Line
-	3000 2155 3075 2155
+	2710 2155 3075 2155
 Wire Wire Line
-	3075 2255 3000 2255
+	3075 2455 2895 2455
 Wire Wire Line
-	3075 2455 3000 2455
+	3075 2655 2720 2655
 Wire Wire Line
-	3075 2555 3000 2555
+	3075 2755 2725 2755
 Wire Wire Line
-	3075 2655 3000 2655
+	2715 2855 3075 2855
 Wire Wire Line
-	3075 2755 3000 2755
+	2730 3055 3075 3055
 Wire Wire Line
-	3000 2855 3075 2855
-Wire Wire Line
-	3000 3055 3075 3055
-Wire Wire Line
-	3000 3155 3075 3155
+	2740 3155 3075 3155
 Wire Wire Line
 	3075 3255 3000 3255
 Wire Wire Line
-	3000 3455 3075 3455
+	2745 3455 3075 3455
 Wire Wire Line
 	3075 3555 3000 3555
 Wire Wire Line
-	9275 3855 9375 3855
+	9275 3855 9825 3855
 Wire Wire Line
-	9275 3655 9375 3655
+	9275 3655 9825 3655
 Wire Wire Line
-	9275 3055 9375 3055
+	9275 3055 9820 3055
 Wire Wire Line
-	9275 2855 9375 2855
+	9275 2855 9815 2855
 Wire Wire Line
-	9275 2755 9375 2755
+	9275 2755 9750 2755
 Wire Wire Line
-	9275 2555 9375 2555
+	9275 2555 9795 2555
 Wire Wire Line
-	9275 2455 9375 2455
+	9275 2455 9795 2455
 Wire Wire Line
-	9275 2155 9375 2155
+	9275 2155 9805 2155
 $Comp
 L power:GND #PWR046
 U 1 1 689CEC73
@@ -281,15 +261,11 @@ Wire Wire Line
 Connection ~ 10450 880 
 Wire Wire Line
 	675  1555 3075 1555
-Text GLabel 9600 3155 2    39   BiDi ~ 0
-~mMPD
 Wire Wire Line
-	9275 3155 9600 3155
-Wire Wire Line
-	9275 3255 9375 3255
-Text GLabel 9850 3455 2    39   BiDi ~ 0
-~mD1XX
-Text GLabel 2825 2955 0    39   BiDi ~ 0
+	9275 3255 9825 3255
+Text GLabel 9800 3455 2    33   BiDi ~ 0
+~dD1XX
+Text GLabel 2770 2955 0    33   BiDi ~ 0
 ~mVCS0
 $Comp
 L power:GND #PWR054
@@ -367,14 +343,12 @@ Wire Wire Line
 Wire Wire Line
 	10200 2855 10575 2855
 Connection ~ 10575 2855
-Text GLabel 9575 3355 2    39   BiDi ~ 0
-~mEXSEL
 Wire Wire Line
-	2875 3755 3075 3755
+	2720 3755 3075 3755
 Wire Wire Line
-	3075 3855 2875 3855
+	3075 3855 2750 3855
 Wire Wire Line
-	9375 2955 9275 2955
+	9770 2955 9275 2955
 $Comp
 L power:GND #PWR058
 U 1 1 68C509A5
@@ -424,24 +398,14 @@ F 3 "" H 6875 4130 50  0001 C CNN
 $EndComp
 Wire Wire Line
 	6875 4055 6875 4130
-Text Notes 615  6930 0    79   ~ 0
-Enternal Memory Setup:\nThe range must be defined in software\n~EXSEL\n\nIn PBI Atari XL there is EXTENB signal output and EXTSEL signal input\nIn PBI Atari XE there is only the EXSEL signal output\n
-Text Notes 605  7490 0    79   ~ 0
-mVCS0 active & A15..A0 $D8XX-$DFXX -> MPD active (Internal 2K ROM)\n\n$D1FF access & DATABUS = PBI DEVICE ID -> mVCS0 active/deactive
-Text Notes 3610 835  0    79   Italic 16
+Text Notes 685  7100 0    69   ~ 0
+When VERA Chip Select (mVCS0) latch is active & A15..A0 $D800-$DFFF -> MPD active (External 2K ROM)\n\nWhen VERA Chip Select (mVCS0) latch is active & A15..A0 $D600-$D7FF -> EXSEL active (External 512 bytes RAM)\n\n$D1FF access & DATABUS = PBI DEVICE ID -> mVCS0 active/deactive latch
+Text Notes 6610 865  0    79   Italic 16
 PBI DEVICE ID: software selectable only
-Wire Notes Line
-	3560 1010 6085 1010
-Wire Notes Line
-	6085 1010 6085 560 
-Wire Notes Line
-	6085 560  3560 560 
-Wire Notes Line
-	3560 560  3560 1010
-Text GLabel 9550 3555 2    39   BiDi ~ 0
+Text GLabel 9795 3555 2    33   BiDi ~ 0
 ~mCCTL
 Wire Wire Line
-	2775 3655 3075 3655
+	3000 3655 3075 3655
 Wire Wire Line
 	1580 5160 1580 5235
 Text GLabel 1105 5685 0    39   BiDi ~ 0
@@ -492,9 +456,9 @@ Wire Notes Line
 	9290 4465 9290 6090
 Wire Wire Line
 	10215 5140 10215 5265
-Text Notes 580  800  0    79   ~ 16
-PBI Bus Interface Decoder:\n$D1XX, $D1FF, MPD, $D8XX-$DFXX, EX(T)SEL
-Text GLabel 2875 3755 0    39   BiDi ~ 0
+Text Notes 2330 1180 0    79   ~ 16
+PBI Bus Interface Decoder:\n\nI/O Space, Math Pack Disable, ROM ADDRESS ($D800-$DFFF),\n\nRAM PBI SPACE ($D600-$D7FF)
+Text GLabel 2720 3755 0    39   BiDi ~ 0
 IO0
 $Comp
 L CRES0805:4K7 R59
@@ -533,16 +497,11 @@ Wire Wire Line
 Wire Wire Line
 	6585 5090 6585 4880
 Wire Wire Line
-	2825 2955 3075 2955
+	2770 2955 3075 2955
 Wire Wire Line
-	9275 3355 9575 3355
+	9275 3455 9800 3455
 Wire Wire Line
-	9275 3455 9850 3455
-Wire Wire Line
-	9275 3555 9550 3555
-Wire Wire Line
-	9275 3755 9325 3755
-NoConn ~ 9325 3755
+	9275 3555 9795 3555
 Wire Wire Line
 	1600 1755 2000 1755
 Wire Wire Line
@@ -806,7 +765,7 @@ $EndComp
 Wire Wire Line
 	2820 5170 2820 5245
 Text GLabel 2345 5695 0    39   BiDi ~ 0
-~mD1XX
+~dD1XX
 Text Notes 1840 5945 0    79   ~ 0
 Accessing $D1XX area space
 $Comp
@@ -922,8 +881,6 @@ Wire Notes Line
 	3775 4390 645  4390
 Wire Notes Line
 	645  4390 645  4410
-Text Notes 645  4290 0    100  ~ 20
-Those signals are valid in ATARI XE only
 $Comp
 L RetroBitLab:CD4011B U5
 U 1 1 68D657F2
@@ -992,4 +949,32 @@ Wire Notes Line
 	4020 4440 4020 6390
 Wire Notes Line
 	8990 4440 8990 6390
+NoConn ~ 3000 1955
+NoConn ~ 3000 3255
+NoConn ~ 3000 3555
+NoConn ~ 3000 3655
+Text GLabel 9770 3355 2    33   BiDi ~ 0
+~RAMSEL
+Text GLabel 9720 3155 2    39   BiDi ~ 0
+~ROMSEL
+Wire Wire Line
+	9275 3155 9720 3155
+Text GLabel 2940 2255 0    39   BiDi ~ 0
+~FPGA_RESET
+Wire Wire Line
+	2940 2255 3075 2255
+Text GLabel 2895 2455 0    33   BiDi ~ 0
+~ATARI_RESET
+Wire Wire Line
+	9275 3355 9770 3355
+Text GLabel 9770 2955 2    39   BiDi ~ 0
+~mMPD
+Text GLabel 9725 3755 2    39   BiDi ~ 0
+~mEXSEL
+Wire Wire Line
+	9275 3755 9725 3755
+Text GLabel 2875 2555 0    33   BiDi ~ 0
+VFPGA_DONE
+Wire Wire Line
+	2875 2555 3075 2555
 $EndSCHEMATC

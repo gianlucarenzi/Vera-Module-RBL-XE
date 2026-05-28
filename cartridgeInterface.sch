@@ -3,9 +3,9 @@ EELAYER 30 0
 EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
-Sheet 4 7
+Sheet 4 8
 Title "CARTRIDGE INTEFACE AND BUS LEVEL SHIFTERS"
-Date "2025-10-27"
+Date "2026-05-28"
 Rev "1.0"
 Comp "RetroBit Lab"
 Comment1 "Gianluca Renzi"
@@ -397,8 +397,6 @@ Wire Wire Line
 	3555 5930 3555 6030
 Wire Wire Line
 	5970 5990 5970 5890
-Text GLabel 4055 5005 1    31   Input ~ 0
-~FPGA_RESET
 Text GLabel 4055 6040 3    39   Input ~ 0
 ~RST
 Wire Wire Line
@@ -441,7 +439,7 @@ Text GLabel 7770 4945 1    50   Input ~ 0
 mA7
 Text GLabel 7670 4945 1    50   Input ~ 0
 mA8
-Text GLabel 1450 5005 1    39   Input ~ 0
+Text GLabel 1450 5005 1    31   Input ~ 0
 ~mMPD
 Wire Wire Line
 	5970 4965 5970 5090
@@ -1329,4 +1327,6 @@ F 4 "C84376" H 4060 3745 50  0001 C CNN "LCSC"
 $EndComp
 Text Notes 1810 7130 0    197  ~ 39
 BUS LOGIC LEVEL SHIFTERS
+Text GLabel 4055 5005 1    31   Input ~ 0
+~ATARI_RESET
 $EndSCHEMATC

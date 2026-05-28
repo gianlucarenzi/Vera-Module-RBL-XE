@@ -691,34 +691,6 @@ Wire Wire Line
 	9420 1445 9420 1605
 Wire Wire Line
 	9420 1605 9450 1605
-$Comp
-L CRES0805:10K R?
-U 1 1 68D8A3EA
-P 9985 1500
-AR Path="/68CF41D8/68D8A3EA" Ref="R?"  Part="1" 
-AR Path="/68821B60/68D8A3EA" Ref="R34"  Part="1" 
-F 0 "R34" H 10044 1541 50  0000 L CNN
-F 1 "10K" H 10044 1450 50  0000 L CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" H 9985 1500 50  0001 C CNN
-F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2506161110_YAGEO-RC0805FR-0710KL_C84376.pdf" H 9985 1500 50  0001 C CNN
-F 4 "C84376" H 9985 1500 50  0001 C CNN "LCSC"
-	1    9985 1500
-	1    0    0    -1  
-$EndComp
-$Comp
-L CRES0805:10K R?
-U 1 1 68D8A3F1
-P 9135 1415
-AR Path="/68CF41D8/68D8A3F1" Ref="R?"  Part="1" 
-AR Path="/68821B60/68D8A3F1" Ref="R33"  Part="1" 
-F 0 "R33" H 8935 1450 50  0000 L CNN
-F 1 "10K" H 8935 1360 50  0000 L CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" H 9135 1415 50  0001 C CNN
-F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2506161110_YAGEO-RC0805FR-0710KL_C84376.pdf" H 9135 1415 50  0001 C CNN
-F 4 "C84376" H 9135 1415 50  0001 C CNN "LCSC"
-	1    9135 1415
-	1    0    0    -1  
-$EndComp
 Text GLabel 8560 2305 0    39   Input ~ 0
 SPI_SSEL_N
 $Comp
@@ -741,12 +713,6 @@ Wire Wire Line
 	8695 2305 8560 2305
 Text GLabel 10050 1705 2    39   Input ~ 0
 FPGA_CDONE
-Text GLabel 9060 1150 0    50   BiDi ~ 0
-3V3
-Wire Wire Line
-	9060 1150 9135 1150
-Wire Wire Line
-	9135 1150 9135 1320
 Text GLabel 9040 1805 0    39   Input ~ 0
 ~FPGA_RESET
 Text GLabel 9975 1905 2    39   Input ~ 0
@@ -811,26 +777,6 @@ Wire Notes Line
 	10050 2765 7980 2765
 Wire Notes Line
 	7980 2765 7980 825 
-Text GLabel 9945 1275 0    50   BiDi ~ 0
-3V3
-Wire Wire Line
-	9135 1520 9135 1805
-Connection ~ 9135 1805
-Wire Wire Line
-	9135 1805 9450 1805
-Wire Wire Line
-	9040 1805 9135 1805
-Wire Wire Line
-	9875 1705 9985 1705
-Wire Wire Line
-	9985 1605 9985 1705
-Connection ~ 9985 1705
-Wire Wire Line
-	9985 1705 10050 1705
-Wire Wire Line
-	9985 1405 9985 1275
-Wire Wire Line
-	9985 1275 9945 1275
 Wire Notes Line
 	10550 825  10550 2765
 Wire Notes Line
@@ -958,4 +904,8 @@ Wire Wire Line
 	3675 1695 3675 1550
 Wire Wire Line
 	3675 1550 3965 1550
+Wire Wire Line
+	9040 1805 9450 1805
+Wire Wire Line
+	9875 1705 10050 1705
 $EndSCHEMATC
