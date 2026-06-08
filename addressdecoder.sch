@@ -14,28 +14,6 @@ Comment3 ""
 Comment4 ""
 $EndDescr
 $Comp
-L power:+5V #PWR012
-U 1 1 6A187084
-P 5725 2900
-F 0 "#PWR012" H 5725 2750 50  0001 C CNN
-F 1 "+5V" H 5740 3073 50  0000 C CNN
-F 2 "" H 5725 2900 50  0001 C CNN
-F 3 "" H 5725 2900 50  0001 C CNN
-	1    5725 2900
-	1    0    0    -1  
-$EndComp
-$Comp
-L power:+5V #PWR010
-U 1 1 6A1878CE
-P 3275 2675
-F 0 "#PWR010" H 3275 2525 50  0001 C CNN
-F 1 "+5V" H 3290 2848 50  0000 C CNN
-F 2 "" H 3275 2675 50  0001 C CNN
-F 3 "" H 3275 2675 50  0001 C CNN
-	1    3275 2675
-	1    0    0    -1  
-$EndComp
-$Comp
 L power:GND #PWR017
 U 1 1 6A188A44
 P 5725 4300
@@ -61,19 +39,6 @@ Wire Wire Line
 	5725 2900 5725 2950
 Wire Wire Line
 	5725 4300 5725 4275
-$Comp
-L power:+5V #PWR019
-U 1 1 6A1B2982
-P 3300 4950
-F 0 "#PWR019" H 3300 4800 50  0001 C CNN
-F 1 "+5V" H 3315 5123 50  0000 C CNN
-F 2 "" H 3300 4950 50  0001 C CNN
-F 3 "" H 3300 4950 50  0001 C CNN
-	1    3300 4950
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	3300 4950 3300 5000
 $Comp
 L power:GND #PWR021
 U 1 1 6A1B77CC
@@ -141,17 +106,6 @@ Wire Wire Line
 	6900 1525 6825 1525
 Wire Wire Line
 	5500 2100 5075 2100
-$Comp
-L power:+5V #PWR09
-U 1 1 6A247967
-P 5275 2325
-F 0 "#PWR09" H 5275 2175 50  0001 C CNN
-F 1 "+5V" V 5290 2453 50  0000 L CNN
-F 2 "" H 5275 2325 50  0001 C CNN
-F 3 "" H 5275 2325 50  0001 C CNN
-	1    5275 2325
-	0    -1   -1   0   
-$EndComp
 Wire Wire Line
 	5275 2325 5350 2325
 Wire Wire Line
@@ -170,17 +124,6 @@ Wire Wire Line
 	6325 2100 6100 2100
 Wire Wire Line
 	7275 3450 7075 3450
-$Comp
-L power:+5V #PWR013
-U 1 1 6A26D538
-P 7165 3680
-F 0 "#PWR013" H 7165 3530 50  0001 C CNN
-F 1 "+5V" V 7180 3808 50  0000 L CNN
-F 2 "" H 7165 3680 50  0001 C CNN
-F 3 "" H 7165 3680 50  0001 C CNN
-	1    7165 3680
-	0    -1   -1   0   
-$EndComp
 Wire Wire Line
 	7875 3450 8175 3450
 Text GLabel 6250 5125 2    50   Output ~ 0
@@ -446,4 +389,22 @@ F 6 "SN74HCT04DR" H 4475 3550 50  0001 C CNN "Man_PN"
 	3    4500 3750
 	1    0    0    -1  
 $EndComp
+Text GLabel 5275 2325 0    50   BiDi ~ 0
+3V3
+Text GLabel 7165 3680 0    50   BiDi ~ 0
+3V3
+Text GLabel 3240 4905 0    50   BiDi ~ 0
+5V
+Wire Wire Line
+	3240 4905 3300 4905
+Wire Wire Line
+	3300 4905 3300 5000
+Text GLabel 3215 2675 0    50   BiDi ~ 0
+5V
+Wire Wire Line
+	3215 2675 3275 2675
+Text GLabel 5650 2900 0    50   BiDi ~ 0
+5V
+Wire Wire Line
+	5650 2900 5725 2900
 $EndSCHEMATC
