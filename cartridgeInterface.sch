@@ -397,11 +397,11 @@ Wire Wire Line
 	3555 5930 3555 6030
 Wire Wire Line
 	5970 5990 5970 5890
-Text GLabel 4055 6040 3    39   Input ~ 0
+Text GLabel 4055 6040 3    33   Input ~ 0
 ~RST
 Wire Wire Line
 	3955 5930 3955 6030
-Text GLabel 1450 6125 3    39   Input ~ 0
+Text GLabel 1450 6125 3    33   Input ~ 0
 ~MPD
 Wire Wire Line
 	5770 5090 5770 4965
@@ -439,7 +439,7 @@ Text GLabel 7770 4945 1    50   Input ~ 0
 mA7
 Text GLabel 7670 4945 1    50   Input ~ 0
 mA8
-Text GLabel 1450 5005 1    31   Input ~ 0
+Text GLabel 1450 5005 1    33   Input ~ 0
 ~mMPD
 Wire Wire Line
 	5970 4965 5970 5090
@@ -455,17 +455,17 @@ Text GLabel 3555 5005 1    39   Input ~ 0
 mD6
 Text GLabel 5970 4965 1    39   Input ~ 0
 mD7
-Text GLabel 1350 5005 1    31   Input ~ 0
+Text GLabel 1350 5005 1    33   Input ~ 0
 ~mRE
-Text GLabel 1250 5005 1    31   Input ~ 0
+Text GLabel 1250 5005 1    33   Input ~ 0
 ~mWE
-Text GLabel 5370 4965 1    31   Input ~ 0
+Text GLabel 5370 4965 1    33   Input ~ 0
 ~mVIRQ
 Text GLabel 8070 4945 1    39   Input ~ 0
 mA4
-Text GLabel 3955 5005 1    39   Input ~ 0
+Text GLabel 3955 5005 1    33   Input ~ 0
 ~mEXSEL
-Text GLabel 3955 6030 3    39   Input ~ 0
+Text GLabel 3955 6030 3    33   Input ~ 0
 ~EXSEL
 $Comp
 L CCAP0805:1uF C?
@@ -974,7 +974,7 @@ Wire Wire Line
 	3655 5930 3655 6030
 Wire Wire Line
 	3755 5930 3755 6030
-Text GLabel 3855 6025 3    39   BiDi ~ 0
+Text GLabel 3855 6025 3    33   BiDi ~ 0
 ~CCTL
 Wire Wire Line
 	3855 5930 3855 6025
@@ -982,7 +982,7 @@ Wire Wire Line
 	5470 5890 5470 5990
 Wire Wire Line
 	4055 5930 4055 6040
-Text GLabel 1550 6125 3    39   Input ~ 0
+Text GLabel 1550 6125 3    33   Input ~ 0
 ~D1XX
 Wire Wire Line
 	5370 5890 5370 6000
@@ -1028,7 +1028,7 @@ Text GLabel 3755 5005 1    39   BiDi ~ 0
 mRD5
 Text GLabel 1950 5000 1    39   Input ~ 0
 ~mHALT
-Text GLabel 1550 5005 1    31   Input ~ 0
+Text GLabel 1550 5005 1    33   Input ~ 0
 ~mD1XX
 Text GLabel 9870 2790 0    39   BiDi ~ 0
 mRSRVD
@@ -1272,7 +1272,7 @@ Text GLabel 2550 4705 2    50   BiDi ~ 0
 3V3
 Wire Wire Line
 	3855 5130 3855 5005
-Text GLabel 3855 5005 1    39   BiDi ~ 0
+Text GLabel 3855 5005 1    33   BiDi ~ 0
 ~mCCTL
 Wire Wire Line
 	3055 5530 3015 5530
@@ -1327,6 +1327,27 @@ F 4 "C84376" H 4060 3745 50  0001 C CNN "LCSC"
 $EndComp
 Text Notes 1810 7130 0    197  ~ 39
 BUS LOGIC LEVEL SHIFTERS
-Text GLabel 4055 5005 1    31   Input ~ 0
+Text GLabel 4055 5005 1    33   Input ~ 0
 ~ATARI_RESET
+Text Notes 580  6780 0    50   ~ 10
+~WE~ and ~RE~\nare coming from\n5V decoding circuitry
+Text GLabel 9805 3175 0    33   Input ~ 0
+~mD1XX
+$Comp
+L Connector:TestPoint mRD?
+U 1 1 6A29D7B8
+P 10965 2565
+AR Path="/68821B60/6A29D7B8" Ref="mRD?"  Part="1" 
+AR Path="/68821C2E/6A29D7B8" Ref="mD1XX1"  Part="1" 
+F 0 "mD1XX1" H 10900 2775 39  0000 L CNN
+F 1 "TestPoint" H 11023 2592 50  0001 L CNN
+F 2 "TestPoint:TestPoint_Pad_D2.0mm" H 11165 2565 50  0001 C CNN
+F 3 "~" H 11165 2565 50  0001 C CNN
+	1    10965 2565
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	10965 2565 10610 3175
+Wire Wire Line
+	10610 3175 9805 3175
 $EndSCHEMATC

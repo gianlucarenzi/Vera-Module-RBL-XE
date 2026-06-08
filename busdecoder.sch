@@ -200,8 +200,6 @@ Wire Wire Line
 Wire Wire Line
 	2745 3455 3075 3455
 Wire Wire Line
-	3075 3555 3000 3555
-Wire Wire Line
 	9275 3855 9825 3855
 Wire Wire Line
 	9275 3655 9825 3655
@@ -577,7 +575,7 @@ Wire Wire Line
 Wire Wire Line
 	5475 5425 5540 5425
 Wire Wire Line
-	5215 5375 5475 5375
+	5215 5375 5265 5375
 Wire Wire Line
 	5540 5525 5475 5525
 Wire Wire Line
@@ -873,12 +871,6 @@ Wire Notes Line
 	645  4415 645  6110
 Wire Notes Line
 	645  6110 3775 6110
-Wire Notes Line
-	3775 6110 3775 4390
-Wire Notes Line
-	3775 4390 645  4390
-Wire Notes Line
-	645  4390 645  4410
 $Comp
 L RetroBitLab:CD4011B U5
 U 1 1 68D657F2
@@ -948,12 +940,11 @@ Wire Notes Line
 Wire Notes Line
 	8990 4440 8990 6390
 NoConn ~ 3000 1955
-NoConn ~ 3000 3555
 NoConn ~ 3000 3655
 Text GLabel 9770 3355 2    33   BiDi ~ 0
-~RAMSEL
+~dRAMSEL
 Text GLabel 9720 3155 2    39   BiDi ~ 0
-~ROMSEL
+~dROMSEL
 Wire Wire Line
 	9275 3155 9720 3155
 Text GLabel 2940 2255 0    39   BiDi ~ 0
@@ -966,10 +957,8 @@ Wire Wire Line
 	9275 3355 9770 3355
 Text GLabel 9770 2955 2    39   BiDi ~ 0
 ~mMPD
-Text GLabel 9725 3755 2    39   BiDi ~ 0
+Text GLabel 2840 3555 0    39   BiDi ~ 0
 ~mEXSEL
-Wire Wire Line
-	9275 3755 9725 3755
 Text GLabel 2875 2555 0    33   BiDi ~ 0
 VFPGA_DONE
 Wire Wire Line
@@ -978,4 +967,26 @@ Text GLabel 2730 3255 0    39   BiDi ~ 0
 mA8
 Wire Wire Line
 	2730 3255 3075 3255
+Wire Wire Line
+	2840 3555 3075 3555
+Text GLabel 5340 5105 2    39   Output ~ 0
+W~R
+Wire Wire Line
+	5340 5105 5265 5105
+Wire Wire Line
+	5265 5105 5265 5375
+Connection ~ 5265 5375
+Wire Wire Line
+	5265 5375 5475 5375
+Text Notes 1480 4440 0    79   ~ 16
+HARDWARE DRIVEN LEDS
+Wire Notes Line
+	645  4285 3775 4285
+Wire Notes Line
+	3775 4285 3775 6110
+Wire Notes Line
+	645  4285 645  4410
+Wire Wire Line
+	9275 3755 9340 3755
+NoConn ~ 9340 3755
 $EndSCHEMATC

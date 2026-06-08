@@ -122,7 +122,7 @@ Wire Wire Line
 Wire Wire Line
 	4390 2200 3965 2200
 Wire Wire Line
-	3965 2200 3960 1940
+	3965 2200 3965 1970
 Wire Wire Line
 	8680 5180 8905 5180
 $Comp
@@ -345,13 +345,13 @@ Wire Wire Line
 $Comp
 L CRES0805:10K R5
 U 1 1 68C0234F
-P 3960 1835
-F 0 "R5" H 4019 1876 50  0000 L CNN
-F 1 "10K" H 4019 1785 50  0000 L CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" H 3960 1835 50  0001 C CNN
-F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2506161110_YAGEO-RC0805FR-0710KL_C84376.pdf" H 3960 1835 50  0001 C CNN
-F 4 "C84376" H 3960 1835 50  0001 C CNN "LCSC"
-	1    3960 1835
+P 3965 1865
+F 0 "R5" H 4024 1906 50  0000 L CNN
+F 1 "10K" H 4024 1815 50  0000 L CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" H 3965 1865 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2506161110_YAGEO-RC0805FR-0710KL_C84376.pdf" H 3965 1865 50  0001 C CNN
+F 4 "C84376" H 3965 1865 50  0001 C CNN "LCSC"
+	1    3965 1865
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -579,7 +579,7 @@ Text GLabel 2540 1625 0    50   BiDi ~ 0
 Text GLabel 4815 1625 0    50   BiDi ~ 0
 3V3
 Wire Wire Line
-	3965 1550 3960 1740
+	3965 1550 3965 1770
 Wire Wire Line
 	3415 4595 3515 4595
 Connection ~ 3515 4595
@@ -683,10 +683,8 @@ Wire Wire Line
 Wire Wire Line
 	1570 2900 1400 2900
 Connection ~ 1570 2900
-Text GLabel 9385 1445 0    50   BiDi ~ 0
+Text GLabel 8410 1090 0    50   BiDi ~ 0
 5V
-Wire Wire Line
-	9385 1445 9420 1445
 Wire Wire Line
 	9420 1445 9420 1605
 Wire Wire Line
@@ -908,4 +906,47 @@ Wire Wire Line
 	9040 1805 9450 1805
 Wire Wire Line
 	9875 1705 10050 1705
+Text GLabel 8820 1090 0    50   BiDi ~ 0
+3V3
+Text Notes 8115 1610 0    50   Italic 10
+! NEED ONLY ONE SOLDERED !
+$Comp
+L Jumper:SolderJumper_2_Open JP1
+U 1 1 6A3662B0
+P 8480 1270
+F 0 "JP1" V 8480 1338 50  0000 L CNN
+F 1 "SolderJumper_2_Open" V 8525 1338 50  0001 L CNN
+F 2 "" H 8480 1270 50  0001 C CNN
+F 3 "~" H 8480 1270 50  0001 C CNN
+	1    8480 1270
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	8480 1420 8480 1445
+$Comp
+L Jumper:SolderJumper_2_Open JP3
+U 1 1 6A375357
+P 8980 1270
+F 0 "JP3" V 8980 1338 50  0000 L CNN
+F 1 "SolderJumper_2_Open" V 9025 1338 50  0001 L CNN
+F 2 "" H 8980 1270 50  0001 C CNN
+F 3 "~" H 8980 1270 50  0001 C CNN
+	1    8980 1270
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	8480 1445 8980 1445
+Wire Wire Line
+	8980 1420 8980 1445
+Connection ~ 8980 1445
+Wire Wire Line
+	8980 1445 9420 1445
+Wire Wire Line
+	8820 1090 8980 1090
+Wire Wire Line
+	8980 1090 8980 1120
+Wire Wire Line
+	8410 1090 8480 1090
+Wire Wire Line
+	8480 1090 8480 1120
 $EndSCHEMATC
