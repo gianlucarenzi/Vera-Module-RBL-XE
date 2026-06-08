@@ -51,7 +51,7 @@ F 5 "C193707" H -2310 -1010 50  0001 C CNN "LCSC"
 	1    6175 2655
 	1    0    0    -1  
 $EndComp
-NoConn ~ 3075 1655
+NoConn ~ 2985 1655
 Wire Wire Line
 	675  1555 675  1755
 Wire Wire Line
@@ -989,4 +989,6 @@ Wire Notes Line
 Wire Wire Line
 	9275 3755 9340 3755
 NoConn ~ 9340 3755
+Wire Wire Line
+	3075 1655 2985 1655
 $EndSCHEMATC
