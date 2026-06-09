@@ -27,13 +27,13 @@
  *   A6-A10        : GPIO 12, 13, 14, 15, 16               (bank-0, PBI only)
  *   PHI2          : GPIO  2   (bank-0)
  *   R/W_          : GPIO 17   (bank-0)
- *   D1XX_N/CCTL_N : GPIO 18   (bank-0)
- *   ROM_SEL_N     : GPIO 21   (bank-0, PBI only)
- *   RAM_SEL_N     : GPIO 40   (bank-1, MTDO, QFN56 pin 45, PBI only)
+ *   D1XX_N/CCTL_N : GPIO 18   (bank-0, direct da 74LVC 3.3V)
+ *   ROM_SEL_N     : GPIO 21   (bank-0, direct da 74LVC 3.3V, PBI only)
+ *   RAM_SEL_N     : GPIO 40   (bank-1, MTDO, QFN56 pin 45, direct da 74LVC 3.3V, PBI only)
  *   EXTSEL_N      : GPIO  0   (output) -- add 10 kohm pull-up to 3.3 V
  *   DEV_SEL_N     : GPIO  1   (output)
  *   MPD           : GPIO 42   (bank-1, MTMS, QFN56 pin 48, output, active LOW)
- *                              Requires 3.3V->5V level shifting (e.g. BSS138)
+ *                              via U3 canale A6/B6 (liberato da D1XX_N → 74LVC)
  *   UART TX       : GPIO 43
  *   WARNING GPIO0 : strapping (download mode if LOW at reset) -- 10 kohm pull-up
  *   WARNING GPIO3 : strapping (JTAG source), floats at reset -- tie GND via 10 kohm

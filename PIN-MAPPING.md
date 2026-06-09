@@ -70,16 +70,24 @@ Firmware A0–A5 decode: `a = (GPIO.in1.val >> 1) & 0x3F`
 
 ## 3. Control Signals
 
-| Signal | GPIO | QFN56 pin | IO MUX name | Direction | Active | Description |
-|---|---|---|---|---|---|---|
-| PHI2 | 2 | 7 | GPIO2 | Input | HIGH | CPU clock phase 2 — 60 µs LOW glitch at power-up |
-| R/W_ | 17 | 23 | GPIO17 | Input | HIGH=read | Read / Not-Write — 60 µs LOW glitch at power-up |
-| D1XX_N | 18 | 24 | GPIO18 | Input | LOW | $D1xx page selected (external decoder) — 60 µs LOW+HIGH glitch |
-| ROM_SEL_N | 21 | 27 | GPIO21 | Input | LOW | $D800–$DFFF from 74HC138 Y7 (bank-0) |
-| RAM_SEL_N | 40 | 45 | MTDO | Input | LOW | $D600–$D7FF from external decoder (bank-1, bit 8) — PBI only |
-| EXTSEL_N | 0 | 5 | GPIO0 | **Output** | LOW | Disables Atari floating-point ROM — strapping pin, add 10 kΩ pull-up |
-| DEV_SEL_N | 1 | 6 | GPIO1 | **Output** | LOW | VERA chip select (direct, no level shifter) — 60 µs LOW glitch |
-| MPD | 42 | 48 | MTMS | **Output** | LOW | Memory Port Data — tells Atari MMU to tristate its bus buffer during ROM/RAM reads. Requires 3.3 V → 5 V level shifting (BSS138 or spare TXS0108E channel). (bank-1, bit 10) |
+> **Logica di decodifica:** 74HCT138 / 74HCT04 / 74HCT10 operano a 5 V con ingressi
+> collegati direttamente al bus Atari. Le loro uscite pilotano uno stadio finale in serie
+> **74LVC** alimentato a 3.3 V (ingressi 5V-tolerant). Le uscite 74LVC — `/D1XX_N`,
+> `/ROM_SEL_N`, `/RAM_SEL_N` — escono già a 3.3 V e si collegano **direttamente** ai
+> GPIO dell'ESP32-S3 senza ulteriori level shifter.
+> PHI2, R/W\_ e A8–A10 provengono invece direttamente dal bus Atari a 5 V e passano
+> per U3 (TXS0108E).
+
+| Signal | GPIO | QFN56 pin | IO MUX name | Direction | Active | Level shift | Description |
+|---|---|---|---|---|---|---|---|
+| PHI2 | 2 | 7 | GPIO2 | Input | HIGH | via U3 | CPU clock phase 2 — 60 µs LOW glitch at power-up |
+| R/W_ | 17 | 23 | GPIO17 | Input | HIGH=read | via U3 | Read / Not-Write — 60 µs LOW glitch at power-up |
+| D1XX_N | 18 | 24 | GPIO18 | Input | LOW | **direct** | $D1xx page — uscita 74LVC a 3.3 V |
+| ROM_SEL_N | 21 | 27 | GPIO21 | Input | LOW | **direct** | $D800–$DFFF — uscita 74LVC a 3.3 V |
+| RAM_SEL_N | 40 | 45 | MTDO | Input | LOW | **direct** | $D600–$D7FF — uscita 74LVC a 3.3 V (bank-1 bit 8, PBI only) |
+| EXTSEL_N | 0 | 5 | GPIO0 | **Output** | LOW | via U3 | Disabilita FP ROM Atari — strapping pin, pull-up 10 kΩ a 3.3 V |
+| DEV_SEL_N | 1 | 6 | GPIO1 | **Output** | LOW | **direct** | VERA chip select — VERA a 3.3 V; 60 µs LOW glitch al power-up |
+| MPD | 42 | 48 | MTMS | **Output** | LOW | via U3 | Memory Port Data — tristate MMU Atari durante letture ROM/RAM (bank-1 bit 10) |
 
 ---
 
@@ -133,21 +141,25 @@ Place 100 nF ceramic capacitors on VCCA→GND and VCCB→GND of each chip.
 | A7/B7 | GPIO 12 — A6 | Atari A6 |
 | A8/B8 | GPIO 13 — A7 | Atari A7 |
 
-### U3 — Address A8–A10, control signals, EXTSEL_N
+### U3 — Address A8–A10, PHI2, R/W\_, MPD, EXTSEL\_N
 
-| Channel | A side (3.3 V ESP32-S3) | B side (5 V) | Direction | Source |
+D1XX\_N e ROM\_SEL\_N non passano più per U3: le uscite 74LVC (3.3 V) si collegano
+direttamente all'ESP32. I canali A6/B6 e A7/B7 risultano liberi; A6/B6 è ora
+assegnato a MPD (GPIO 42, output ESP32-S3 → bus Atari 5 V). A7/B7 è di riserva.
+
+| Channel | A side (3.3 V ESP32-S3) | B side (5 V) | Direction | Note |
 |---|---|---|---|---|
-| A1/B1 | GPIO 14 — A8 | Atari A8 | B→A | Atari |
-| A2/B2 | GPIO 15 — A9 | Atari A9 | B→A | Atari |
-| A3/B3 | GPIO 16 — A10 | Atari A10 | B→A | Atari |
-| A4/B4 | GPIO 2  — PHI2 | Atari PHI2 | B→A | Atari |
-| A5/B5 | GPIO 17 — R/W_ | Atari R/W_ | B→A | Atari |
-| A6/B6 | GPIO 18 — D1XX_N | External decoder | B→A | External |
-| A7/B7 | GPIO 21 — ROM_SEL_N | 74HC138 Y7 | B→A | 74HC138 |
-| A8/B8 | GPIO 0  — EXTSEL_N | Atari EXTSEL | **A→B** | **ESP32-S3** |
+| A1/B1 | GPIO 14 — A8 | Atari A8 | B→A | Input |
+| A2/B2 | GPIO 15 — A9 | Atari A9 | B→A | Input |
+| A3/B3 | GPIO 16 — A10 | Atari A10 | B→A | Input |
+| A4/B4 | GPIO 2  — PHI2 | Atari PHI2 | B→A | Input |
+| A5/B5 | GPIO 17 — R/W_ | Atari R/W_ | B→A | Input |
+| A6/B6 | GPIO 42 — MPD | Atari ECI MPD | **A→B** | Output, active LOW |
+| A7/B7 | — | — | — | **Spare** |
+| A8/B8 | GPIO 0  — EXTSEL_N | Atari EXTSEL | **A→B** | Output, active LOW |
 
-**Note:** DEV_SEL_N (GPIO 1) connects directly from ESP32-S3 to VERA chip select
-without level shifting — the FPGA operates at 3.3 V.
+**Note:** DEV_SEL_N (GPIO 1) va direttamente al chip select di VERA (3.3 V) senza
+level shifter. RAM\_SEL\_N, ROM\_SEL\_N, D1XX\_N vanno direttamente all'ESP32 (74LVC a 3.3 V).
 
 ---
 
@@ -163,7 +175,7 @@ Generates ROM_SEL_N (active LOW) for $D800–$DFFF.
 | Pin 4 (G2A, active LOW) | Atari A13 |
 | Pin 5 (G2B, active LOW) | GND |
 | Pin 6 (G1, active HIGH) | Atari A14 |
-| Pin 7 (Y7) | U3 B7 → GPIO 21 |
+| Pin 7 (Y7) | → 74LVC → GPIO 21 (ROM_SEL_N, 3.3 V) |
 | Pin 16 (VCC) | 5 V |
 
 Decode: A15=1, A14=1, A13=0, A12=1, A11=1 → Y7 LOW → **$D800–$DFFF** ✓
