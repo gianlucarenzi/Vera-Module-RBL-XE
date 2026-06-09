@@ -21,7 +21,7 @@
  *     ROM       : none
  *     VERA regs : $D500-$D51F -- DEV_SEL_N asserted on A0-A4 range
  *
- * Supported MCUs (select via build_flags -D MCU_xxx):
+ * Supported MCUs:
  *
  *   MCU_ESP32_S3  --  ESP32-S3FN8, QFN56
  *   -------------------------------------------------------
@@ -46,23 +46,6 @@
  *   WARNING GPIO3 : strapping (JTAG source), floats at reset -- tie GND via 10 kohm
  *   WARNING GPIO1 : 60 us LOW glitch at power-up -- hold VERA in reset during boot
  *   WARNING GPIO26-32: in-package Quad SPI flash -- never connect externally
- *
- *   MCU_ESP32_CLASSIC  --  NodeMCU DevKit V1 / ESP32-PICO-D4 / WROOM-32
- *   -------------------------------------------------------
- *   D0-D7         : GPIO 18, 19, 21, 22, 23, 25, 26, 27
- *   A0-A5         : GPIO 32, 33, 34, 35, 36, 39  (bank-1)
- *   A6-A10        : GPIO 16, 17, 14, 12, 13      (PBI only)
- *   PHI2          : GPIO  2  (strapping, safe if GPIO0 is HIGH)
- *   R/W_          : GPIO 15  (strapping, safe -- normally HIGH)
- *   D1XX_N/CCTL_N : GPIO  5  (strapping, safe -- normally HIGH inactive)
- *   ROM_SEL_N     : GPIO  4
- *   EXTSEL_N      : GPIO  0  (strapping -- add 10 kohm pull-up to 3.3 V)
- *   DEV_SEL_N     : GPIO  3  (UART0 RX repurposed; RX disabled in firmware)
- *   UART TX       : GPIO  1
- *   RAM_SEL_N     : ** NOT AVAILABLE ** (all GPIOs occupied)
- *   MPD           : ** NOT AVAILABLE ** (all GPIOs occupied)
- *   WARNING GPIO12: VDD_SDIO strapping pin -- used as A9. See warning below.
- *   WARNING GPIO6-11: internal flash -- never connect externally
  *
  * Architecture:
  *   Core 1: MonitorTask -- IRAM, no blocking calls, ~54-cycle decode path.
@@ -149,75 +132,9 @@ static inline uint8_t IRAM_ATTR decode_data(uint32_t lo)
      (1ULL<<PIN_RAM_SEL_N))
 
 #elif defined(MCU_ESP32_CLASSIC)
-/* ---- NodeMCU DevKit V1 / ESP32-PICO-D4 / WROOM-32 ---------------------- */
-/*
- * GPIO12 (A9) is the VDD_SDIO voltage strapping pin on classic ESP32.
- * If the Atari bus holds A9 HIGH during ESP32 power-up or reset, the MCU
- * configures VDD_SDIO = 1.8 V, which prevents in-package flash from booting.
- * NodeMCU / WROOM-32: eFuse EFUSE_VDD_SDIO_TIEH is factory-burned to 3.3 V,
- * so GPIO12 level is irrelevant on those boards.
- * Bare PICO-D4 / custom boards: ensure the Atari is powered off (or the ECI
- * connector is disconnected) whenever the ESP32 is reset.
- */
-#warning "MCU_ESP32_CLASSIC: GPIO12 is VDD_SDIO strapping pin (A9). Atari must be off during ESP32 reset on boards without EFUSE_VDD_SDIO_TIEH burned. See comment above."
-#warning "MCU_ESP32_CLASSIC: PIN_RAM_SEL_N not available -- all GPIOs used. RAM $D600-$D7FF serving disabled."
-#warning "MCU_ESP32_CLASSIC: PIN_MPD not available -- all GPIOs used. Bus contention possible during ROM reads on classic hardware without open-drain workaround."
-
-#define PIN_PHI2        2
-#define PIN_RW         15
-#define PIN_BUS_SEL_N   5
-#define PIN_DEV_SEL_N   3
-#define PIN_ROM_SEL_N   4
-#define PIN_EXTSEL_N    0
-#define PIN_UART_TX     1
-/* No PIN_RAM_SEL_N, no PIN_MPD -- all GPIOs occupied on classic ESP32 */
-
-/* D0-D7: GPIO18,19,21,22,23,25,26,27 bank-0 */
-#define DBUS_MASK \
-    ((1UL<<18)|(1UL<<19)|(1UL<<21)|(1UL<<22)|(1UL<<23)|(1UL<<25)|(1UL<<26)|(1UL<<27))
-static const uint8_t DBUS_PINS[8] = {18, 19, 21, 22, 23, 25, 26, 27};
-
-/* A0-A4: GPIO32-36 (bank-1 bits 0-4); A5: GPIO39 (bit 7); A6-A10: bank-0 */
-static inline uint16_t IRAM_ATTR decode_addr(uint32_t lo, uint32_t hi)
-{
-    uint16_t a = (uint16_t)(hi & 0x1Fu);               /* A0-A4  GPIO32-36 */
-    a |= (uint16_t)(((hi >>  7) & 1u) <<  5);          /* A5     GPIO39    */
-    a |= (uint16_t)(((lo >> 16) & 1u) <<  6);          /* A6     GPIO16    */
-    a |= (uint16_t)(((lo >> 17) & 1u) <<  7);          /* A7     GPIO17    */
-    a |= (uint16_t)(((lo >> 14) & 1u) <<  8);          /* A8     GPIO14    */
-    a |= (uint16_t)(((lo >> 12) & 1u) <<  9);          /* A9     GPIO12 (STRAPPING!) */
-    a |= (uint16_t)(((lo >> 13) & 1u) << 10);          /* A10    GPIO13    */
-    return a;
-}
-static inline uint8_t IRAM_ATTR decode_offset_cctl(uint32_t hi)
-{
-    return (uint8_t)(hi & 0x1Fu);  /* GPIO32-36 (in1 bits 0-4) = A0-A4 */
-}
-static inline uint8_t IRAM_ATTR decode_data(uint32_t lo)
-{
-    return (uint8_t)(
-        ( (lo >> 18) & 0x03u)        |   /* D0-D1  GPIO18-19 */
-        (((lo >> 21) & 0x07u) <<  2) |   /* D2-D4  GPIO21-23 */
-        (((lo >> 25) & 0x07u) <<  5)     /* D5-D7  GPIO25-27 */
-    );
-}
-
-/* MPD and RAM_SEL not wired on classic ESP32 -- no-ops */
-#define MPD_ASSERT()            /* no-op: MPD not available */
-#define MPD_DEASSERT()          /* no-op: MPD not available */
-#define DECODE_IS_RAM(g_hi)     false
-
-/* gpio_config bitmasks */
-#define CFG_INPUTS_SHARED \
-    ((uint64_t)DBUS_MASK | (1ULL<<PIN_PHI2) | (1ULL<<PIN_RW) | \
-     (1ULL<<PIN_BUS_SEL_N) | \
-     (1ULL<<32)|(1ULL<<33)|(1ULL<<34)|(1ULL<<35)|(1ULL<<36)|(1ULL<<39))
-#define CFG_INPUTS_PBI_ONLY \
-    ((1ULL<<PIN_ROM_SEL_N) | \
-     (1ULL<<16)|(1ULL<<17)|(1ULL<<14)|(1ULL<<12)|(1ULL<<13))
-
+#  error "MCU_ESP32_CLASSIC (NodeMCU/PICO-D4) is no longer supported. Use MCU_ESP32_S3."
 #else
-#  error "Set -D MCU_ESP32_S3 or -D MCU_ESP32_CLASSIC in build_flags"
+#  error "Set -D MCU_ESP32_S3 in build_flags"
 #endif
 
 /* PBI device configuration */

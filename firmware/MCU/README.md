@@ -95,11 +95,11 @@ Per compilare le due parti del progetto, sono necessari due approcci diversi.
 È necessario avere **PlatformIO Core** installato.
 
 ```bash
-# Compila il progetto per il ESP32-S3FN8
-platformio run -e esp32-s3-fn8
+# Compila il progetto per il ESP32-S3FN8 (PBI mode)
+platformio run -e esp32s3fn8-pbi
 
 # Carica il firmware sulla scheda (UART0: GPIO43=TX, GPIO44=RX)
-platformio run -e esp32-s3-fn8 --target upload
+platformio run -e esp32s3fn8-pbi --target upload
 ```
 
 ### Compilazione Driver 6502

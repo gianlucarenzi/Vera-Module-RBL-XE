@@ -91,7 +91,7 @@
 \section{Introduzione}
 Questo documento presenta un'analisi tecnica del firmware per il progetto \textit{Vera-Module-RBL-XE}. L'obiettivo del firmware, eseguito su un microcontrollore ESP32, è di interfacciarsi con il bus di un processore 6502 per emulare un dispositivo PBI (Parallel Bus Interface) o CCTL (Cartridge Control Line) per computer ATARI della serie XL/XE.
 
-Il progetto supporta due MCU target e due modalità operative, per un totale di quattro varianti di compilazione distinte. L'analisi si concentra sulla fattibilità temporale (timing) dell'interazione tra la MCU moderna e la CPU vintage, illustrando la logica di funzionamento tramite diagrammi di flusso e temporali.
+Il progetto supporta la MCU target ESP32-S3 e due modalità operative, per un totale di due varianti di compilazione distinte. L'analisi si concentra sulla fattibilità temporale (timing) dell'interazione tra la MCU moderna e la CPU vintage, illustrando la logica di funzionamento tramite diagrammi di flusso e temporali.
 
 % --- SEZIONE 2: ARCHITETTURA DEL SISTEMA ---
 \section{Architettura del Sistema}
@@ -100,10 +100,9 @@ Il sistema si basa sull'interazione di due componenti principali.
 \subsection{Componenti Chiave}
 \begin{itemize}
     \item {\bfseries CPU 6502 (MOS/SALLY):} Il processore centrale dell'Atari, operante a una frequenza di clock di \textbf{1.7897 MHz} (NTSC).
-    \item {\bfseries MCU (selezionabile a compile-time):} Il microcontrollore moderno responsabile del monitoraggio del bus e dell'emulazione della periferica. Sono supportati due target:
+    \item {\bfseries MCU:} Il microcontrollore moderno responsabile del monitoraggio del bus e dell'emulazione della periferica. Il target è:
     \begin{itemize}
         \item \textbf{ESP32-S3FN8} (QFN56, 7$\times$7\,mm) — Dual-core Xtensa LX7 @ 240\,MHz, 512\,KB SRAM, 8\,MB flash in-package Quad SPI, 45 GPIO bidirezionali.
-        \item \textbf{ESP32-WROOM-32 / NodeMCU DevKit V1} (ESP32-PICO-D4) — Dual-core Xtensa LX6 @ 240\,MHz, 520\,KB SRAM, 4\,MB flash, GPIO34--39 solo input.
     \end{itemize}
 \end{itemize}
 
@@ -123,22 +122,20 @@ Il firmware supporta due modalità operative, selezionate a compile-time tramite
 \end{itemize}
 
 \subsection{Ambienti di build PlatformIO}
-Il file \texttt{platformio.ini} definisce quattro ambienti indipendenti:
+Il file \texttt{platformio.ini} definisce due ambienti indipendenti:
 
 \begin{center}
 \begin{tabular}{llll}
 \toprule
 \textbf{Ambiente} & \textbf{MCU} & \textbf{Modalità} & \textbf{Piattaforma} \\
 \midrule
-\texttt{nodemcu-pbi}    & ESP32-WROOM-32 & PBI  & espressif32@6.6.0 \\
-\texttt{nodemcu-cctl}   & ESP32-WROOM-32 & CCTL & espressif32@6.6.0 \\
 \texttt{esp32s3fn8-pbi} & ESP32-S3FN8   & PBI  & espressif32@6.6.0 \\
 \texttt{esp32s3fn8-cctl}& ESP32-S3FN8   & CCTL & espressif32@6.6.0 \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-La selezione dell'MCU avviene tramite le macro \texttt{MCU\_ESP32\_S3} e \texttt{MCU\_ESP32\_CLASSIC} passate come \texttt{-D} nei \texttt{build\_flags}.
+La selezione avviene tramite la macro \texttt{MCU\_ESP32\_S3} passata come \texttt{-D} nei \texttt{build\_flags}.
 
 \subsection{Interfacciamento Bus}
 L'ESP32 è collegato direttamente alle seguenti linee del bus del 6502 tramite tre level-shifter bidirezionali TXS0108E (3.3\,V lato MCU, 5\,V lato Atari):
@@ -324,20 +321,8 @@ Di seguito è riportato un estratto del file \texttt{main.cpp} che mostra la str
     return (uint8_t)((lo >> 4) & 0xFFu); /* GPIO4-11 compatti */
   }
 
-#elif defined(MCU_ESP32_CLASSIC)
-  /* NodeMCU / PICO-D4: nessun PIN_RAM_SEL_N ne' PIN_MPD disponibili */
-  #warning "MCU_ESP32_CLASSIC: RAM $D600-$D7FF e MPD non supportati"
-  #define MPD_ASSERT()        /* no-op */
-  #define MPD_DEASSERT()      /* no-op */
-  #define DECODE_IS_RAM(hi)   false
-  /* D0-D7: GPIO18,19,21-23,25-27 (non contigui in bank-0) */
-  static inline uint8_t IRAM_ATTR decode_data(uint32_t lo) {
-    return (uint8_t)(((lo>>18)&0x03u) |
-                     (((lo>>21)&0x07u)<<2) |
-                     (((lo>>25)&0x07u)<<5));
-  }
 #else
-  #error "Set -D MCU_ESP32_S3 or -D MCU_ESP32_CLASSIC"
+  #error "Set -D MCU_ESP32_S3"
 #endif
 \end{lstlisting}
 
@@ -499,6 +484,6 @@ La revisione del firmware e della mappatura hardware ha chiarito e corretto i se
   \item \textbf{GPIO\,15 e GPIO\,16} (pad RTC \texttt{XTAL\_32K\_P}/\texttt{N}): il progetto non impiega quarzo da 32\,kHz; il MCU opera con oscillatore interno RC a 240\,MHz. I pad sono utilizzati come normali GPIO per A9 e A10.
 \end{itemize}
 
-Il supporto dual-MCU (\texttt{MCU\_ESP32\_S3} / \texttt{MCU\_ESP32\_CLASSIC}) e dual-mode (\texttt{BUS\_MODE=0} PBI, \texttt{BUS\_MODE=1} CCTL) rende il firmware portabile su hardware diverso senza duplicazione di codice. La tabella dei pin fisici del package QFN56 consente di realizzare il PCB direttamente dalla documentazione senza ambiguità tra numero GPIO logico e pad fisico.
+Il firmware supporta le due modalità (\texttt{BUS\_MODE=0} PBI, \texttt{BUS\_MODE=1} CCTL) e garantisce portabilità su hardware diverso senza duplicazione di codice. La tabella dei pin fisici del package QFN56 consente di realizzare il PCB direttamente dalla documentazione senza ambiguità tra numero GPIO logico e pad fisico.
 
 \end{document}

@@ -225,20 +225,3 @@ Pin non assegnati al progetto ed esclusi i critici (strapping, flash in-package)
 
 > GPIO22–25 non esistono su ESP32-S3.
 
----
-
-## 8. ESP32-S3FN8 vs ESP32-PICO-D4 — Migration Notes
-
-| Parameter | ESP32-PICO-D4 | ESP32-S3FN8 |
-|---|---|---|
-| CPU | Dual-core LX6 @ 240 MHz | Dual-core LX7 @ 240 MHz |
-| SRAM | 520 KB | 512 KB |
-| In-package Flash | 4 MB (Quad SPI) | 8 MB (Quad SPI) |
-| Package | QFN48 (7×7 mm) | QFN56 (7×7 mm) |
-| GPIO count | 34 usable | 45 total (38 usable excl. flash) |
-| Input-only pins | GPIO34–39 (input only) | None — all GPIOs bidirectional |
-| Bluetooth | BT 4.2 | BT 5 (LE) |
-| USB | None | Full-speed USB OTG + Serial/JTAG |
-| UART0 pins | TX=GPIO1, RX=GPIO3 | TX=GPIO43, RX=GPIO44 |
-| Strapping pins | GPIO0, GPIO2, GPIO5, GPIO12, GPIO15 | GPIO0, GPIO3, GPIO45, GPIO46 |
-| Flash-reserved pins | GPIO6–11 | GPIO26–32 |
