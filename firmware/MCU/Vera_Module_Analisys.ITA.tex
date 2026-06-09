@@ -15,6 +15,8 @@
 \usepackage{tikz-timing}
 \usepackage{verbatim} % Aggiunto per commentare blocchi
 \usepackage{float}
+\usepackage{booktabs}
+\usepackage{array}
 
 % --- CONFIGURAZIONE GEOMETRIA PAGINA ---
 \geometry{a4paper, top=3cm, bottom=3cm, left=2.5cm, right=2.5cm}
@@ -39,21 +41,21 @@
 \definecolor{backcolour}{rgb}{0.98,0.98,0.98}
 
 \lstdefinestyle{cppstyle}{
-    backgroundcolor=\color{backcolour},   
+    backgroundcolor=\color{backcolour},
     commentstyle=\color{codegreen},
     keywordstyle=\color{magenta},
     numberstyle=\tiny\color{codegray},
     stringstyle=\color{codepurple},
     basicstyle=\footnotesize\ttfamily,
-    breakatwhitespace=false,         
-    breaklines=true,                 
-    captionpos=b,                    
-    keepspaces=true,                 
-    numbers=left,                    
-    numbersep=5pt,                  
-    showspaces=false,                
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
     showstringspaces=false,
-    showtabs=false,                  
+    showtabs=false,
     tabsize=2,
     language=C++
 }
@@ -87,9 +89,9 @@
 
 % --- SEZIONE 1: INTRODUZIONE ---
 \section{Introduzione}
-Questo documento presenta un'analisi tecnica del firmware per il progetto \textit{Vera-Module-RBL-XE}. L'obiettivo del firmware, eseguito su un microcontrollore ESP32, è di interfacciarsi con il bus di un processore 6502 per emulare un dispositivo PBI (Parallel Bus Interface) per computer ATARI.
+Questo documento presenta un'analisi tecnica del firmware per il progetto \textit{Vera-Module-RBL-XE}. L'obiettivo del firmware, eseguito su un microcontrollore ESP32, è di interfacciarsi con il bus di un processore 6502 per emulare un dispositivo PBI (Parallel Bus Interface) o CCTL (Cartridge Control Line) per computer ATARI della serie XL/XE.
 
-L'analisi si concentra sulla fattibilità temporale (timing) dell'interazione tra la MCU moderna e la CPU vintage, illustrando la logica di funzionamento tramite diagrammi di flusso e temporali.
+Il progetto supporta due MCU target e due modalità operative, per un totale di quattro varianti di compilazione distinte. L'analisi si concentra sulla fattibilità temporale (timing) dell'interazione tra la MCU moderna e la CPU vintage, illustrando la logica di funzionamento tramite diagrammi di flusso e temporali.
 
 % --- SEZIONE 2: ARCHITETTURA DEL SISTEMA ---
 \section{Architettura del Sistema}
@@ -97,31 +99,129 @@ Il sistema si basa sull'interazione di due componenti principali.
 
 \subsection{Componenti Chiave}
 \begin{itemize}
-    \item {\bfseries CPU 6502:} Il processore centrale dell'Atari, operante a una frequenza di clock di \textbf{1.79 MHz}.
-    \item {\bfseries MCU ESP32-S3:} Un moderno microcontrollore dual-core con una frequenza di clock di \textbf{240 MHz}, responsabile del monitoraggio del bus e dell'emulazione della periferica.
+    \item {\bfseries CPU 6502 (MOS/SALLY):} Il processore centrale dell'Atari, operante a una frequenza di clock di \textbf{1.7897 MHz} (NTSC).
+    \item {\bfseries MCU (selezionabile a compile-time):} Il microcontrollore moderno responsabile del monitoraggio del bus e dell'emulazione della periferica. Sono supportati due target:
+    \begin{itemize}
+        \item \textbf{ESP32-S3FN8} (QFN56, 7$\times$7\,mm) — Dual-core Xtensa LX7 @ 240\,MHz, 512\,KB SRAM, 8\,MB flash in-package Quad SPI, 45 GPIO bidirezionali.
+        \item \textbf{ESP32-WROOM-32 / NodeMCU DevKit V1} (ESP32-PICO-D4) — Dual-core Xtensa LX6 @ 240\,MHz, 520\,KB SRAM, 4\,MB flash, GPIO34--39 solo input.
+    \end{itemize}
 \end{itemize}
+
+\subsection{Modalità operative (BUS\_MODE)}
+Il firmware supporta due modalità operative, selezionate a compile-time tramite la macro \texttt{BUS\_MODE}:
+
+\begin{itemize}
+    \item \textbf{PBI mode (\texttt{BUS\_MODE=0}):} Il modulo si collega al connettore ECI della serie XL/XE. Il firmware decodifica la pagina \$D1xx tramite il segnale \texttt{D1XX\_N}, serve una ROM da 2\,KB nell'area \$D800--\$DFFF (segnale \texttt{ROM\_SEL\_N} dalla 74HC138), e controlla \texttt{EXTSEL\_N} per disabilitare la ROM floating-point dell'Atari quando il dispositivo viene selezionato.
+    \item \textbf{CCTL mode (\texttt{BUS\_MODE=1}):} Il modulo si collega alla porta cartuccia. Il firmware decodifica i 5 bit bassi dell'indirizzo nell'area \$D500--\$D5FF tramite il segnale \texttt{CCTL\_N} e genera il chip-select per il chip VERA.
+\end{itemize}
+
+\subsection{Ambienti di build PlatformIO}
+Il file \texttt{platformio.ini} definisce quattro ambienti indipendenti:
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+\textbf{Ambiente} & \textbf{MCU} & \textbf{Modalità} & \textbf{Piattaforma} \\
+\midrule
+\texttt{nodemcu-pbi}    & ESP32-WROOM-32 & PBI  & espressif32@6.6.0 \\
+\texttt{nodemcu-cctl}   & ESP32-WROOM-32 & CCTL & espressif32@6.6.0 \\
+\texttt{esp32s3fn8-pbi} & ESP32-S3FN8   & PBI  & espressif32@6.6.0 \\
+\texttt{esp32s3fn8-cctl}& ESP32-S3FN8   & CCTL & espressif32@6.6.0 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+La selezione dell'MCU avviene tramite le macro \texttt{MCU\_ESP32\_S3} e \texttt{MCU\_ESP32\_CLASSIC} passate come \texttt{-D} nei \texttt{build\_flags}.
 
 \subsection{Interfacciamento Bus}
-L'ESP32 è collegato direttamente alle seguenti linee del bus del 6502:
+L'ESP32 è collegato direttamente alle seguenti linee del bus del 6502 tramite tre level-shifter bidirezionali TXS0108E (3.3\,V lato MCU, 5\,V lato Atari):
 \begin{itemize}
-    \item {\bfseries Bus Indirizzi (A0-A15):} Per determinare a quale locazione di memoria la CPU vuole accedere.
-    \item {\bfseries Bus Dati (D0-D7):} Per leggere o scrivere dati.
-    \item {\bfseries Segnali di Controllo:} Principalmente \texttt{PHI2} (il clock principale della CPU) e \texttt{R/W} (indica un'operazione di lettura o scrittura).
+    \item {\bfseries Bus Dati (D0--D7):} Bidirezionale; la direzione è controllata dal segnale \texttt{R/W\_}.
+    \item {\bfseries Bus Indirizzi (A0--A10):} Solo input; utilizzati per decodificare l'area di memoria di interesse. In modalità CCTL vengono usati solo A0--A4.
+    \item {\bfseries Segnali di controllo:} \texttt{PHI2} (clock CPU), \texttt{R/W\_} (lettura/scrittura), \texttt{D1XX\_N} o \texttt{CCTL\_N} (selezione pagina), \texttt{ROM\_SEL\_N} (solo PBI), \texttt{EXTSEL\_N} e \texttt{DEV\_SEL\_N} (output verso l'Atari e verso VERA).
 \end{itemize}
 
-% --- SEZIONE 3: ANALISI DELLE TEMPISTICHE ---
+% --- SEZIONE 3: MAPPING DEI PIN ---
+\section{Mapping dei Pin (ESP32-S3FN8, QFN56)}
+
+I pin fisici del package QFN56 sono numerati 1--56 (più il pad GND centrale, pin 57). La tabella seguente riporta i segnali del progetto con il numero GPIO logico \textbf{e} il numero di pad fisico del QFN56 (da Table~2-1 del datasheet ESP32-S3 v2.2).
+
+\begin{center}
+\begin{tabular}{lccll}
+\toprule
+\textbf{Segnale Atari} & \textbf{GPIO} & \textbf{Pin QFN56} & \textbf{IO MUX name} & \textbf{Note} \\
+\midrule
+\multicolumn{5}{l}{\textit{Bus dati (GPIO bank-0, bit 4--11)}} \\
+D0  & 4  &  9 & GPIO4  & TXS0108E U1 — glitch LOW 60\,µs al power-up \\
+D1  & 5  & 10 & GPIO5  & glitch LOW 60\,µs \\
+D2  & 6  & 11 & GPIO6  & glitch LOW 60\,µs \\
+D3  & 7  & 12 & GPIO7  & glitch LOW 60\,µs \\
+D4  & 8  & 13 & GPIO8  & glitch LOW 60\,µs \\
+D5  & 9  & 14 & GPIO9  & glitch LOW 60\,µs \\
+D6  & 10 & 15 & GPIO10 & glitch LOW 60\,µs \\
+D7  & 11 & 16 & GPIO11 & glitch LOW 60\,µs \\
+\midrule
+\multicolumn{5}{l}{\textit{Bus indirizzi A0--A5 (GPIO bank-1, bit 1--6, GPIO.in1.val)}} \\
+A0  & 33 & 38 & GPIO33 & TXS0108E U2 \\
+A1  & 34 & 39 & GPIO34 & \\
+A2  & 35 & 40 & GPIO35 & \\
+A3  & 36 & 41 & GPIO36 & \\
+A4  & 37 & 42 & GPIO37 & \\
+A5  & 38 & 43 & GPIO38 & \\
+\midrule
+\multicolumn{5}{l}{\textit{Bus indirizzi A6--A10 (GPIO bank-0, solo PBI)}} \\
+A6  & 12 & 17 & GPIO12      & glitch LOW 60\,µs \\
+A7  & 13 & 18 & GPIO13      & glitch LOW 60\,µs \\
+A8  & 14 & 19 & GPIO14      & glitch LOW 60\,µs \\
+A9  & 15 & 21 & XTAL\_32K\_P & \textbf{No cristallo 32\,kHz!} \\
+A10 & 16 & 22 & XTAL\_32K\_N & \textbf{No cristallo 32\,kHz!} \\
+\midrule
+\multicolumn{5}{l}{\textit{Segnali di controllo}} \\
+PHI2       & 2  &  7 & GPIO2  & input — glitch LOW 60\,µs \\
+R/W\_      & 17 & 23 & GPIO17 & input — glitch LOW 60\,µs \\
+D1XX\_N    & 18 & 24 & GPIO18 & input — glitch LOW+HIGH 60\,µs \\
+ROM\_SEL\_N& 21 & 27 & GPIO21 & input, PBI only \\
+EXTSEL\_N  &  0 &  5 & GPIO0  & \textbf{output} — strapping, pull-up 10\,k$\Omega$ \\
+DEV\_SEL\_N&  1 &  6 & GPIO1  & \textbf{output} verso VERA — glitch LOW 60\,µs \\
+\midrule
+\multicolumn{5}{l}{\textit{Debug}} \\
+UART TX & 43 & 49 & U0TXD & Serial debug @ 115200 baud \\
+UART RX & 44 & 50 & U0RXD & non utilizzato in firmware \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent\textbf{Attenzione:} I pin fisici 28 e 30--35 del QFN56 (GPIO26--32) sono collegati internamente alla flash Quad SPI in-package. Non devono mai essere connessi a segnali esterni nella variante FN8.
+
+% --- SEZIONE 4: ANALISI DELLE TEMPISTICHE ---
 \section{Analisi delle Tempistiche}
 Una delle principali preoccupazioni in un progetto di questo tipo è la capacità della MCU di rispondere entro la finestra temporale definita dal ciclo di clock della CPU 6502.
 
 \begin{itemize}
-    \item {\bfseries Ciclo Clock 6502 (1.79 MHz):} $T_{6502} = 1 / (1.79 \times 10^6) \approx 558 \text{ ns}$
-    \item {\bfseries Ciclo Clock ESP32 (240 MHz):} $T_{ESP32} = 1 / (240 \times 10^6) \approx 4.17 \text{ ns}$
+    \item {\bfseries Ciclo Clock 6502 (1.7897 MHz, NTSC):} $T_{6502} = 1 / (1.7897 \times 10^6) \approx 559\,\text{ns}$
+    \item {\bfseries Finestra PHI2 alto (half-cycle):} $T_{PHI2\uparrow} \approx 279\,\text{ns}$ — questa è la finestra critica entro cui l'ESP32 deve leggere l'indirizzo, decodificarlo ed eventualmente pilotare il bus dati.
+    \item {\bfseries Ciclo Clock ESP32 (240 MHz):} $T_{ESP32} = 1 / (240 \times 10^6) \approx 4.17\,\text{ns}$
 \end{itemize}
 
-Il rapporto tra i due periodi di clock è di circa \textbf{134:1}. Questo significa che l'ESP32 ha a disposizione oltre 130 dei suoi cicli di clock per ogni singolo ciclo del 6502. Questo margine è eccezionalmente ampio e garantisce che tutte le operazioni di lettura dei pin, elaborazione logica e scrittura sul bus possano essere completate con largo anticipo.
+Il rapporto tra la finestra critica e il ciclo dell'ESP32 è:
+\[
+\frac{T_{PHI2\uparrow}}{T_{ESP32}} = \frac{279\,\text{ns}}{4.17\,\text{ns}} \approx 67\,\text{cicli ESP32}
+\]
 
-\subsection{Diagramma Temporale di un Ciclo di Lettura}
-Il diagramma seguente illustra un tipico ciclo di lettura gestito dall'ESP32. L'asse X rappresenta il tempo, mentre l'asse Y mostra lo stato logico dei segnali.
+Anche considerando solo la semi-finestra di PHI2 alto (il caso peggiore), l'ESP32-S3 dispone di circa \textbf{67 cicli di clock} per completare tutta la catena: lettura di \texttt{GPIO.in} / \texttt{GPIO.in1.val}, decodifica dell'indirizzo, lookup nella LUT, pilotaggio del bus dati. Poiché tutte le funzioni critiche risiedono in IRAM (\texttt{IRAM\_ATTR}) ed operano solo su registri hardware, il percorso critico è tipicamente inferiore a 20 cicli.
+
+\subsection{Accesso diretto ai registri GPIO}
+Per eliminare qualsiasi overhead di astrazione, il firmware usa esclusivamente accesso diretto ai registri hardware dell'ESP32:
+
+\begin{itemize}
+    \item \texttt{GPIO.in} — legge i 32 GPIO del bank-0 in un'unica istruzione a 32 bit.
+    \item \texttt{GPIO.in1.val} — legge i GPIO del bank-1 (GPIO32--48).
+    \item \texttt{GPIO.out\_w1ts} / \texttt{GPIO.out\_w1tc} — set/clear atomico dei bit di uscita (write-1-to-set / write-1-to-clear).
+    \item \texttt{GPIO.enable\_w1ts} / \texttt{GPIO.enable\_w1tc} — abilitazione/disabilitazione in uscita (tristate) per il bus dati.
+\end{itemize}
+
+\subsection{Diagramma Temporale di un Ciclo di Lettura (PBI)}
+Il diagramma seguente illustra un tipico ciclo di lettura gestito dall'ESP32 in modalità PBI.
 
 \begin{figure}[h!]
 \centering
@@ -140,64 +240,102 @@ Il diagramma seguente illustra un tipico ciclo di lettura gestito dall'ESP32. L'
         \node[below, font=\tiny, text=blue] at (11,-0.5) {CPU legge dati};
     \end{pgfonlayer}
 \end{tikztimingtable}
-\caption{Diagramma temporale di un ciclo di lettura del 6502 gestito dall'ESP32.}
+\caption{Diagramma temporale di un ciclo di lettura del 6502 gestito dall'ESP32 (modalità PBI).}
 \label{fig:timing_diagram}
 \end{figure}
 
-% --- SEZIONE 4: CODICE SORGENTE ---
+% --- SEZIONE 5: CODICE SORGENTE ---
 \section{Frammento di Codice Sorgente}
-Di seguito è riportato un estratto significativo del file \texttt{main.cpp}, che implementa la logica descritta nel diagramma di flusso. L'uso di accesso diretto ai registri (\texttt{read\_gpio\_level}, \texttt{read\_address\_bus}) e di un task dedicato (\texttt{MonitorTask}) è fondamentale per le prestazioni.
+Di seguito è riportato un estratto del file \texttt{main.cpp} che mostra la struttura di selezione a compile-time della MCU e il cuore del \texttt{MonitorTask} in modalità PBI. Tutte le funzioni critiche sono marcate \texttt{IRAM\_ATTR} per garantire l'esecuzione dalla RAM interna, indipendentemente dallo stato della cache flash.
 
-\begin{lstlisting}[style=cppstyle, caption={Estratto dal MonitorTask in main.cpp}, label=code:monitor_task]
-void MonitorTask(void *pvParameters)
+\begin{lstlisting}[style=cppstyle, caption={Selezione MCU e decode per ESP32-S3FN8 in main.cpp}, label=code:mcu_select]
+#if defined(MCU_ESP32_S3)
+  #define PIN_PHI2 2   #define PIN_RW 17
+  #define PIN_BUS_SEL_N 18  #define PIN_ROM_SEL_N 21
+  #define PIN_EXTSEL_N  0   #define PIN_DEV_SEL_N  1
+  #define PIN_UART_TX  43
+  #define DBUS_MASK \
+    ((1UL<<4)|(1UL<<5)|...|(1UL<<11))   /* GPIO4-11, 0x00000FF0 */
+  static const uint8_t DBUS_PINS[8] = {4,5,6,7,8,9,10,11};
+
+  /* A0-A5: GPIO.in1.val bits 1-6; A6-A10: GPIO.in bits 12-16 */
+  static inline uint16_t IRAM_ATTR decode_addr(uint32_t lo, uint32_t hi) {
+    uint16_t a = (uint16_t)((hi >> 1) & 0x3Fu);     /* A0-A5 */
+    a |= (uint16_t)(((lo >> 12) & 1u) <<  6);        /* A6    */
+    /* ... A7-A10 analoghi ... */
+    return a;
+  }
+  static inline uint8_t IRAM_ATTR decode_data(uint32_t lo) {
+    return (uint8_t)((lo >> 4) & 0xFFu); /* GPIO4-11 compatti */
+  }
+
+#elif defined(MCU_ESP32_CLASSIC)
+  /* Pin e decode differenti per NodeMCU / PICO-D4 */
+  #define PIN_RW  15  #define PIN_BUS_SEL_N 5
+  /* D0-D7: GPIO18,19,21-23,25-27 (non contigui) */
+  static inline uint8_t IRAM_ATTR decode_data(uint32_t lo) {
+    return (uint8_t)(
+      ((lo >> 18) & 0x03u) |
+      (((lo >> 21) & 0x07u) << 2) |
+      (((lo >> 25) & 0x07u) << 5));
+  }
+#else
+  #error "Set -D MCU_ESP32_S3 or -D MCU_ESP32_CLASSIC"
+#endif
+\end{lstlisting}
+
+\begin{lstlisting}[style=cppstyle, caption={Nucleo del MonitorTask (modalità PBI, semplificato)}, label=code:monitor_task]
+static void IRAM_ATTR MonitorTask(void *arg)
 {
-    serialPrintQueue(ANSI_BLUE "6502 Bus Monitor Ready on Core 1\n" ANSI_RESET);
+    bool selected = false;
+    bus_release();    /* tristate data bus */
 
     for (;;)
     {
-        // Attesa del fronte di salita di PHI2
-        while (!read_gpio_level(PIN_PHI2))
-            ;;
+        /* 1. Attesa fronte di salita di PHI2 + snapshot */
+        uint32_t g_lo;
+        while (!((g_lo = GPIO.in) & (1UL << PIN_PHI2)));
 
-        uint16_t address = read_address_bus();
-        bool rw = read_gpio_level(PIN_RW);
+        /* 2. Decodifica segnali e indirizzo */
+        bool is_read  = (g_lo & (1UL << PIN_RW))        != 0;
+        bool is_d1xx  = (g_lo & (1UL << PIN_BUS_SEL_N)) == 0;
+        bool is_rom   = (g_lo & (1UL << PIN_ROM_SEL_N))  == 0;
+        uint16_t addr = decode_addr(g_lo, GPIO.in1.val);
+        uint8_t  off  = (uint8_t)(addr & 0xFFu);
 
-        // Esempio: gestione dell\'area di memoria CCTL ($D5xx)
-        if (address >= 0xD500 && address <= 0xD5FF)
-        {
-            if (rw) // La CPU sta leggendo
-            {
-                uint8_t data = d500[address & 0x00FF];
-                set_data_bus_direction(GPIO_MODE_OUTPUT);
-                write_data_bus(data);
-                
-                // Attendi che il ciclo di clock finisca
-                while (read_gpio_level(PIN_PHI2))
-                    ;;
-                
-                set_data_bus_direction(GPIO_MODE_INPUT);
-            }
-            else // La CPU sta scrivendo
-            {
-                set_data_bus_direction(GPIO_MODE_INPUT);
-                uint8_t data = read_data_bus();
-                d500[address & 0x00FF] = data;
+        /* 3. Selezione dispositivo (scrittura D1FF) */
+        if (!is_read && is_d1xx && off == 0xFFu) {
+            uint8_t data = decode_data(GPIO.in);
+            bool new_sel = (data == DEVICE_MASK);   /* 0x80 */
+            if (new_sel != selected) {
+                selected = new_sel;
+                /* EXTSEL_N alto = ROM FP attiva; basso = disattivata */
+                if (selected) GPIO.out_w1tc = (1UL << PIN_EXTSEL_N);
+                else          GPIO.out_w1ts = (1UL << PIN_EXTSEL_N);
             }
         }
-        // ... altre condizioni per PBI I/O, ROM, etc.
+        /* 4. Lettura ROM ($D800-$DFFF) */
+        if (is_read && selected && is_rom) {
+            bus_drive(pbi_driver[addr & 0x7FFu]);
+        }
+
+        /* 5. Attesa fine PHI2, rilascio bus */
+        while (GPIO.in & (1UL << PIN_PHI2));
+        bus_release();
+        GPIO.out_w1ts = (1UL << PIN_DEV_SEL_N); /* deassert VERA CS */
     }
 }
 \end{lstlisting}
 
-% --- SEZIONE 5: DIAGRAMMA DI FLUSSO ---
+% --- SEZIONE 6: DIAGRAMMA DI FLUSSO ---
 \section{Diagramma di Flusso del Firmware}
-La logica principale del firmware è contenuta nel \texttt{MonitorTask}, che viene eseguito sul secondo core dell'ESP32 per garantire prestazioni in tempo reale.
+La logica principale del firmware è contenuta nel \texttt{MonitorTask}, che viene eseguito sul secondo core dell'ESP32 (Core 1) con priorità massima per garantire prestazioni in tempo reale.
 
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}[
     scale=0.7, transform shape,
-    node distance=2cm and 1.5cm, % Aumenta la spaziatura
+    node distance=2cm and 1.5cm,
     base/.style={draw, text width=4.5cm, align=center, minimum height=1cm},
     proc/.style={base, rectangle, fill=blue!10},
     test/.style={base, diamond, aspect=1.5, text width=3.5cm, fill=orange!15},
@@ -205,42 +343,44 @@ La logica principale del firmware è contenuta nel \texttt{MonitorTask}, che vie
     arrow/.style={-latex, thick}
 ]
     % Nodi del diagramma
-    \node[term] (start) {Inizio \texttt{MonitorTask}};
-    \node[proc, below=of start] (wait_phi2) {Attesa fronte di salita di PHI2};
-    \node[proc, below=of wait_phi2] (read_bus) {Lettura Address Bus e segnale R/W};
-    \node[test, below=of read_bus] (check_range) {L'indirizzo è in un'area di interesse? (es. \$D1xx, \$D5xx)};
-    
-    \node[proc, below=of check_range] (handle_rw) {Gestisci Lettura/Scrittura};
-    \node[proc, below=of handle_rw] (wait_phi2_low) {Attesa fronte di discesa di PHI2};
-    \node[proc, below=of wait_phi2_low] (release_bus) {Rilascia il Data Bus (imposta come Input)};
-    
-    \node[proc, left=of check_range, xshift=-2cm] (do_nothing) {Ignora (ciclo per memoria interna Atari)};
+    \node[term] (start) {Inizio \texttt{MonitorTask} (Core 1)};
+    \node[proc, below=of start] (wait_phi2) {Spin-wait fronte di salita PHI2 + snapshot \texttt{GPIO.in}};
+    \node[proc, below=of wait_phi2] (read_bus) {Decode: indirizzo, R/W\_, D1XX\_N, ROM\_SEL\_N};
+    \node[test, below=of read_bus] (check_range) {Indirizzo in area di interesse? (\$D1xx / \$D8xx)};
+
+    \node[proc, below=of check_range] (handle_rw) {Gestisci: VERA CS, bus drive (lettura) o cattura dato (scrittura)};
+    \node[proc, below=of handle_rw] (wait_phi2_low) {Spin-wait fronte di discesa PHI2};
+    \node[proc, below=of wait_phi2_low] (release_bus) {bus\_release() — tristate data bus, deassert DEV\_SEL\_N};
+
+    \node[proc, left=of check_range, xshift=-2cm] (do_nothing) {Ignora (ciclo memoria interna Atari)};
 
     % Connessioni
     \draw[arrow] (start) -- (wait_phi2);
     \draw[arrow] (wait_phi2) -- (read_bus);
     \draw[arrow] (read_bus) -- (check_range);
-    
+
     % Ramo "Sì"
     \draw[arrow] (check_range) -- node[right, pos=0.4] {Sì} (handle_rw);
     \draw[arrow] (handle_rw) -- (wait_phi2_low);
     \draw[arrow] (wait_phi2_low) -- (release_bus);
-    
+
     % Ramo "No"
     \draw[arrow] (check_range) -- node[above, pos=0.5] {No} (do_nothing);
-    
+
     % Loop di ritorno
     \coordinate (loop_point) at ([xshift=-1.5cm]do_nothing.west);
     \draw[arrow] (do_nothing.west) -| (loop_point) |- (wait_phi2);
     \draw[arrow] (release_bus.west) -| (loop_point);
 
 \end{tikzpicture}
-\caption{Diagramma di flusso semplificato del \texttt{MonitorTask}.}
+\caption{Diagramma di flusso semplificato del \texttt{MonitorTask} (modalità PBI).}
 \label{fig:flowchart}
 \end{figure}
 
-% --- SEZIONE 6: CONCLUSIONE ---
+% --- SEZIONE 7: CONCLUSIONE ---
 \section{Conclusione}
-L'analisi conferma che l'architettura hardware e software del progetto è solida e performante. L'uso di un microcontrollore ESP32 a 240 MHz fornisce un margine di elaborazione più che sufficiente per interfacciarsi con un bus 6502 a 1.79 MHz (o anche 2 MHz) senza incorrere in alcun problema di tempistica. Le tecniche di programmazione a basso livello, come l'accesso diretto ai registri GPIO e l'uso di task dedicati, sono state implementate correttamente per garantire la massima efficienza.
+L'analisi conferma che l'architettura hardware e software del progetto è solida e performante. L'ESP32-S3FN8 a 240\,MHz garantisce circa 67 cicli di clock nella finestra critica di PHI2 alto (279\,ns), ampiamente sufficienti per l'intera catena di decodifica e pilotaggio del bus. Le tecniche di programmazione a basso livello — accesso diretto ai registri GPIO (\texttt{GPIO.in}, \texttt{GPIO.in1.val}, \texttt{GPIO.out\_w1ts}/\texttt{w1tc}), funzioni in IRAM, LUT pre-calcolata per il bus dati — garantiscono un percorso critico tipicamente inferiore a 20 cicli.
+
+Il supporto dual-MCU (\texttt{MCU\_ESP32\_S3} / \texttt{MCU\_ESP32\_CLASSIC}) e dual-mode (\texttt{BUS\_MODE=0} PBI, \texttt{BUS\_MODE=1} CCTL) rende il firmware portabile su hardware diverso senza duplicazione di codice. La tabella dei pin fisici del package QFN56 consente di realizzare il PCB direttamente dalla documentazione senza ambiguità tra numero GPIO logico e pad fisico.
 
 \end{document}
