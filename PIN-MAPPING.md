@@ -11,11 +11,14 @@ Target MCU: **ESP32-S3FN8** — QFN56 package, 45 GPIOs, 8 MB in-package Quad SP
 |------|-----------|--------|------|
 | **GPIO 0** | 5 | EXTSEL_N | Strapping pin — if LOW at power-on, ESP32-S3 enters download mode. Add a **10 kΩ pull-up** to 3.3 V so the Atari bus cannot hold it LOW during reset. |
 | **GPIO 3** | 8 | (unused) | Strapping pin (JTAG source) — **no internal pull resistor, floats at reset**. Must be externally pulled; tie to GND via 10 kΩ resistor. |
-| **GPIO 15–16** | 21–22 | A9, A10 | XTAL_32K_P/N pads reused as GPIO. **Do not connect a 32 kHz crystal.** |
 | **GPIO 26–32** | 28, 30–35 | — | Hard-wired to in-package Quad SPI flash (FN8 variant). **Never connect externally**. |
 | **GPIO 45** | 51 | (unused) | Strapping pin (VDD_SPI select) — internal weak pull-down selects VDD_SPI = 3.3 V. Leave unconnected. |
 | **GPIO 46** | 52 | (unused) | Strapping pin (boot mode) — internal weak pull-down. Leave unconnected. |
 | **GPIO 19–20** | 25–26 | (unused) | USB D−/D+. USB CDC disabled in firmware. Leave unconnected or use carefully. |
+
+> **Nota GPIO 15–16 (XTAL\_32K\_P/N):** In questo progetto non si usa il quarzo da
+> 32 kHz e il MCU funziona con oscillatore interno RC a 240 MHz. GPIO15 e GPIO16 vengono
+> quindi utilizzati come normali GPIO (A9 e A10). Non collegare alcun quarzo 32 kHz.
 
 ---
 

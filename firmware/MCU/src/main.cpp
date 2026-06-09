@@ -28,6 +28,8 @@
  *   D0-D7         : GPIO  4,  5,  6,  7,  8,  9, 10, 11  (bank-0 bits 4-11)
  *   A0-A5         : GPIO 33, 34, 35, 36, 37, 38           (bank-1 bits 1-6)
  *   A6-A10        : GPIO 12, 13, 14, 15, 16               (bank-0, PBI only)
+ *                              GPIO15/16 = pad XTAL_32K_P/N: usati come GPIO normali;
+ *                              nessun quarzo 32 kHz; MCU su RC interno a 240 MHz
  *   PHI2          : GPIO  2   (bank-0)
  *   R/W_          : GPIO 17   (bank-0)
  *   D1XX_N/CCTL_N : GPIO 18   (bank-0, direct da 74LVC 3.3V)
