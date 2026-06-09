@@ -85,9 +85,9 @@ Firmware A0–A5 decode: `a = (GPIO.in1.val >> 1) & 0x3F`
 | D1XX_N | 18 | 24 | GPIO18 | Input | LOW | **direct** | $D1xx page — uscita 74LVC a 3.3 V |
 | ROM_SEL_N | 21 | 27 | GPIO21 | Input | LOW | **direct** | $D800–$DFFF — uscita 74LVC a 3.3 V |
 | RAM_SEL_N | 40 | 45 | MTDO | Input | LOW | **direct** | $D600–$D7FF — uscita 74LVC a 3.3 V (bank-1 bit 8, PBI only) |
-| EXTSEL_N | 0 | 5 | GPIO0 | **Output** | LOW | via U3 | Disabilita FP ROM Atari — strapping pin, pull-up 10 kΩ a 3.3 V |
+| EXTSEL_N | 0 | 5 | GPIO0 | **Output** | LOW | via U3 | Disabilita MMU/Freddie per accesso D1xx ($D100-$D1FE) e RAM $D600-$D7FF — segnale per-ciclo; strapping pin, pull-up 10 kΩ a 3.3 V |
 | DEV_SEL_N | 1 | 6 | GPIO1 | **Output** | LOW | **direct** | VERA chip select — VERA a 3.3 V; 60 µs LOW glitch al power-up |
-| MPD | 42 | 48 | MTMS | **Output** | LOW | via U3 | Memory Port Data — tristate MMU Atari durante letture ROM/RAM (bank-1 bit 10) |
+| MPD | 42 | 48 | MTMS | **Output** | LOW | via U3 | Math Pack Disable — disabilita ROM Atari $D800-$DFFF; asserto solo durante accessi ROM con device selezionato (bank-1 bit 10, U3 canale A6/B6) |
 
 ---
 

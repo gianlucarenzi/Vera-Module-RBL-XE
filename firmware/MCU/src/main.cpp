@@ -7,9 +7,12 @@
  *     Connector : XL/XE ECI
  *     Signals   : D1XX_N, ROM_SEL_N, RAM_SEL_N, EXTSEL_N, MPD
  *     Selection : D1FF one-hot write -- 0x80 selects this device (VCS latch)
- *     ROM       : 2 KB image served from IRAM at $D800-$DFFF via MPD + bus_drive
- *     RAM       : 512 B buffer served from IRAM at $D600-$D7FF via MPD + bus_drive
- *     VERA regs : $D100-$D11F (A0-A4, 32 registers) -- DEV_SEL_N asserted + MPD
+ *     ROM       : 2 KB image served from IRAM at $D800-$DFFF
+ *                 MPD (Math Pack Disable) asserted ONLY during ROM cycles
+ *     RAM       : 512 B buffer at $D600-$D7FF
+ *                 EXTSEL_N asserted during RAM cycles (disables MMU/Freddie)
+ *     VERA regs : $D100-$D11F (A0-A4, 32 registers) -- DEV_SEL_N asserted
+ *                 EXTSEL_N asserted during D1xx cycles (excl. D1FF latch reg)
  *
  *   BUS_MODE 1             -- CCTL mode
  *     Connector : 400/800 or XL/XE cartridge port
@@ -30,9 +33,11 @@
  *   D1XX_N/CCTL_N : GPIO 18   (bank-0, direct da 74LVC 3.3V)
  *   ROM_SEL_N     : GPIO 21   (bank-0, direct da 74LVC 3.3V, PBI only)
  *   RAM_SEL_N     : GPIO 40   (bank-1, MTDO, QFN56 pin 45, direct da 74LVC 3.3V, PBI only)
- *   EXTSEL_N      : GPIO  0   (output) -- add 10 kohm pull-up to 3.3 V
- *   DEV_SEL_N     : GPIO  1   (output)
+ *   EXTSEL_N      : GPIO  0   (output) -- disabilita MMU/Freddie per D1xx e D6xx
+ *                              add 10 kohm pull-up to 3.3 V (strapping pin)
+ *   DEV_SEL_N     : GPIO  1   (output) -- VERA chip select
  *   MPD           : GPIO 42   (bank-1, MTMS, QFN56 pin 48, output, active LOW)
+ *                              Math Pack Disable -- solo durante accessi ROM $D800-$DFFF
  *                              via U3 canale A6/B6 (liberato da D1XX_N → 74LVC)
  *   UART TX       : GPIO 43
  *   WARNING GPIO0 : strapping (download mode if LOW at reset) -- 10 kohm pull-up
@@ -307,72 +312,61 @@ static void IRAM_ATTR MonitorTask(void * /*arg*/)
         bool is_vera_range = is_d1xx && (off8 <= VERA_REG_MAX);
         bool is_int_range  = is_d1xx && (off8 >= INT_REG_LO) && (off8 <= INT_REG_HI);
 
-        /* 5. Assert VERA CS for D1xx VERA range -- required for both R and W.
-              DEV_SEL_N is released at end of every cycle (step 8). */
+        /* 5. EXTSEL_N -- per-cycle, not persistent.
+              Disabilita MMU/Freddie per accesso D1xx (escluso D1FF latch)
+              e per accesso RAM $D600-$D7FF. */
+        if (selected && ((is_d1xx && !is_d1ff) || is_ram))
+            GPIO.out_w1tc = (1UL << PIN_EXTSEL_N);
+
+        /* 6. MPD (Math Pack Disable) -- solo durante accessi ROM $D800-$DFFF.
+              Disabilita la ROM interna Atari per far vincere la ROM dell'ESP32. */
+        if (selected && is_rom)
+            MPD_ASSERT();
+
+        /* 7. Assert VERA CS per range D1xx VERA ($D100-$D11F), R e W. */
         if (selected && is_vera_range)
             GPIO.out_w1tc = (1UL << PIN_DEV_SEL_N);
 
-        /* 6. READ cycle */
+        /* 8. READ cycle */
         if (is_read)
         {
             if (selected)
             {
-                if (is_rom) {
-                    /* Serve 2 KB ROM image. Offset = A0-A10, masked to 2 K.
-                       Assert MPD first so Atari bus buffer tristates before
-                       the ESP32 (via TXS0108E U1) drives the data lines. */
-                    MPD_ASSERT();
-                    bus_drive(pbi_driver[addr & 0x7FFu]);
-                }
-                else if (is_ram) {
-                    /* Serve 512 B RAM at $D600-$D7FF. Offset = A0-A8. */
-                    MPD_ASSERT();
-                    bus_drive(ram_pbi[addr & 0x1FFu]);
-                }
-                else if (is_int_range) {
-                    /* ESP32 internal registers at $D120-$D1FE */
-                    MPD_ASSERT();
-                    bus_drive(int_regs[off8]);
-                }
-                else if (is_vera_range) {
-                    /* VERA register read: DEV_SEL_N asserted in step 5.
-                       VERA drives the bus autonomously via TXS0108E U1.
-                       Assert MPD so the Atari does not fight the bus. */
-                    MPD_ASSERT();
-                }
+                if (is_rom)
+                    bus_drive(pbi_driver[addr & 0x7FFu]);  /* 2 KB ROM */
+                else if (is_ram)
+                    bus_drive(ram_pbi[addr & 0x1FFu]);     /* 512 B RAM */
+                else if (is_int_range)
+                    bus_drive(int_regs[off8]);             /* registri interni */
+                /* is_vera_range: VERA guida il bus autonomamente */
             }
         }
-        /* 7. WRITE cycle -- re-read GPIO.in for stable write data */
+        /* 9. WRITE cycle -- re-read GPIO.in per dati stabili */
         else
         {
             uint8_t data = decode_data(GPIO.in);
 
             if (is_d1ff) {
-                /* VCS latch: $80 = activate (EXTSEL_N low, FP ROM disabled).
-                              Any other value = deactivate. */
+                /* VCS latch: $80 = seleziona device, qualsiasi altro = deseleziona.
+                   EXTSEL_N e MPD sono segnali per-ciclo, non si toccano qui. */
                 bool new_sel = (data == DEVICE_MASK);
                 if (new_sel != selected) {
                     selected = new_sel;
-                    if (selected)
-                        GPIO.out_w1tc = (1UL << PIN_EXTSEL_N);  /* FP ROM off */
-                    else
-                        GPIO.out_w1ts = (1UL << PIN_EXTSEL_N);  /* FP ROM on  */
                     xQueueSend(eventQueue, &selected, 0);
                 }
             }
             else if (selected && is_int_range) {
                 int_regs[off8] = data;
             }
-            /* is_vera_range write: DEV_SEL_N already asserted (step 5);
-               VERA latches write data on PHI2 falling edge. No extra action. */
-            /* is_ram write: add write-back logic here if needed. */
+            /* is_vera_range write: DEV_SEL_N gia' asserito (step 7);
+               VERA cattura i dati sul fronte discendente di PHI2. */
         }
 
-        /* 8. Wait PHI2 low, release bus, deassert MPD and VERA CS */
+        /* 10. Fine ciclo: rilascia bus, deasserta tutti gli output */
         while (GPIO.in & (1UL << PIN_PHI2));
         bus_release();
         MPD_DEASSERT();
-        GPIO.out_w1ts = (1UL << PIN_DEV_SEL_N);
+        GPIO.out_w1ts = (1UL << PIN_EXTSEL_N) | (1UL << PIN_DEV_SEL_N);
     }
 
 #else   /* BUS_MODE == 1 */
