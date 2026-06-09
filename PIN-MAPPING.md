@@ -1,8 +1,7 @@
-# Pin Mapping: VERA Module RBL-XE (ESP32 — unified with BOBOARD-5V)
+# Pin Mapping: VERA Module RBL-XE (ESP32-S3FN8)
 
-Pin assignments aligned with the ESP32-BOBOARD-5V reference firmware.
-The same GPIO numbers apply to both boards; only the physical package differs
-(PICO-D4 vs WROOM/NodeMCU-32S).
+Target MCU: **ESP32-S3FN8** — QFN56 package, 45 GPIOs, 8 MB in-package Quad SPI flash,
+512 KB SRAM, dual-core Xtensa LX7 @ 240 MHz.
 
 ---
 
@@ -10,54 +9,57 @@ The same GPIO numbers apply to both boards; only the physical package differs
 
 | GPIO | Signal | Risk |
 |------|--------|------|
-| **GPIO 0** | EXTSEL_N | Bootstrap pin — if LOW at power-on, ESP32 enters download mode. Add a **10 kΩ pull-up** to 3.3 V so the Atari bus cannot hold it LOW during ESP32 reset. |
-| **GPIO 3** | DEV_SEL_N (VERA CS) | UART0 RX pin. Firmware disables serial RX: `Serial.begin(115200, SERIAL_8N1, -1, 1)`. Do **not** connect a USB-UART adapter to GPIO 3 while the Atari is powered. |
-| **GPIO 12** | A9 | Strapping pin — selects 1.8 V flash VDD if HIGH at boot. The A9 line must be LOW (or floating with internal pull-down) during ESP32 reset. |
-| **GPIO 34, 35, 36, 39** | A2, A3, A4, A5 | Hardware input-only — no output driver, no internal pull resistors. Correct for address-bus inputs. |
-
-**PICO-D4 additional restriction:** GPIOs 6, 7, 8, 9, 10, 11 are wired internally to the SPI flash. They must not be connected externally.
+| **GPIO 0** | EXTSEL_N | Strapping pin — if LOW at power-on, ESP32-S3 enters download mode. Add a **10 kΩ pull-up** to 3.3 V so the Atari bus cannot hold it LOW during reset. |
+| **GPIO 3** | (unused) | Strapping pin (JTAG source) — **no internal pull resistor, floats at reset**. Must be externally pulled; tie to GND via 10 kΩ resistor. |
+| **GPIO 26–32** | — | Hard-wired to in-package Quad SPI flash (FN8 variant). **Never connect externally**. |
+| **GPIO 45** | (unused) | Strapping pin (VDD_SPI select) — internal weak pull-down selects VDD_SPI = 3.3 V. Leave unconnected. |
+| **GPIO 46** | (unused) | Strapping pin (boot mode) — internal weak pull-down. Leave unconnected. |
+| **GPIO 19–20** | (unused) | USB D−/D+. USB CDC disabled in firmware. Leave unconnected or use carefully. |
 
 ---
 
-## 1. Data Bus D0–D7  (bidirectional, GPIO bank 0)
+## 1. Data Bus D0–D7  (bidirectional, GPIO bank 0, bits 4–11)
 
-| Atari signal | GPIO | GPIO_IN bit | Notes |
+| Atari signal | GPIO | Bank-0 bit | Notes |
 |---|---|---|---|
-| D0 | 18 | 18 | Bidirectional via TXS0108E |
-| D1 | 19 | 19 | |
-| D2 | 21 | 21 | |
-| D3 | 22 | 22 | |
-| D4 | 23 | 23 | |
-| D5 | 25 | 25 | |
-| D6 | 26 | 26 | |
-| D7 | 27 | 27 | |
+| D0 | 4 | 4 | Bidirectional via TXS0108E |
+| D1 | 5 | 5 | |
+| D2 | 6 | 6 | |
+| D3 | 7 | 7 | |
+| D4 | 8 | 8 | |
+| D5 | 9 | 9 | |
+| D6 | 10 | 10 | |
+| D7 | 11 | 11 | |
 
-Firmware bitmask: `DBUS_MASK = (1<<18)|(1<<19)|(1<<21)|(1<<22)|(1<<23)|(1<<25)|(1<<26)|(1<<27)`
+Firmware bitmask: `DBUS_MASK = 0x00000FF0`
+Firmware data decode: `data = (GPIO.in >> 4) & 0xFF`
 
 ---
 
 ## 2. Address Bus A0–A10
 
-### Bank 1 (GPIO_IN1 register, GPIO 32–39)
+### Bank 1 (GPIO.in1.val, GPIO 33–38, bits 1–6)
 
-| Atari signal | GPIO | GPIO_IN1 bit | Notes |
+| Atari signal | GPIO | Bank-1 bit | Notes |
 |---|---|---|---|
-| A0 | 32 | 0 | Via TXS0108E |
-| A1 | 33 | 1 | |
-| A2 | 34 | 2 | Input-only pin |
-| A3 | 35 | 3 | Input-only pin |
-| A4 | 36 | 4 | Input-only pin (VP) |
-| A5 | 39 | 7 | Input-only pin (VN) |
+| A0 | 33 | 1 | Via TXS0108E |
+| A1 | 34 | 2 | |
+| A2 | 35 | 3 | |
+| A3 | 36 | 4 | |
+| A4 | 37 | 5 | |
+| A5 | 38 | 6 | |
 
-### Bank 0 (GPIO_IN register)
+Firmware A0–A5 decode: `a = (GPIO.in1.val >> 1) & 0x3F`
 
-| Atari signal | GPIO | GPIO_IN bit | Notes |
+### Bank 0 (GPIO.in, GPIO 12–16)
+
+| Atari signal | GPIO | Bank-0 bit | Notes |
 |---|---|---|---|
-| A6 | 16 | 16 | Via TXS0108E |
-| A7 | 17 | 17 | |
+| A6 | 12 | 12 | Via TXS0108E |
+| A7 | 13 | 13 | |
 | A8 | 14 | 14 | |
-| A9 | 12 | 12 | Strapping pin — see warning above |
-| A10 | 13 | 13 | |
+| A9 | 15 | 15 | |
+| A10 | 16 | 16 | |
 
 ---
 
@@ -66,11 +68,11 @@ Firmware bitmask: `DBUS_MASK = (1<<18)|(1<<19)|(1<<21)|(1<<22)|(1<<23)|(1<<25)|(
 | Signal | GPIO | Direction | Active | Description |
 |---|---|---|---|---|
 | PHI2 | 2 | Input | HIGH | CPU clock phase 2 |
-| R/W_ | 15 | Input | HIGH=read | Read / Not-Write |
-| D1XX_N | 5 | Input | LOW | $D1xx page selected (external decoder) |
-| ROM_SEL_N | 4 | Input | LOW | $D800–$DFFF from 74HC138 Y7 |
+| R/W_ | 17 | Input | HIGH=read | Read / Not-Write |
+| D1XX_N | 18 | Input | LOW | $D1xx page selected (external decoder) |
+| ROM_SEL_N | 21 | Input | LOW | $D800–$DFFF from 74HC138 Y7 |
 | EXTSEL_N | 0 | **Output** | LOW | Disables Atari floating-point ROM |
-| DEV_SEL_N | 3 | **Output** | LOW | VERA chip select |
+| DEV_SEL_N | 1 | **Output** | LOW | VERA chip select (direct, no level shifter) |
 
 ---
 
@@ -78,14 +80,14 @@ Firmware bitmask: `DBUS_MASK = (1<<18)|(1<<19)|(1<<21)|(1<<22)|(1<<23)|(1<<25)|(
 
 | Function | GPIO | Notes |
 |---|---|---|
-| UART TX | 1 | Serial debug output |
-| UART RX | 3 | **Repurposed as DEV_SEL_N** — serial RX disabled in firmware |
+| UART TX | 43 | Serial debug output (S3 UART0 hardware pin) |
+| UART RX | 44 | S3 UART0 hardware pin — RX disabled in firmware |
 
 ---
 
 ## 5. Level Shifting (TXS0108E)
 
-Three TXS0108E chips translate between the 5 V Atari bus (B side) and 3.3 V ESP32 (A side).
+Three TXS0108E chips translate between the 5 V Atari bus (B side) and 3.3 V ESP32-S3 (A side).
 
 **Common wiring for all three chips:**
 
@@ -100,42 +102,45 @@ Place 100 nF ceramic capacitors on VCCA→GND and VCCB→GND of each chip.
 
 ### U1 — Data bus D0–D7
 
-| Channel | A side (3.3 V ESP32) | B side (5 V Atari) |
+| Channel | A side (3.3 V ESP32-S3) | B side (5 V Atari) |
 |---|---|---|
-| A1/B1 | GPIO 18 — D0 | Atari D0 |
-| A2/B2 | GPIO 19 — D1 | Atari D1 |
-| A3/B3 | GPIO 21 — D2 | Atari D2 |
-| A4/B4 | GPIO 22 — D3 | Atari D3 |
-| A5/B5 | GPIO 23 — D4 | Atari D4 |
-| A6/B6 | GPIO 25 — D5 | Atari D5 |
-| A7/B7 | GPIO 26 — D6 | Atari D6 |
-| A8/B8 | GPIO 27 — D7 | Atari D7 |
+| A1/B1 | GPIO 4  — D0 | Atari D0 |
+| A2/B2 | GPIO 5  — D1 | Atari D1 |
+| A3/B3 | GPIO 6  — D2 | Atari D2 |
+| A4/B4 | GPIO 7  — D3 | Atari D3 |
+| A5/B5 | GPIO 8  — D4 | Atari D4 |
+| A6/B6 | GPIO 9  — D5 | Atari D5 |
+| A7/B7 | GPIO 10 — D6 | Atari D6 |
+| A8/B8 | GPIO 11 — D7 | Atari D7 |
 
 ### U2 — Address bus A0–A7
 
-| Channel | A side (3.3 V ESP32) | B side (5 V Atari) |
+| Channel | A side (3.3 V ESP32-S3) | B side (5 V Atari) |
 |---|---|---|
-| A1/B1 | GPIO 32 — A0 | Atari A0 |
-| A2/B2 | GPIO 33 — A1 | Atari A1 |
-| A3/B3 | GPIO 34 — A2 | Atari A2 |
-| A4/B4 | GPIO 35 — A3 | Atari A3 |
-| A5/B5 | GPIO 36 — A4 | Atari A4 |
-| A6/B6 | GPIO 39 — A5 | Atari A5 |
-| A7/B7 | GPIO 16 — A6 | Atari A6 |
-| A8/B8 | GPIO 17 — A7 | Atari A7 |
+| A1/B1 | GPIO 33 — A0 | Atari A0 |
+| A2/B2 | GPIO 34 — A1 | Atari A1 |
+| A3/B3 | GPIO 35 — A2 | Atari A2 |
+| A4/B4 | GPIO 36 — A3 | Atari A3 |
+| A5/B5 | GPIO 37 — A4 | Atari A4 |
+| A6/B6 | GPIO 38 — A5 | Atari A5 |
+| A7/B7 | GPIO 12 — A6 | Atari A6 |
+| A8/B8 | GPIO 13 — A7 | Atari A7 |
 
 ### U3 — Address A8–A10, control signals, EXTSEL_N
 
-| Channel | A side (3.3 V ESP32) | B side (5 V) | Direction | Source |
+| Channel | A side (3.3 V ESP32-S3) | B side (5 V) | Direction | Source |
 |---|---|---|---|---|
 | A1/B1 | GPIO 14 — A8 | Atari A8 | B→A | Atari |
-| A2/B2 | GPIO 12 — A9 | Atari A9 | B→A | Atari |
-| A3/B3 | GPIO 13 — A10 | Atari A10 | B→A | Atari |
-| A4/B4 | GPIO 2 — PHI2 | Atari PHI2 | B→A | Atari |
-| A5/B5 | GPIO 15 — R/W_ | Atari R/W_ | B→A | Atari |
-| A6/B6 | GPIO 5 — D1XX_N | External decoder | B→A | External |
-| A7/B7 | GPIO 4 — ROM_SEL_N | 74HC138 Y7 | B→A | 74HC138 |
-| A8/B8 | GPIO 0 — EXTSEL_N | Atari EXTSEL | **A→B** | **ESP32** |
+| A2/B2 | GPIO 15 — A9 | Atari A9 | B→A | Atari |
+| A3/B3 | GPIO 16 — A10 | Atari A10 | B→A | Atari |
+| A4/B4 | GPIO 2  — PHI2 | Atari PHI2 | B→A | Atari |
+| A5/B5 | GPIO 17 — R/W_ | Atari R/W_ | B→A | Atari |
+| A6/B6 | GPIO 18 — D1XX_N | External decoder | B→A | External |
+| A7/B7 | GPIO 21 — ROM_SEL_N | 74HC138 Y7 | B→A | 74HC138 |
+| A8/B8 | GPIO 0  — EXTSEL_N | Atari EXTSEL | **A→B** | **ESP32-S3** |
+
+**Note:** DEV_SEL_N (GPIO 1) connects directly from ESP32-S3 to VERA chip select
+without level shifting — the FPGA operates at 3.3 V.
 
 ---
 
@@ -151,7 +156,25 @@ Generates ROM_SEL_N (active LOW) for $D800–$DFFF.
 | Pin 4 (G2A, active LOW) | Atari A13 |
 | Pin 5 (G2B, active LOW) | GND |
 | Pin 6 (G1, active HIGH) | Atari A14 |
-| Pin 7 (Y7) | U3 B7 → GPIO 4 |
+| Pin 7 (Y7) | U3 B7 → GPIO 21 |
 | Pin 16 (VCC) | 5 V |
 
 Decode: A15=1, A14=1, A13=0, A12=1, A11=1 → Y7 LOW → **$D800–$DFFF** ✓
+
+---
+
+## 7. ESP32-S3FN8 vs ESP32-PICO-D4 — Migration Notes
+
+| Parameter | ESP32-PICO-D4 | ESP32-S3FN8 |
+|---|---|---|
+| CPU | Dual-core LX6 @ 240 MHz | Dual-core LX7 @ 240 MHz |
+| SRAM | 520 KB | 512 KB |
+| In-package Flash | 4 MB (Quad SPI) | 8 MB (Quad SPI) |
+| Package | QFN48 (7×7 mm) | QFN56 (7×7 mm) |
+| GPIO count | 34 usable | 45 total (38 usable excl. flash) |
+| Input-only pins | GPIO34–39 (input only) | None — all GPIOs bidirectional |
+| Bluetooth | BT 4.2 | BT 5 (LE) |
+| USB | None | Full-speed USB OTG + Serial/JTAG |
+| UART0 pins | TX=GPIO1, RX=GPIO3 | TX=GPIO43, RX=GPIO44 |
+| Strapping pins | GPIO0, GPIO2, GPIO5, GPIO12, GPIO15 | GPIO0, GPIO3, GPIO45, GPIO46 |
+| Flash-reserved pins | GPIO6–11 | GPIO26–32 |

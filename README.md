@@ -5,7 +5,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![KiCad](https://img.shields.io/badge/KiCad-5.1.9-blue.svg)](https://www.kicad.org/)
 [![ATARI Ready](https://img.shields.io/badge/ATARI-Ready-red.svg)](https://atari.com)
-[![ESP32](https://img.shields.io/badge/ESP32-PICO--D4-yellow.svg)](https://www.espressif.com/)
+[![ESP32](https://img.shields.io/badge/ESP32--S3-FN8-yellow.svg)](https://www.espressif.com/)
 
 *🌐 English | [🌐 Italiano](#vera-module-rbl-xe-italiano)*
 
@@ -105,7 +105,7 @@ Commander X16 computer but has been adapted for ATARI systems. It provides:
 | Component | Specification |
 |-----------|---------------|
 | **FPGA** | Lattice ICE40UP5K-SG48ITR |
-| **Microcontroller** | ESP32-PICO-D4 |
+| **Microcontroller** | ESP32-S3FN8 |
 | **Flash Memory** | W25Q16JVSNIQ (16Mbit) |
 | **Audio Codec** | WM8524CGEDT |
 | **USB Interface** | CH340T |
@@ -141,11 +141,12 @@ Commander X16 computer but has been adapted for ATARI systems. It provides:
 - **Package**: QFN-48 (7x7mm)
 - **Programming**: SPI configuration
 
-#### ESP32-PICO-D4
-- **CPU**: Dual-core Xtensa LX6 @ 240MHz
-- **Memory**: 4MB SPI flash, 520KB SRAM
-- **Connectivity**: Wi-Fi 802.11 b/g/n, Bluetooth 4.2
-- **Package**: QFN-48 (7x7mm)
+#### ESP32-S3FN8
+- **CPU**: Dual-core Xtensa LX7 @ 240MHz
+- **Memory**: 8MB in-package Quad SPI flash, 512KB SRAM
+- **Connectivity**: Wi-Fi 802.11 b/g/n, Bluetooth 5 LE
+- **GPIO**: 45 total (38 usable), all bidirectional
+- **Package**: QFN-56 (7x7mm)
 - **Role**: Bus decoder and system controller
 
 ### Interface Components
@@ -343,7 +344,7 @@ Commander X16 computer but has been adapted for ATARI systems. It provides:
 
 #### Major Components
 - **1x** ICE40UP5K-SG48ITR FPGA
-- **1x** ESP32-PICO-D4 Microcontroller  
+- **1x** ESP32-S3FN8 Microcontroller  
 - **1x** W25Q16JVSNIQ SPI Flash
 - **1x** WM8524CGEDT Audio Codec
 - **1x** CH340T USB Interface
@@ -670,7 +671,7 @@ computer Commander X16 ma è stato adattato per i sistemi ATARI. Fornisce:
 | Componente | Specifica |
 |------------|-----------|
 | **FPGA** | Lattice ICE40UP5K-SG48ITR |
-| **Microcontrollore** | ESP32-PICO-D4 |
+| **Microcontrollore** | ESP32-S3FN8 |
 | **Memoria Flash** | W25Q16JVSNIQ (16Mbit) |
 | **Codec Audio** | WM8524CGEDT |
 | **Interfaccia USB** | CH340T |
@@ -706,11 +707,12 @@ computer Commander X16 ma è stato adattato per i sistemi ATARI. Fornisce:
 - **Package**: QFN-48 (7x7mm)
 - **Programmazione**: Configurazione SPI
 
-#### ESP32-PICO-D4
-- **CPU**: Dual-core Xtensa LX6 @ 240MHz
-- **Memoria**: 4MB flash SPI, 520KB SRAM
-- **Connettività**: Wi-Fi 802.11 b/g/n, Bluetooth 4.2
-- **Package**: QFN-48 (7x7mm)
+#### ESP32-S3FN8
+- **CPU**: Dual-core Xtensa LX7 @ 240MHz
+- **Memoria**: 8MB flash Quad SPI integrata, 512KB SRAM
+- **Connettività**: Wi-Fi 802.11 b/g/n, Bluetooth 5 LE
+- **GPIO**: 45 totali (38 usabili), tutti bidirezionali
+- **Package**: QFN-56 (7x7mm)
 - **Ruolo**: Decodificatore bus e controllore sistema
 
 ### Componenti Interfaccia
@@ -908,7 +910,7 @@ computer Commander X16 ma è stato adattato per i sistemi ATARI. Fornisce:
 
 #### Componenti Principali
 - **1x** ICE40UP5K-SG48ITR FPGA
-- **1x** ESP32-PICO-D4 Microcontrollore
+- **1x** ESP32-S3FN8 Microcontrollore
 - **1x** W25Q16JVSNIQ Flash SPI
 - **1x** WM8524CGEDT Codec Audio
 - **1x** CH340T Interfaccia USB

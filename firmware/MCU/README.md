@@ -9,7 +9,7 @@ Questo progetto implementa un'interfaccia hardware che si collega
 alla **Parallel Bus Interface (PBI)** dell'ATARI. 
 Il sistema è composto da due parti principali che lavorano in sinergia:
 
-1.  Un **firmware per un microcontrollore moderno** (ESP32-PICO-D4).
+1.  Un **firmware per un microcontrollore moderno** (ESP32-S3FN8).
 2.  Una FPGA **programmata con il bitstream VERA** (Commander X16).
 3.  Un **driver in assembly 6502** che gira sull'ATARI per comunicare con il modulo.
 
@@ -29,7 +29,7 @@ Il progetto ha un'architettura ibrida, con due codebase distinte.
 Questa è la parte principale del progetto, gestita con **PlatformIO**.
 
 -   **Scheda:** Il file `platformio.ini` specifica che il microcontrollore 
-    target è un **ESP32-PICO-D4**.
+    target è un **ESP32-S3FN8** (QFN56, 8 MB flash integrata, LX7 @ 240 MHz).
 -   **Codice Sorgente:** Il file `src/main.cpp` è il punto di ingresso del 
     firmware. Questo codice C++ gestisce la logica principale del modulo.
 -   **Interfaccia:** Il file `include/pbi-driver.h` definisce le strutture 
@@ -37,7 +37,7 @@ Questa è la parte principale del progetto, gestita con **PlatformIO**.
     con il driver 6502 sull'ATARI.
 
 La logica in `main.cpp` è responsabile di:
--   Inizializzare l'hardware del Pico.
+-   Inizializzare l'hardware dell'ESP32-S3.
 -   Mettersi in ascolto di comandi provenienti dall'ATARI attraverso la 
     comunicazione tramite protocollo PBI.
 -   Eseguire le operazioni richieste.
@@ -63,7 +63,7 @@ Questa parte del progetto risiede nella cartella `6502/`.
 
 ```
 /
-├── platformio.ini            # File di configurazione di PlatformIO (target: ESP32-PICO-D4)
+├── platformio.ini            # File di configurazione di PlatformIO (target: ESP32-S3FN8)
 ├── 6502/
 │   ├── Makefile              # Makefile per compilare il driver 6502
 │   └── src/
@@ -80,7 +80,7 @@ Questa parte del progetto risiede nella cartella `6502/`.
 
 -   **Linguaggi:** C++, Assembly 6502
 -   **Piattaforma Embedded:** PlatformIO
--   **Hardware MCU:** ESP32-PICO-D4
+-   **Hardware MCU:** ESP32-S3FN8
 -   **Hardware Host:** ATARI XE (con interfaccia per protocollo PBI)
 -   **Build System:** `make` (per il codice 6502)
 
@@ -95,11 +95,11 @@ Per compilare le due parti del progetto, sono necessari due approcci diversi.
 È necessario avere **PlatformIO Core** installato.
 
 ```bash
-# Compila il progetto per il ESP32-PICO-D4
-platformio run
+# Compila il progetto per il ESP32-S3FN8
+platformio run -e esp32-s3-fn8
 
-# Carica il firmware sulla scheda (in modalità bootloader)
-platformio run --target upload
+# Carica il firmware sulla scheda (UART0: GPIO43=TX, GPIO44=RX)
+platformio run -e esp32-s3-fn8 --target upload
 ```
 
 ### Compilazione Driver 6502
