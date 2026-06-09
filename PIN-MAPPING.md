@@ -7,29 +7,30 @@ Target MCU: **ESP32-S3FN8** — QFN56 package, 45 GPIOs, 8 MB in-package Quad SP
 
 ## ⚠ Critical Boot-Time Warnings
 
-| GPIO | Signal | Risk |
-|------|--------|------|
-| **GPIO 0** | EXTSEL_N | Strapping pin — if LOW at power-on, ESP32-S3 enters download mode. Add a **10 kΩ pull-up** to 3.3 V so the Atari bus cannot hold it LOW during reset. |
-| **GPIO 3** | (unused) | Strapping pin (JTAG source) — **no internal pull resistor, floats at reset**. Must be externally pulled; tie to GND via 10 kΩ resistor. |
-| **GPIO 26–32** | — | Hard-wired to in-package Quad SPI flash (FN8 variant). **Never connect externally**. |
-| **GPIO 45** | (unused) | Strapping pin (VDD_SPI select) — internal weak pull-down selects VDD_SPI = 3.3 V. Leave unconnected. |
-| **GPIO 46** | (unused) | Strapping pin (boot mode) — internal weak pull-down. Leave unconnected. |
-| **GPIO 19–20** | (unused) | USB D−/D+. USB CDC disabled in firmware. Leave unconnected or use carefully. |
+| GPIO | QFN56 pin | Signal | Risk |
+|------|-----------|--------|------|
+| **GPIO 0** | 5 | EXTSEL_N | Strapping pin — if LOW at power-on, ESP32-S3 enters download mode. Add a **10 kΩ pull-up** to 3.3 V so the Atari bus cannot hold it LOW during reset. |
+| **GPIO 3** | 8 | (unused) | Strapping pin (JTAG source) — **no internal pull resistor, floats at reset**. Must be externally pulled; tie to GND via 10 kΩ resistor. |
+| **GPIO 15–16** | 21–22 | A9, A10 | XTAL_32K_P/N pads reused as GPIO. **Do not connect a 32 kHz crystal.** |
+| **GPIO 26–32** | 28, 30–35 | — | Hard-wired to in-package Quad SPI flash (FN8 variant). **Never connect externally**. |
+| **GPIO 45** | 51 | (unused) | Strapping pin (VDD_SPI select) — internal weak pull-down selects VDD_SPI = 3.3 V. Leave unconnected. |
+| **GPIO 46** | 52 | (unused) | Strapping pin (boot mode) — internal weak pull-down. Leave unconnected. |
+| **GPIO 19–20** | 25–26 | (unused) | USB D−/D+. USB CDC disabled in firmware. Leave unconnected or use carefully. |
 
 ---
 
 ## 1. Data Bus D0–D7  (bidirectional, GPIO bank 0, bits 4–11)
 
-| Atari signal | GPIO | Bank-0 bit | Notes |
-|---|---|---|---|
-| D0 | 4 | 4 | Bidirectional via TXS0108E |
-| D1 | 5 | 5 | |
-| D2 | 6 | 6 | |
-| D3 | 7 | 7 | |
-| D4 | 8 | 8 | |
-| D5 | 9 | 9 | |
-| D6 | 10 | 10 | |
-| D7 | 11 | 11 | |
+| Atari signal | GPIO | QFN56 pin | Bank-0 bit | Notes |
+|---|---|---|---|---|
+| D0 | 4 | 9 | 4 | Bidirectional via TXS0108E U1 — 60 µs LOW glitch at power-up |
+| D1 | 5 | 10 | 5 | 60 µs LOW glitch at power-up |
+| D2 | 6 | 11 | 6 | 60 µs LOW glitch at power-up |
+| D3 | 7 | 12 | 7 | 60 µs LOW glitch at power-up |
+| D4 | 8 | 13 | 8 | 60 µs LOW glitch at power-up |
+| D5 | 9 | 14 | 9 | 60 µs LOW glitch at power-up |
+| D6 | 10 | 15 | 10 | 60 µs LOW glitch at power-up |
+| D7 | 11 | 16 | 11 | 60 µs LOW glitch at power-up |
 
 Firmware bitmask: `DBUS_MASK = 0x00000FF0`
 Firmware data decode: `data = (GPIO.in >> 4) & 0xFF`
@@ -40,48 +41,52 @@ Firmware data decode: `data = (GPIO.in >> 4) & 0xFF`
 
 ### Bank 1 (GPIO.in1.val, GPIO 33–38, bits 1–6)
 
-| Atari signal | GPIO | Bank-1 bit | Notes |
-|---|---|---|---|
-| A0 | 33 | 1 | Via TXS0108E |
-| A1 | 34 | 2 | |
-| A2 | 35 | 3 | |
-| A3 | 36 | 4 | |
-| A4 | 37 | 5 | |
-| A5 | 38 | 6 | |
+| Atari signal | GPIO | QFN56 pin | Bank-1 bit | Notes |
+|---|---|---|---|---|
+| A0 | 33 | 38 | 1 | Via TXS0108E U2 |
+| A1 | 34 | 39 | 2 | |
+| A2 | 35 | 40 | 3 | |
+| A3 | 36 | 41 | 4 | |
+| A4 | 37 | 42 | 5 | |
+| A5 | 38 | 43 | 6 | |
 
 Firmware A0–A5 decode: `a = (GPIO.in1.val >> 1) & 0x3F`
 
-### Bank 0 (GPIO.in, GPIO 12–16)
+### Bank 0 (GPIO.in, GPIO 12–16) — PBI mode only
 
-| Atari signal | GPIO | Bank-0 bit | Notes |
-|---|---|---|---|
-| A6 | 12 | 12 | Via TXS0108E |
-| A7 | 13 | 13 | |
-| A8 | 14 | 14 | |
-| A9 | 15 | 15 | |
-| A10 | 16 | 16 | |
+| Atari signal | GPIO | QFN56 pin | IO MUX name | Bank-0 bit | Notes |
+|---|---|---|---|---|---|
+| A6 | 12 | 17 | GPIO12 | 12 | Via TXS0108E U2 — 60 µs LOW glitch at power-up |
+| A7 | 13 | 18 | GPIO13 | 13 | 60 µs LOW glitch at power-up |
+| A8 | 14 | 19 | GPIO14 | 14 | 60 µs LOW glitch at power-up |
+| A9 | 15 | 21 | **XTAL_32K_P** | 15 | Do **not** connect a 32 kHz crystal |
+| A10 | 16 | 22 | **XTAL_32K_N** | 16 | Do **not** connect a 32 kHz crystal |
+
+> **Note:** GPIO15 and GPIO16 share the 32 kHz crystal pads (XTAL_32K_P / XTAL_32K_N).
+> When used as regular GPIOs, no external 32 kHz oscillator may be connected.
+> Physical pin 20 between GPIO14 (pin 19) and XTAL_32K_P (pin 21) is VDD3P3_RTC (power, no signal).
 
 ---
 
 ## 3. Control Signals
 
-| Signal | GPIO | Direction | Active | Description |
-|---|---|---|---|---|
-| PHI2 | 2 | Input | HIGH | CPU clock phase 2 |
-| R/W_ | 17 | Input | HIGH=read | Read / Not-Write |
-| D1XX_N | 18 | Input | LOW | $D1xx page selected (external decoder) |
-| ROM_SEL_N | 21 | Input | LOW | $D800–$DFFF from 74HC138 Y7 |
-| EXTSEL_N | 0 | **Output** | LOW | Disables Atari floating-point ROM |
-| DEV_SEL_N | 1 | **Output** | LOW | VERA chip select (direct, no level shifter) |
+| Signal | GPIO | QFN56 pin | IO MUX name | Direction | Active | Description |
+|---|---|---|---|---|---|---|
+| PHI2 | 2 | 7 | GPIO2 | Input | HIGH | CPU clock phase 2 — 60 µs LOW glitch at power-up |
+| R/W_ | 17 | 23 | GPIO17 | Input | HIGH=read | Read / Not-Write — 60 µs LOW glitch at power-up |
+| D1XX_N | 18 | 24 | GPIO18 | Input | LOW | $D1xx page selected (external decoder) — 60 µs LOW+HIGH glitch |
+| ROM_SEL_N | 21 | 27 | GPIO21 | Input | LOW | $D800–$DFFF from 74HC138 Y7 |
+| EXTSEL_N | 0 | 5 | GPIO0 | **Output** | LOW | Disables Atari floating-point ROM — strapping pin, add 10 kΩ pull-up |
+| DEV_SEL_N | 1 | 6 | GPIO1 | **Output** | LOW | VERA chip select (direct, no level shifter) — 60 µs LOW glitch |
 
 ---
 
 ## 4. Debug / Programming
 
-| Function | GPIO | Notes |
-|---|---|---|
-| UART TX | 43 | Serial debug output (S3 UART0 hardware pin) |
-| UART RX | 44 | S3 UART0 hardware pin — RX disabled in firmware |
+| Function | GPIO | QFN56 pin | IO MUX name | Notes |
+|---|---|---|---|---|
+| UART TX | 43 | 49 | U0TXD | Serial debug output (S3 UART0 hardware pin) |
+| UART RX | 44 | 50 | U0RXD | S3 UART0 hardware pin — RX disabled in firmware |
 
 ---
 
