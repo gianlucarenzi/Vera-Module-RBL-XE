@@ -328,7 +328,14 @@ static void IRAM_ATTR MonitorTask(void * /*arg*/)
 // ============================================================================
 void setup(void)
 {
-    Serial.begin(115200, SERIAL_8N1, -1, PIN_UART_TX);
+    /* Disable JTAG on pins 39-42 to reclaim them as regular GPIOs */
+    gpio_reset_pin(GPIO_NUM_39);
+    gpio_reset_pin(GPIO_NUM_40);
+    gpio_reset_pin(GPIO_NUM_41);
+    gpio_reset_pin(GPIO_NUM_42);
+
+    /* Initialize Serial on GPIO 43 (TX) and 44 (RX) */
+    Serial.begin(115200, SERIAL_8N1, 44, 43);
 
 #if BUS_MODE == 0
     Serial.println("[VeraX16] PBI mode -- ECI connector");

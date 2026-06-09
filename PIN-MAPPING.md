@@ -114,7 +114,7 @@ gestiti dal segnale /RAM\_SEL esterno.
 | Function | GPIO | QFN56 pin | IO MUX name | Notes |
 |---|---|---|---|---|
 | UART TX | 43 | 49 | U0TXD | Serial debug output (S3 UART0 hardware pin) |
-| UART RX | 44 | 50 | U0RXD | S3 UART0 hardware pin — RX disabled in firmware |
+| UART RX | 44 | 50 | U0RXD | S3 UART0 hardware pin — Used for serial communication/CH340 |
 
 ---
 
@@ -202,15 +202,15 @@ Decode: A15=1, A14=1, A13=0, A12=1, A11=1 → Y7 LOW → **$D800–$DFFF** ✓
 
 ## 7. GPIO disponibili (ESP32-S3FN8)
 
-Pin non assegnati al progetto ed esclusi i critici (strapping, flash in-package).
+Pin non assegnati al progetto ed esclusi i critici (strapping, flash in-package). In firmware, i pin JTAG (39-42) vengono resettati per essere usati come GPIO normali.
 
 | GPIO | QFN56 pin | IO MUX | Note |
 |---|---|---|---|
 | 19 | 25 | USB\_D− | Libero su PCB custom (USB CDC disabilitato nel firmware) |
 | 20 | 26 | USB\_D+ | Libero su PCB custom (USB CDC disabilitato nel firmware) |
-| 39 | 44 | MTCK | JTAG clock — usabile come GPIO quando JTAG non attivo |
-| 41 | 46 | MTDI | JTAG data in — usabile come GPIO quando JTAG non attivo |
-| 44 | 50 | U0RXD | UART0 RX — non usata in firmware, disponibile |
+| 39 | 44 | MTCK | JTAG clock — reclamato come GPIO nel firmware |
+| 41 | 46 | MTDI | JTAG data in — reclamato come GPIO nel firmware |
+| 44 | 50 | U0RXD | UART0 RX — usata per bootloader/debug |
 | 47 | 53 | FSPICLK | GPIO generico |
 | 48 | 54 | FSPID | GPIO generico |
 
@@ -222,6 +222,7 @@ Pin non assegnati al progetto ed esclusi i critici (strapping, flash in-package)
 | 26–32 | 28, 30–35 | Flash in-package — mai connettere esternamente |
 | 45 | 51 | Strapping VDD\_SPI — lasciare libero |
 | 46 | 52 | Strapping boot mode — lasciare libero |
+
 
 > GPIO22–25 non esistono su ESP32-S3.
 
