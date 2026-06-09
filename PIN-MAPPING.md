@@ -61,13 +61,28 @@ Firmware A0–A5 decode: `a = (GPIO.in1.val >> 1) & 0x3F`
 |---|---|---|---|---|---|
 | A6 | 12 | 17 | GPIO12 | 12 | Via TXS0108E U2 — 60 µs LOW glitch at power-up |
 | A7 | 13 | 18 | GPIO13 | 13 | 60 µs LOW glitch at power-up |
-| A8 | 14 | 19 | GPIO14 | 14 | 60 µs LOW glitch at power-up |
-| A9 | 15 | 21 | **XTAL_32K_P** | 15 | Do **not** connect a 32 kHz crystal |
-| A10 | 16 | 22 | **XTAL_32K_N** | 16 | Do **not** connect a 32 kHz crystal |
+| A8 | 14 | 19 | GPIO14 | 14 | Via TXS0108E U3 — 60 µs LOW glitch at power-up |
+| A9 | 15 | 21 | XTAL_32K_P | 15 | Via TXS0108E U3 — pad RTC usato come GPIO (nessun quarzo 32 kHz) |
+| A10 | 16 | 22 | XTAL_32K_N | 16 | Via TXS0108E U3 — pad RTC usato come GPIO (nessun quarzo 32 kHz) |
 
-> **Note:** GPIO15 and GPIO16 share the 32 kHz crystal pads (XTAL_32K_P / XTAL_32K_N).
-> When used as regular GPIOs, no external 32 kHz oscillator may be connected.
-> Physical pin 20 between GPIO14 (pin 19) and XTAL_32K_P (pin 21) is VDD3P3_RTC (power, no signal).
+Firmware A6–A10 decode: `a |= ((GPIO.in >> 12) & 0x1F) << 6`
+
+> Pin 20 (QFN56) tra GPIO14 e GPIO15 è VDD3P3\_RTC (alimentazione, non segnale).
+
+### Firmware: decode indirizzo completo e maschere memoria
+
+```
+decode_addr() restituisce A0-A10 (11 bit):
+  A0-A5  = (GPIO.in1.val >> 1) & 0x3F     ← bank-1, GPIO33-38
+  A6-A10 = (GPIO.in   >> 12) & 0x1F       ← bank-0, GPIO12-16
+
+ROM $D800-$DFFF  2048 byte  11 bit  →  pbi_driver[addr & 0x7FF]
+RAM $D600-$D7FF   512 byte   9 bit  →  ram_pbi   [addr & 0x1FF]
+```
+
+A9 e A10 sono necessari solo per la ROM (2 KB = 11 bit). Per la RAM (512 B = 9 bit)
+bastano A0–A8; A9 e A10 sono fissi a 1 nell'intervallo $D6xx–$D7xx e vengono
+gestiti dal segnale /RAM\_SEL esterno.
 
 ---
 
@@ -185,7 +200,34 @@ Decode: A15=1, A14=1, A13=0, A12=1, A11=1 → Y7 LOW → **$D800–$DFFF** ✓
 
 ---
 
-## 7. ESP32-S3FN8 vs ESP32-PICO-D4 — Migration Notes
+## 7. GPIO disponibili (ESP32-S3FN8)
+
+Pin non assegnati al progetto ed esclusi i critici (strapping, flash in-package).
+
+| GPIO | QFN56 pin | IO MUX | Note |
+|---|---|---|---|
+| 19 | 25 | USB\_D− | Libero su PCB custom (USB CDC disabilitato nel firmware) |
+| 20 | 26 | USB\_D+ | Libero su PCB custom (USB CDC disabilitato nel firmware) |
+| 39 | 44 | MTCK | JTAG clock — usabile come GPIO quando JTAG non attivo |
+| 41 | 46 | MTDI | JTAG data in — usabile come GPIO quando JTAG non attivo |
+| 44 | 50 | U0RXD | UART0 RX — non usata in firmware, disponibile |
+| 47 | 53 | FSPICLK | GPIO generico |
+| 48 | 54 | FSPID | GPIO generico |
+
+**Pin esclusi (non utilizzabili):**
+
+| GPIO | QFN56 pin | Motivo |
+|---|---|---|
+| 3 | 8 | Strapping JTAG — pull-down fisso 10 kΩ a GND |
+| 26–32 | 28, 30–35 | Flash in-package — mai connettere esternamente |
+| 45 | 51 | Strapping VDD\_SPI — lasciare libero |
+| 46 | 52 | Strapping boot mode — lasciare libero |
+
+> GPIO22–25 non esistono su ESP32-S3.
+
+---
+
+## 8. ESP32-S3FN8 vs ESP32-PICO-D4 — Migration Notes
 
 | Parameter | ESP32-PICO-D4 | ESP32-S3FN8 |
 |---|---|---|
