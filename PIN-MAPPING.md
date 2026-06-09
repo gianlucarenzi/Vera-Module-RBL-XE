@@ -75,9 +75,11 @@ Firmware A0–A5 decode: `a = (GPIO.in1.val >> 1) & 0x3F`
 | PHI2 | 2 | 7 | GPIO2 | Input | HIGH | CPU clock phase 2 — 60 µs LOW glitch at power-up |
 | R/W_ | 17 | 23 | GPIO17 | Input | HIGH=read | Read / Not-Write — 60 µs LOW glitch at power-up |
 | D1XX_N | 18 | 24 | GPIO18 | Input | LOW | $D1xx page selected (external decoder) — 60 µs LOW+HIGH glitch |
-| ROM_SEL_N | 21 | 27 | GPIO21 | Input | LOW | $D800–$DFFF from 74HC138 Y7 |
+| ROM_SEL_N | 21 | 27 | GPIO21 | Input | LOW | $D800–$DFFF from 74HC138 Y7 (bank-0) |
+| RAM_SEL_N | 40 | 45 | MTDO | Input | LOW | $D600–$D7FF from external decoder (bank-1, bit 8) — PBI only |
 | EXTSEL_N | 0 | 5 | GPIO0 | **Output** | LOW | Disables Atari floating-point ROM — strapping pin, add 10 kΩ pull-up |
 | DEV_SEL_N | 1 | 6 | GPIO1 | **Output** | LOW | VERA chip select (direct, no level shifter) — 60 µs LOW glitch |
+| MPD | 42 | 48 | MTMS | **Output** | LOW | Memory Port Data — tells Atari MMU to tristate its bus buffer during ROM/RAM reads. Requires 3.3 V → 5 V level shifting (BSS138 or spare TXS0108E channel). (bank-1, bit 10) |
 
 ---
 
