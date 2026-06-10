@@ -100,31 +100,48 @@ a |= ((g_hi >> (33 - 32)) & 1u) << 12;           /* A12    — Bank 1 bit  1    
 a |= ((g_hi >> (34 - 32)) & 1u) << 13;           /* A13    — Bank 1 bit  2     */
 a |= ((g_hi >> (47 - 32)) & 1u) << 14;           /* A14    — Bank 1 bit 15     */
 a |= ((g_hi >> (48 - 32)) & 1u) << 15;           /* A15    — Bank 1 bit 16     */
+```
 
-/* Confronti indirizzi completi (nessuna ambiguità di pagina): */
-/* ROM  $D800-$DFFF  2048 B  →  pbi_driver[addr & 0x7FF]  */
-/* RAM  $D600-$D7FF   512 B  →  ram_pbi   [addr & 0x1FF]  */
-/* VERA $D100-$D11F    32 B  →  DEV_SEL_N assert           */
-/* PBI latch           $D1FF →  selezione device           */
+La modalità operativa è selezionata a compile time tramite `VERA_BOARD_IS_PBI` in `main.cpp`:
+
+| `VERA_BOARD_IS_PBI` | Modalità | Range attivi | Latch selezione |
+|---------------------|----------|--------------|-----------------|
+| `1` (default) | **PBI**  | $D100–$D1FF, $D600–$D7FF, $D800–$DFFF | write `0x80` → $D1FF |
+| `0`           | **CCTL** | $D500–$D5FF                           | write `0x80` → $D5FF |
+
+```c
+/* Confronti indirizzi — PBI mode (VERA_BOARD_IS_PBI = 1): */
+/* VERA regs  $D100-$D11F   32 B  →  EXTSEL_N + DEV_SEL_N (se selezionato) */
+/* PBI latch  $D1FF              →  write 0x80 = seleziona scheda           */
+/* RAM        $D600-$D7FF  512 B  →  ram_pbi[addr & 0x1FF]  (ESP32 drive)   */
+/* ROM        $D800-$DFFF 2048 B  →  pbi_driver[addr & 0x7FF] (ESP32 drive) */
+
+/* Confronti indirizzi — CCTL mode (VERA_BOARD_IS_PBI = 0): */
+/* CCTL range $D500-$D5FE       →  DEV_SEL_N (se selezionato, FPGA drive)  */
+/* CCTL latch $D5FF             →  write 0x80 = seleziona scheda            */
 ```
 
 ---
 
 ## 3. Control Signals
 
-Il firmware decodifica tutti gli indirizzi **interamente in software**: non esistono più segnali
+Il firmware decodifica tutti gli indirizzi **interamente in software**: non esistono segnali
 decodificati hardware (D1XX\_N, ROM\_SEL\_N, RAM\_SEL\_N) come ingressi ESP32.
 L'ESP32 legge A0–A15, PHI2, R/W\_ ogni ciclo e asserisce i segnali di uscita di conseguenza
 tramite il **Dedicated GPIO** (istruzioni TIE Xtensa `ee.get_gpio_in` / `ee.wr_mask_gpio_out`).
 Con A0–A15 completi il decode è esatto: nessuna ambiguità di pagina.
 
+La modalità operativa (PBI o CCTL) è selezionata a compile time con `VERA_BOARD_IS_PBI`
+(vedere sezione 2). In PBI mode tutti e tre i segnali (EXTSEL\_N, DEV\_SEL\_N, MPD) sono
+attivi; in CCTL mode solo DEV\_SEL\_N è usato.
+
 | Signal | GPIO | QFN56 pin | IO MUX | Direction | Active | Level shift | Description |
 |---|---|---|---|---|---|---|---|
 | PHI2 | 1 | 6 | GPIO1 | Input | HIGH | via U3 | Clock fase 2 CPU 6502 — 1.79 MHz |
 | R/W\_ | 2 | 7 | GPIO2 | Input | HIGH=read | via U3 | Read / Not-Write |
-| EXTSEL\_N | 41 | 46 | MTDI | **Output** | LOW | via U3 | Disabilita MMU/Freddie per $D1xx e $D6xx; asserto per-ciclo. Ex-JTAG, reclaimed. |
-| DEV\_SEL\_N | 40 | 45 | MTDO | **Output** | LOW | **direct** | VERA chip select (3.3 V); diretto al FPGA senza level shifter. Ex-JTAG, reclaimed. |
-| MPD | 42 | 48 | MTMS | **Output** | LOW | via U3 | Math Pack Disable — disabilita ROM Atari $D800–$DFFF. Ex-JTAG, reclaimed. |
+| EXTSEL\_N | 41 | 46 | MTDI | **Output** | LOW | via U3 | Disabilita MMU/Freddie per $D1xx e $D6xx — **solo PBI mode**. Ex-JTAG, reclaimed. |
+| DEV\_SEL\_N | 40 | 45 | MTDO | **Output** | LOW | **direct** | VERA chip select (3.3 V); PBI: VERA regs $D1xx; CCTL: range $D5xx. Ex-JTAG, reclaimed. |
+| MPD | 42 | 48 | MTMS | **Output** | LOW | via U3 | Math Pack Disable — disabilita ROM Atari $D800–$DFFF — **solo PBI mode**. Ex-JTAG, reclaimed. |
 | ARESET | 37 | 42 | GPIO37 | **Output** | LOW | via U3 | Atari System Reset — pilota /RESET bus Atari (open-drain + pull-up consigliati). |
 | CRESET | 38 | 43 | GPIO38 | **Output** | LOW | **direct** | VERA FPGA Reset — 3.3 V, diretto al chip FPGA. |
 | CDONE | 39 | 44 | MTCK | Input | HIGH | **direct** | VERA FPGA configured status — HIGH = configurazione completata. Ex-JTAG, reclaimed. |
