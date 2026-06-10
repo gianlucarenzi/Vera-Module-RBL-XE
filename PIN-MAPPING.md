@@ -77,8 +77,10 @@ Firmware data decode: `data = (GPIO.in >> 4) & 0xFF`
 ### A12–A15 (Bank 1, GPIO 33–34 e 47–48, via TXS0108E U4)
 
 > **Hardware:** richiede un nuovo TXS0108E U4 (4 dei suoi 8 canali).
-> GPIO 33/34 (pin 38–39) sono adiacenti ad A10/A11; GPIO 47/48 (pin 53–54)
-> sono sul lato opposto del QFN56 — tenere conto nel routing PCB.
+> GPIO 33/34 (pin 38–39) e GPIO 47/48 (pin 53–54) sono su lati opposti del
+> QFN56. **Routing PCB:** applicare *length matching* — tutte le tracce di
+> A12–A15 portate alla lunghezza della traccia più lunga (A14 o A15) tramite
+> serpentine, per eliminare lo skew di propagazione tra i quattro bit.
 
 | Atari signal | GPIO | QFN56 pin | IO MUX | Bank-1 bit | Notes |
 |---|---|---|---|---|---|
@@ -208,9 +210,8 @@ Tutti ingressi B→A (Atari → ESP32).
 
 ### U4 — A12–A15 (nuovo, 4 canali su 8 usati)
 
-> **Nota PCB:** GPIO 33/34 (pin 38–39) sono adiacenti ad A10/A11 (pin 40–41);
-> GPIO 47/48 (pin 53–54) sono sul lato opposto del package.
-> Valutare la posizione ottimale di U4 in fase di layout.
+> **Nota PCB:** tutte le tracce A12–A15 sono portate alla lunghezza della
+> traccia più lunga (*length matching* con serpentine) per eliminare lo skew.
 
 | Canale | Lato A (3.3 V, ESP32-S3) | Lato B (5 V) | Direzione | Note |
 |---|---|---|---|---|
