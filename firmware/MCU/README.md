@@ -20,6 +20,22 @@ le modalità.
 
 ## 2. Architettura del Firmware
 
+### Sequenza di startup (prima del hot loop)
+
+`setup()` abbassa **ARESET** e **CRESET** immediatamente dopo il reclaim dei pin
+JTAG — prima ancora di `Serial.begin` — garantendo che Atari e FPGA VERA rimangano
+in reset per tutta la durata dell'inizializzazione ESP32.
+
+`MonitorTask` ha priorità massima su Core 1 e preempta `setup()` appena viene
+creato. Prima di entrare nel hot loop esegue la sequenza di sincronizzazione:
+
+1. **CRESET → HIGH** (`GPIO.out1_w1ts`): la FPGA VERA esce dal reset e inizia il
+   caricamento del bitstream dalla flash SPI on-board.
+2. **Poll CDONE** (GPIO 39): attesa con `vTaskDelay(1)` finché il pin va HIGH —
+   ICE40UP5K tipicamente < 100 ms. Timeout 5 s con log di errore.
+3. **ARESET → HIGH** (`GPIO.out1_w1ts`): l'Atari esce dal reset. Da questo momento
+   il bus è live e il hot loop deve rispondere ad ogni ciclo PHI2.
+
 ### Hot loop (Core 1, priorità massima FreeRTOS)
 
 Il task `MonitorTask()` gira sul Core 1 con priorità `configMAX_PRIORITIES - 1`.

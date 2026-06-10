@@ -413,6 +413,7 @@ iceprog -c
 
 #### ESP32 Firmware
 The ESP32-S3FN8 (Core 1 hot loop) handles:
+- **Startup sync**: ARESET and CRESET asserted LOW immediately in `setup()` (before `Serial.begin`). `MonitorTask` releases CRESET, polls CDONE until the ICE40UP5K bitstream is loaded (< 100 ms typical, 5 s timeout), then releases ARESET — Atari starts with bus and FPGA already ready
 - **Bus Decoding**: Full software decode of A0–A15 sampled on every PHI2 rising edge — no page ambiguity
 - **Dedicated GPIO**: Control signals (EXTSEL\_N, DEV\_SEL\_N, MPD) asserted in a single Xtensa TIE instruction (`ee.wr_mask_gpio_out`, 1 CPU cycle) within the 279 ns PHI2-high window
 - **Data Bus Drive** *(PBI mode only)*: D0–D7 driven via `GPIO.out` for ROM ($D800–$DFFF) and RAM ($D600–$D7FF) reads; FPGA drives the bus in CCTL mode
@@ -999,6 +1000,7 @@ iceprog -c
 
 #### Firmware ESP32
 L'ESP32-S3FN8 (hot loop sul Core 1) gestisce:
+- **Sincronizzazione startup**: ARESET e CRESET abbassati subito in `setup()` (prima di `Serial.begin`). `MonitorTask` rilascia CRESET, attende CDONE = HIGH (bitstream ICE40UP5K caricato, tipicamente < 100 ms, timeout 5 s), poi rilascia ARESET — l'Atari parte con bus e FPGA già operativi
 - **Decodifica Bus**: Decodifica software completa di A0–A15 campionati ad ogni fronte di salita di PHI2 — nessuna ambiguità di pagina, nessun hardware decoder esterno
 - **Dedicated GPIO**: I segnali di controllo (EXTSEL\_N, DEV\_SEL\_N, MPD) vengono affermati in una singola istruzione Xtensa TIE (`ee.wr_mask_gpio_out`, 1 ciclo CPU) nella finestra PHI2-high di 279 ns
 - **Bus Dati** *(solo modalità PBI)*: D0–D7 pilotati via `GPIO.out` per letture ROM ($D800–$DFFF) e RAM ($D600–$D7FF); in modalità CCTL è la FPGA a guidare il bus
