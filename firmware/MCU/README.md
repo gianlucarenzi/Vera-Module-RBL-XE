@@ -66,8 +66,12 @@ I pin GPIO 39–42 erano originariamente riservati a JTAG; vengono liberati in
 | R/W          | 2           | 7          | Input                             |
 | D0–D7        | 4–11        | 9–16       | Bus dati bidirezionale            |
 | A0–A9        | 12–21       | 17–27      | GPIO 19=USB D−, 20=USB D+ (USB disabilitato) |
-| A10          | 35          | 40         | Address bit 10                    |
-| A11          | 36          | 41         | Address bit 11                    |
+| A10          | 35          | 40         | Address bit 10 (via U3)           |
+| A11          | 36          | 41         | Address bit 11 (via U3)           |
+| A12          | 33          | 38         | Address bit 12 (via U4)           |
+| A13          | 34          | 39         | Address bit 13 (via U4)           |
+| A14          | 47          | 53         | Address bit 14 (via U4)           |
+| A15          | 48          | 54         | Address bit 15 (via U4)           |
 | ARESET       | 37          | 42         | System reset ATARI (output)       |
 | CRESET       | 38          | 43         | Chip reset VERA (output)          |
 | CDONE        | 39          | 44         | VERA programmata (input)          |
@@ -77,7 +81,12 @@ I pin GPIO 39–42 erano originariamente riservati a JTAG; vengono liberati in
 | Debug TX     | 43          | 49         | UART0 TX (Serial)                 |
 | Debug RX     | 44          | 50         | UART0 RX (Serial)                 |
 
-Per la mappatura completa GPIO→QFN-56 vedere `PIN-MAPPING.md` nella root.
+`decode_addr()` restituisce un indirizzo **16 bit** completo: nessuna ambiguità di
+pagina. I bit A12–A15 sono catturati nella stessa lettura `GPIO.in1.val` già
+eseguita per A10–A11 — zero cicli APB aggiuntivi nel hot loop.
+
+Per la mappatura completa GPIO→QFN-56 e lo schema level shifter U4 vedere
+`PIN-MAPPING.md` nella root.
 
 ---
 

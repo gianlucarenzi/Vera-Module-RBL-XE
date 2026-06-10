@@ -45,7 +45,7 @@ Firmware data decode: `data = (GPIO.in >> 4) & 0xFF`
 
 ---
 
-## 2. Address Bus A0–A11
+## 2. Address Bus A0–A15
 
 ### A0–A7 (Bank 0, GPIO 12–19, via TXS0108E U2)
 
@@ -71,21 +71,39 @@ Firmware data decode: `data = (GPIO.in >> 4) & 0xFF`
 
 | Atari signal | GPIO | QFN56 pin | IO MUX | Bank-1 bit | Notes |
 |---|---|---|---|---|---|
-| A10 | 35 | 40 | GPIO35 | 3 | Necessario solo per ROM 2 KB ($D800–$DFFF) |
-| A11 | 36 | 41 | GPIO36 | 4 | Necessario solo per ROM 2 KB |
+| A10 | 35 | 40 | GPIO35 | 3 | |
+| A11 | 36 | 41 | GPIO36 | 4 | |
 
-### Firmware: decode indirizzo completo
+### A12–A15 (Bank 1, GPIO 33–34 e 47–48, via TXS0108E U4)
+
+> **Hardware:** richiede un nuovo TXS0108E U4 (4 dei suoi 8 canali).
+> GPIO 33/34 (pin 38–39) sono adiacenti ad A10/A11; GPIO 47/48 (pin 53–54)
+> sono sul lato opposto del QFN56 — tenere conto nel routing PCB.
+
+| Atari signal | GPIO | QFN56 pin | IO MUX | Bank-1 bit | Notes |
+|---|---|---|---|---|---|
+| A12 | 33 | 38 | GPIO33 | 1  | Ex-spare CONN / libre |
+| A13 | 34 | 39 | GPIO34 | 2  | Ex-spare CONN / libre |
+| A14 | 47 | 53 | FSPICLK | 15 | Ex-spare CONN1; FSPI non usato (flash in-package) |
+| A15 | 48 | 54 | FSPID   | 16 | Ex-spare CONN2; FSPI non usato (flash in-package) |
+
+### Firmware: decode indirizzo completo (16 bit)
 
 ```c
-/* decode_addr(g_lo, g_hi) — restituisce A0-A11 (12 bit): */
+/* decode_addr(g_lo, g_hi) — restituisce A0-A15 (16 bit): */
 uint16_t a = (g_lo >> 12) & 0x3FF;               /* A0-A9  — Bank 0 bits 12-21 */
 a |= ((g_hi >> (35 - 32)) & 1u) << 10;           /* A10    — Bank 1 bit  3     */
 a |= ((g_hi >> (36 - 32)) & 1u) << 11;           /* A11    — Bank 1 bit  4     */
+a |= ((g_hi >> (33 - 32)) & 1u) << 12;           /* A12    — Bank 1 bit  1     */
+a |= ((g_hi >> (34 - 32)) & 1u) << 13;           /* A13    — Bank 1 bit  2     */
+a |= ((g_hi >> (47 - 32)) & 1u) << 14;           /* A14    — Bank 1 bit 15     */
+a |= ((g_hi >> (48 - 32)) & 1u) << 15;           /* A15    — Bank 1 bit 16     */
 
-/* Maschere di decodifica (offset da $D000): */
-/* ROM  $D800-$DFFF  2048 B  →  pbi_driver[addr & 0x7FF]  (A0-A10 usati) */
-/* RAM  $D600-$D7FF   512 B  →  ram_pbi   [addr & 0x1FF]  (A0-A8  usati) */
-/* VERA $D100-$D11F    32 B  →  DEV_SEL_N assert           (A0-A4  usati) */
+/* Confronti indirizzi completi (nessuna ambiguità di pagina): */
+/* ROM  $D800-$DFFF  2048 B  →  pbi_driver[addr & 0x7FF]  */
+/* RAM  $D600-$D7FF   512 B  →  ram_pbi   [addr & 0x1FF]  */
+/* VERA $D100-$D11F    32 B  →  DEV_SEL_N assert           */
+/* PBI latch           $D1FF →  selezione device           */
 ```
 
 ---
@@ -94,8 +112,9 @@ a |= ((g_hi >> (36 - 32)) & 1u) << 11;           /* A11    — Bank 1 bit  4    
 
 Il firmware decodifica tutti gli indirizzi **interamente in software**: non esistono più segnali
 decodificati hardware (D1XX\_N, ROM\_SEL\_N, RAM\_SEL\_N) come ingressi ESP32.
-L'ESP32 legge A0–A11, PHI2, R/W\_ ogni ciclo e asserisce i segnali di uscita di conseguenza
+L'ESP32 legge A0–A15, PHI2, R/W\_ ogni ciclo e asserisce i segnali di uscita di conseguenza
 tramite il **Dedicated GPIO** (istruzioni TIE Xtensa `ee.get_gpio_in` / `ee.wr_mask_gpio_out`).
+Con A0–A15 completi il decode è esatto: nessuna ambiguità di pagina.
 
 | Signal | GPIO | QFN56 pin | IO MUX | Direction | Active | Level shift | Description |
 |---|---|---|---|---|---|---|---|
@@ -187,6 +206,20 @@ Tutti ingressi B→A (Atari → ESP32).
 | A7/B7 | GPIO 41 (pin 46) — EXTSEL\_N | Atari EXTSEL | **A→B** | Output, active LOW |
 | A8/B8 | GPIO 42 (pin 48) — MPD | Atari ECI MPD | **A→B** | Output, active LOW |
 
+### U4 — A12–A15 (nuovo, 4 canali su 8 usati)
+
+> **Nota PCB:** GPIO 33/34 (pin 38–39) sono adiacenti ad A10/A11 (pin 40–41);
+> GPIO 47/48 (pin 53–54) sono sul lato opposto del package.
+> Valutare la posizione ottimale di U4 in fase di layout.
+
+| Canale | Lato A (3.3 V, ESP32-S3) | Lato B (5 V) | Direzione | Note |
+|---|---|---|---|---|
+| A1/B1 | GPIO 33 (pin 38) — A12 | Atari A12 | B→A | Input |
+| A2/B2 | GPIO 34 (pin 39) — A13 | Atari A13 | B→A | Input |
+| A3/B3 | GPIO 47 (pin 53) — A14 | Atari A14 | B→A | Input |
+| A4/B4 | GPIO 48 (pin 54) — A15 | Atari A15 | B→A | Input |
+| A5–A8 | — | — | — | Canali liberi su U4 |
+
 **Connessioni dirette (senza level shifter):**
 
 | Signal | GPIO | QFN56 pin | Collegato a |
@@ -204,10 +237,8 @@ Pin non assegnati al progetto, esclusi strapping e flash in-package.
 | GPIO | QFN56 pin | IO MUX | Note |
 |---|---|---|---|
 | 22–25 | — | — | Non esistono su ESP32-S3 |
-| 33 | 38 | GPIO33 | Libero |
-| 34 | 39 | GPIO34 | Libero |
-| 47 | 53 | FSPICLK | GPIO generico (spare CONN1) |
-| 48 | 54 | FSPID  | GPIO generico (spare CONN2) |
+
+> Tutti gli altri GPIO non riservati (33, 34, 47, 48) sono ora assegnati ad A12–A15.
 
 **Pin esclusi (non utilizzabili):**
 
@@ -263,8 +294,8 @@ Riferimento rapido ESP32-S3FN8 QFN56 (56 pin segnale + pad GND centrale).
 | 35  | GPIO 32 (FLASH SPICS1)| **Flash in-package — NC esterno** |
 | 36  | — | (riservato / NC) |
 | 37  | — | (riservato / NC) |
-| 38  | GPIO 33 | Libero |
-| 39  | GPIO 34 | Libero |
+| 38  | GPIO 33 | A12 (via U4) |
+| 39  | GPIO 34 | A13 (via U4) |
 | 40  | GPIO 35 | A10 (via U3) |
 | 41  | GPIO 36 | A11 (via U3) |
 | 42  | GPIO 37 | ARESET output (via U3) |
@@ -278,8 +309,8 @@ Riferimento rapido ESP32-S3FN8 QFN56 (56 pin segnale + pad GND centrale).
 | 50  | GPIO 44 / U0RXD | UART0 RX — debug seriale |
 | 51  | GPIO 45 | NC (strapping VDD\_SPI) |
 | 52  | GPIO 46 | NC (strapping boot) |
-| 53  | GPIO 47 / FSPICLK | Spare CONN1 |
-| 54  | GPIO 48 / FSPID  | Spare CONN2 |
+| 53  | GPIO 47 / FSPICLK | A14 (via U4) |
+| 54  | GPIO 48 / FSPID   | A15 (via U4) |
 | 55  | XTAL\_N | Quarzo principale 40 MHz |
 | 56  | XTAL\_P | Quarzo principale 40 MHz |
 | EP  | GND (pad centrale) | GND |

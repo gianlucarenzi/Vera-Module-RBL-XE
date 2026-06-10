@@ -7,8 +7,8 @@
  * Atari XL/XE computer via the Parallel Bus Interface (PBI) or 
  * Cartridge Control Line (CCTL).
  * 
- * This version uses a definitive 30-GPIO mapping (plus Serial on 43/44)
- * with software-based 12-bit address decoding.
+ * This version uses a definitive 34-GPIO mapping (plus Serial on 43/44)
+ * with software-based 16-bit address decoding.
  * 
  * Style: Allman
  * Language: English
@@ -48,6 +48,8 @@ static const uint8_t DBUS_PINS[8] = { 4, 5, 6, 7, 8, 9, 10, 11 };
 #define ABUS_LO_MASK    0x003FF000UL
 
 /* --- Bank 1 Signals (GPIO 32-48) --- */
+#define PIN_A12         33   /* Address Bit 12 (Pin 38) */
+#define PIN_A13         34   /* Address Bit 13 (Pin 39) */
 #define PIN_A10         35   /* Address Bit 10 (Pin 40) */
 #define PIN_A11         36   /* Address Bit 11 (Pin 41) */
 #define PIN_ARESET      37   /* Atari System Reset Output (Pin 42) */
@@ -56,29 +58,33 @@ static const uint8_t DBUS_PINS[8] = { 4, 5, 6, 7, 8, 9, 10, 11 };
 #define PIN_DEV_SEL_N   40   /* Vera Chip Select Output (Pin 45, active LOW) */
 #define PIN_EXTSEL_N    41   /* Atari MMU Disable Output (Pin 46, active LOW) */
 #define PIN_MPD         42   /* Math Pack Disable Output (Pin 48, active LOW) */
+#define PIN_A14         47   /* Address Bit 14 (Pin 53) */
+#define PIN_A15         48   /* Address Bit 15 (Pin 54) */
 
 /* Serial Debug (UART0 default pins on ESP32-S3 QFN56) */
 #define PIN_UART_TX     43   /* UART0 TX (Pin 49) */
 #define PIN_UART_RX     44   /* UART0 RX (Pin 50) */
 
-/* Spare Pins */
-#define PIN_SPARE1      47   /* GPIO 47 (Pin 53) */
-#define PIN_SPARE2      48   /* GPIO 48 (Pin 54) */
-
 /* ===========================================================================
  * Helper Macros & Inline Functions
  * =========================================================================== */
 
-/**
- * Decode A0-A11 from GPIO input snapshots.
- * A0-A9 are in Bank 0 bits 12-21.
- * A10-A11 are in Bank 1 bits 3-4 (since 35-32=3, 36-32=4).
+/*
+ * Decode full 16-bit address from GPIO input snapshots.
+ * A0-A9  : Bank 0 bits 12-21.
+ * A10-A13: Bank 1 bits 3, 4, 1, 2  (GPIO 35, 36, 33, 34 → offsets from 32).
+ * A14-A15: Bank 1 bits 15, 16       (GPIO 47, 48).
+ * All bits captured in the same g_lo / g_hi APB reads — no extra reads needed.
  */
 static inline uint16_t IRAM_ATTR decode_addr(uint32_t lo, uint32_t hi)
 {
-    uint16_t a = (uint16_t)((lo >> 12) & 0x3FFu);      /* A0-A9   */
-    a |= (uint16_t)(((hi >> (PIN_A10 - 32)) & 1u) << 10); /* A10     */
-    a |= (uint16_t)(((hi >> (PIN_A11 - 32)) & 1u) << 11); /* A11     */
+    uint16_t a = (uint16_t)((lo >> 12) & 0x3FFu);              /* A0-A9  */
+    a |= (uint16_t)(((hi >> (PIN_A10 - 32)) & 1u) << 10);      /* A10    */
+    a |= (uint16_t)(((hi >> (PIN_A11 - 32)) & 1u) << 11);      /* A11    */
+    a |= (uint16_t)(((hi >> (PIN_A12 - 32)) & 1u) << 12);      /* A12    */
+    a |= (uint16_t)(((hi >> (PIN_A13 - 32)) & 1u) << 13);      /* A13    */
+    a |= (uint16_t)(((hi >> (PIN_A14 - 32)) & 1u) << 14);      /* A14    */
+    a |= (uint16_t)(((hi >> (PIN_A15 - 32)) & 1u) << 15);      /* A15    */
     return a;
 }
 
@@ -222,9 +228,9 @@ static void IRAM_ATTR MonitorTask(void *arg)
         uint16_t addr = decode_addr(g_lo, g_hi);
         uint8_t  off8 = (uint8_t)(addr & 0xFFu);
 
-        bool is_d1xx  = (addr >= 0x100u && addr <= 0x1FFu);
-        bool is_d6xx  = (addr >= 0x600u && addr <= 0x7FFu);
-        bool is_d8xx  = (addr >= 0x800u && addr <= 0xFFFu);
+        bool is_d1xx  = (addr >= 0xD100u && addr <= 0xD1FFu);
+        bool is_d6xx  = (addr >= 0xD600u && addr <= 0xD7FFu);
+        bool is_d8xx  = (addr >= 0xD800u && addr <= 0xDFFFu);
 
         bool is_vera_range = is_d1xx && (off8 <= 0x1Fu);
         bool is_int_range  = is_d1xx && (off8 >= 0x20u && off8 <= 0xFEu);
@@ -327,7 +333,7 @@ static void IRAM_ATTR MonitorTask(void *arg)
         uint32_t g_hi = GPIO.in1.val;
 
         uint16_t addr = decode_addr(g_lo, g_hi);
-        if (addr >= 0x500u && addr <= 0x5FFu && (addr & 0xFFu) <= 0x1Fu)
+        if (addr >= 0xD500u && addr <= 0xD51Fu)
         {
             cpu_ll_write_dedic_gpio_mask(0x01u, 0x00u); /* DEV_SEL_N asserted */
         }
@@ -374,8 +380,11 @@ void setup(void)
     cfg.pin_bit_mask = (1ULL << PIN_PHI2) | (1ULL << PIN_RW) | DBUS_MASK | ABUS_LO_MASK;
     gpio_config(&cfg);
 
-    /* Bank 1 inputs: A10, A11, CDONE */
-    cfg.pin_bit_mask = (1ULL << PIN_A10) | (1ULL << PIN_A11) | (1ULL << PIN_CDONE);
+    /* Bank 1 inputs: A10-A15, CDONE */
+    cfg.pin_bit_mask = (1ULL << PIN_A10) | (1ULL << PIN_A11) |
+                       (1ULL << PIN_A12) | (1ULL << PIN_A13) |
+                       (1ULL << PIN_A14) | (1ULL << PIN_A15) |
+                       (1ULL << PIN_CDONE);
     gpio_config(&cfg);
 
     /* Output Signal Initialization */
