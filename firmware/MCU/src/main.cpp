@@ -143,7 +143,7 @@ static uint8_t extended_rambo_256k[256 * 1024] __attribute__((section(".iram0.bs
  *   bank = ((portb >> 2) & 0x03) | ((portb >> 3) & 0x0C)
  * Initialised to 0xFF (bit 4 = 1) — RAMbo disabled until first 6502 write to $D301.
  */
-static IRAM_ATTR uint8_t portb_rambo = 0xFFu;
+static IRAM_ATTR uint8_t PORTB = 0xFFu;
 
 static QueueHandle_t eventQueue;
 
@@ -288,7 +288,7 @@ static void IRAM_ATTR MonitorTask(void *arg)
          * Active when PIN_RAMBO_EN=1 (hardware present) and bit 4 of PORTB ($D301) = 0.
          * Bank (0-15) from PORTB bits 6,5,3,2: bank = ((portb>>2)&0x03)|((portb>>3)&0x0C) */
         bool is_rambo_window = (addr >= 0x4000u && addr <= 0x7FFFu);
-        bool rambo_active    = rambo_hw_enabled && ((portb_rambo & 0x10u) == 0u);
+        bool rambo_active    = rambo_hw_enabled && ((PORTB & 0x10u) == 0u);
 
         /* 3. Assert control signals atomically in one ee.wr_mask_gpio_out instruction.
          *    Previously: up to 3 separate APB writes (~18 cycles total).
@@ -342,7 +342,7 @@ static void IRAM_ATTR MonitorTask(void *arg)
             }
             if (rambo_active && is_rambo_window)
             {
-                uint8_t bank = ((portb_rambo >> 2) & 0x03u) | ((portb_rambo >> 3) & 0x0Cu);
+                uint8_t bank = ((PORTB >> 2) & 0x03u) | ((PORTB >> 3) & 0x0Cu);
                 bus_drive(extended_rambo_256k[((uint32_t)bank << 14) | (addr & 0x3FFFu)]);
             }
             /* CCTL mode: no data bus driving */
@@ -379,11 +379,11 @@ static void IRAM_ATTR MonitorTask(void *arg)
             }
             /* RAMbo bank switch: snoop PORTB writes at $D301 */
             if (addr == 0xD301u)
-                portb_rambo = data;
+                PORTB = data;
             /* RAMbo write: store data into the active bank */
             if (rambo_active && is_rambo_window)
             {
-                uint8_t bank = ((portb_rambo >> 2) & 0x03u) | ((portb_rambo >> 3) & 0x0Cu);
+                uint8_t bank = ((PORTB >> 2) & 0x03u) | ((PORTB >> 3) & 0x0Cu);
                 extended_rambo_256k[((uint32_t)bank << 14) | (addr & 0x3FFFu)] = data;
             }
         }
