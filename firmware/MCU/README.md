@@ -86,6 +86,7 @@ Per la mappatura completa GPIO→QFN-56 vedere `PIN-MAPPING.md` nella root.
 ```
 firmware/MCU/
 ├── platformio.ini               # Configurazione build (due target: pbi, cctl)
+├── pre_build_6502.py            # Script pre-build PlatformIO: esegue make in 6502/
 ├── include/
 │   ├── pbi-driver.h             # Strutture dati e costanti del protocollo PBI
 │   └── vera_pbi_handler.h       # ROM 6502 compilata come array C (generato da make)
@@ -114,6 +115,13 @@ Il progetto definisce due ambienti PlatformIO in `platformio.ini`:
 
 Entrambi usano `-D USE_DEDICATED_GPIO` e `-D USE_ESP32_REGISTER_ACCESS` per
 abilitare l'hot loop ottimizzato.
+
+### Pre-build automatico del driver 6502
+
+`platformio.ini` dichiara `extra_scripts = pre:pre_build_6502.py`. Lo script
+viene eseguito da PlatformIO **prima di qualsiasi compilazione**, garantendo che
+`include/vera_pbi_handler.h` sia sempre aggiornato rispetto ai sorgenti 6502.
+Il `make` è incrementale: se i sorgenti non sono cambiati non rigenera nulla.
 
 ---
 
