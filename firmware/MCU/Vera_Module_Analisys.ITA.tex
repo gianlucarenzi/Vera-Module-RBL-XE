@@ -116,10 +116,11 @@ Il firmware supporta due modalità operative, selezionate a compile-time tramite
         \item \textbf{VCS latch:} scrittura di \$80 a \$D1FF attiva il dispositivo; qualsiasi altro valore lo disattiva.
         \item \textbf{ROM \$D800--\$DFFF (2\,KB, 11 bit A0--A10):} \texttt{MPD} (Math Pack Disable, GPIO42) viene asserito basso per ogni ciclo ROM con device selezionato, disabilitando la ROM Math Pack interna all'Atari.
         \item \textbf{RAM \$D600--\$D7FF (512\,B, 9 bit A0--A8):} buffer IRAM esposto al 6502. \texttt{EXTSEL\_N} viene asserito per-ciclo.
-        \item \textbf{Registri VERA \$D100--\$D11F} (A0--A4, 32 registri) e \textbf{registri interni ESP32 \$D120--\$D1FE}: \texttt{EXTSEL\_N} viene asserito per ogni ciclo in questo intervallo (escluso \$D1FF).
+        \item \textbf{Registri VERA \$D100--\$D11F} (32 registri): \texttt{DEV\_SEL\_N} e \texttt{EXTSEL\_N} affermati quando selezionato; la FPGA VERA guida il bus dati.
+        \item \textbf{Intervallo \$D120--\$D1FE}: \texttt{EXTSEL\_N} asserito; nessun dato guidato dall'ESP32 (non implementato nel firmware corrente).
         \item \textbf{EXTSEL\_N (GPIO41):} segnale \emph{per-ciclo} che disabilita MMU/Freddie dell'Atari per accessi D1xx e D6xx. Non è un segnale persistente.
     \end{itemize}
-    \item \textbf{CCTL mode (\texttt{VERA\_BOARD\_IS\_PBI=0}):} Il modulo si collega alla porta cartuccia. Il firmware decodifica i 5 bit bassi dell'indirizzo nell'area \$D500--\$D5FF tramite il segnale \texttt{CCTL\_N} e genera il chip-select per il chip VERA.
+    \item \textbf{CCTL mode (\texttt{VERA\_BOARD\_IS\_PBI=0}):} Il modulo si collega alla porta cartuccia. Il firmware decodifica l'indirizzo completo a 16\,bit e intercetta \$D500--\$D5FF: \texttt{DEV\_SEL\_N} affermato per \$D500--\$D5FE (FPGA guida il bus dati), latch di selezione a \$D5FF (scrittura di \$80 seleziona la scheda).
 \end{itemize}
 
 \subsection{Ambiente di build PlatformIO}
@@ -140,13 +141,19 @@ La modalità PBI/CCTL non è più selezionata da ambienti separati ma dalla macr
 \texttt{0} per CCTL.
 
 \subsection{Interfacciamento Bus}
-L'ESP32 è collegato direttamente alle seguenti linee del bus del 6502 tramite tre level-shifter bidirezionali TXS0108E (3.3\,V lato MCU, 5\,V lato Atari):
+L'ESP32 legge il bus indirizzi completo \textbf{A0--A15} e i segnali \texttt{PHI2} e \texttt{R/W\_} direttamente dai propri GPIO ad ogni ciclo di clock. \textbf{Non esiste alcuna logica esterna di pre-decodifica degli indirizzi}: i segnali \texttt{D1XX\_N}, \texttt{ROM\_SEL\_N} e \texttt{RAM\_SEL\_N} del progetto precedente sono stati eliminati. La decodifica è interamente software in \texttt{decode\_addr()}, che restituisce un indirizzo a 16\,bit senza ambiguità di pagina.
+
+I quattro TXS0108E (U1--U4) svolgono esclusivamente adattamento di livello 5\,V\,$\leftrightarrow$\,3.3\,V:
+
 \begin{itemize}
-    \item {\bfseries Bus Dati (D0--D7):} Bidirezionale; la direzione è controllata dal segnale \texttt{R/W\_}.
-    \item {\bfseries Bus Indirizzi (A0--A10):} Solo input; utilizzati per decodificare l'area di memoria di interesse. In modalità CCTL vengono usati solo A0--A4.
-    \item {\bfseries Segnali di controllo input:} \texttt{PHI2}, \texttt{R/W\_}, \texttt{D1XX\_N}/\texttt{CCTL\_N}, \texttt{ROM\_SEL\_N}, \texttt{RAM\_SEL\_N} (GPIO40, solo PBI). I segnali \texttt{D1XX\_N}, \texttt{ROM\_SEL\_N} e \texttt{RAM\_SEL\_N} provengono da logica combinatoria 74HCT (5\,V) seguita da uno stadio 74LVC (3.3\,V, ingressi 5V-tolerant): le uscite arrivano già a 3.3\,V direttamente ai GPIO, senza level shifter intermedio.
-    \item {\bfseries Segnali di controllo output:} \texttt{EXTSEL\_N} (GPIO0, per-ciclo, via U3), \texttt{DEV\_SEL\_N} (GPIO1, VERA chip select, diretto), \texttt{MPD} (GPIO42, Math Pack Disable, via U3 canale liberato).
+    \item {\bfseries U1 — Bus Dati D0--D7 (GPIO\,4--11, Bank-0 bit 4--11):} bidirezionale. Il firmware abilita le uscite con \texttt{GPIO.enable\_w1ts} solo durante i cicli di lettura che richiedono risposta dell'ESP32 (ROM \$D800--\$DFFF, RAM \$D600--\$D7FF, RAMbo \$4000--\$7FFF).
+    \item {\bfseries U2 — Bus Indirizzi A0--A7 (GPIO\,12--19, Bank-0 bit 12--19):} tutti ingressi B→A (Atari 5\,V → ESP32 3.3\,V). GPIO\,19 condivide il pad USB D-; USB CDC è disabilitato nel firmware.
+    \item {\bfseries U3 — A8--A11, PHI2, R/W\_, EXTSEL\_N, MPD (GPIO\,20--21, 35--36, 1, 2, 41, 42):} ingressi B→A per A8, A9, A10, A11, PHI2, R/W\_; uscite A→B per \texttt{EXTSEL\_N} (GPIO\,41) e \texttt{MPD} (GPIO\,42). \texttt{ARESET} (GPIO\,37) è anch'esso su U3 (uscita A→B). I GPIO\,39--42 erano riservati a JTAG: \texttt{setup()} li de-registra con \texttt{gpio\_reset\_pin()} prima di creare il Dedicated GPIO bundle.
+    \item {\bfseries U4 — Bus Indirizzi A12--A15 (GPIO\,33--34, 47--48, Bank-1):} tutti ingressi B→A (4 canali su 8 utilizzati). GPIO\,33 e GPIO\,34 si trovano sul lato opposto del QFN56 rispetto a GPIO\,47 e GPIO\,48: applicare \emph{length matching} (serpentine alla traccia più lunga) per eliminare lo skew su U4.
+    \item {\bfseries Connessioni dirette (senza level shifter, 3.3\,V):} \texttt{DEV\_SEL\_N} (GPIO\,40) → VERA /CS; \texttt{CRESET} (GPIO\,38) → VERA /RESET; \texttt{CDONE} (GPIO\,39) $\leftarrow$ VERA CDONE.
 \end{itemize}
+
+I segnali \texttt{DEV\_SEL\_N}, \texttt{EXTSEL\_N} e \texttt{MPD} sono raggruppati nel \textbf{Dedicated GPIO output bundle} (Core 1, canali 0--2): vengono asseriti e de-asseriti in un'unica istruzione TIE Xtensa (\texttt{ee.wr\_mask\_gpio\_out}, $\approx$1\,ciclo CPU), anziché con tre scritture APB separate ($\approx$18\,cicli totali). Il segnale \texttt{PHI2} è nel bundle di ingresso (canale 0): il polling avviene via \texttt{ee.get\_gpio\_in} (1\,ciclo CPU).
 
 % --- SEZIONE 3: MAPPING DEI PIN ---
 \section{Mapping dei Pin (ESP32-S3FN8, QFN56)}
@@ -160,42 +167,48 @@ I pin fisici del package QFN56 sono numerati 1--56 (più il pad GND centrale). L
 \toprule
 \textbf{Segnale} & \textbf{GPIO} & \textbf{Pin QFN56} & \textbf{IO MUX} & \textbf{Dir.} & \textbf{Note} \\
 \midrule
-\multicolumn{6}{l}{\textit{Bus dati D0--D7 (bank-0, bit 4--11) — bidirezionale via TXS0108E U1}} \\
+\multicolumn{6}{l}{\textit{Bus dati D0--D7 — bidirezionale via TXS0108E U1 (Bank-0 bit 4--11)}} \\
 D0 & 4  &  9 & GPIO4  & I/O & glitch LOW 60\,µs al power-up \\
-D1 & 5  & 10 & GPIO5  & I/O & glitch LOW 60\,µs \\
-D2 & 6  & 11 & GPIO6  & I/O & glitch LOW 60\,µs \\
-D3 & 7  & 12 & GPIO7  & I/O & glitch LOW 60\,µs \\
-D4 & 8  & 13 & GPIO8  & I/O & glitch LOW 60\,µs \\
-D5 & 9  & 14 & GPIO9  & I/O & glitch LOW 60\,µs \\
-D6 & 10 & 15 & GPIO10 & I/O & glitch LOW 60\,µs \\
-D7 & 11 & 16 & GPIO11 & I/O & glitch LOW 60\,µs \\
+D1 & 5  & 10 & GPIO5  & I/O & \\
+D2 & 6  & 11 & GPIO6  & I/O & \\
+D3 & 7  & 12 & GPIO7  & I/O & \\
+D4 & 8  & 13 & GPIO8  & I/O & \\
+D5 & 9  & 14 & GPIO9  & I/O & \\
+D6 & 10 & 15 & GPIO10 & I/O & \\
+D7 & 11 & 16 & GPIO11 & I/O & \\
 \midrule
-\multicolumn{6}{l}{\textit{Bus indirizzi A0--A5 (bank-1, bit 1--6) — input via TXS0108E U2}} \\
-A0 & 33 & 38 & GPIO33 & IN & \\
-A1 & 34 & 39 & GPIO34 & IN & \\
-A2 & 35 & 40 & GPIO35 & IN & \\
-A3 & 36 & 41 & GPIO36 & IN & \\
-A4 & 37 & 42 & GPIO37 & IN & \\
-A5 & 38 & 43 & GPIO38 & IN & \\
+\multicolumn{6}{l}{\textit{Bus indirizzi A0--A7 — input via TXS0108E U2 (Bank-0 bit 12--19)}} \\
+A0 & 12 & 17 & GPIO12       & IN & \\
+A1 & 13 & 18 & GPIO13       & IN & \\
+A2 & 14 & 19 & GPIO14       & IN & \\
+A3 & 15 & 21 & XTAL\_32K\_P & IN & pad RTC usato come GPIO; pin\,20 = VDD3P3\_RTC \\
+A4 & 16 & 22 & XTAL\_32K\_N & IN & pad RTC usato come GPIO \\
+A5 & 17 & 23 & GPIO17       & IN & \\
+A6 & 18 & 24 & GPIO18       & IN & \\
+A7 & 19 & 25 & USB\_D$-$    & IN & USB CDC disabilitato \\
 \midrule
-\multicolumn{6}{l}{\textit{Bus indirizzi A6--A10 (bank-0) — input via TXS0108E U2/U3, solo PBI}} \\
-A6  & 12 & 17 & GPIO12      & IN & via U2 — glitch LOW 60\,µs \\
-A7  & 13 & 18 & GPIO13      & IN & via U2 — glitch LOW 60\,µs \\
-A8  & 14 & 19 & GPIO14      & IN & via U3 — glitch LOW 60\,µs \\
-A9  & 15 & 21 & XTAL\_32K\_P & IN & via U3 — pad RTC usato come GPIO (no cristallo 32\,kHz) \\
-A10 & 16 & 22 & XTAL\_32K\_N & IN & via U3 — pad RTC usato come GPIO (no cristallo 32\,kHz) \\
+\multicolumn{6}{l}{\textit{Bus indirizzi A8--A11 e controllo — via TXS0108E U3}} \\
+A8  & 20 & 26 & USB\_D$+$ & IN  & USB CDC disabilitato \\
+A9  & 21 & 27 & GPIO21    & IN  & \\
+A10 & 35 & 40 & GPIO35    & IN  & Bank-1 bit\,3 \\
+A11 & 36 & 41 & GPIO36    & IN  & Bank-1 bit\,4 \\
+PHI2     &  1 &  6 & GPIO1  & IN  & Dedicated GPIO input ch\,0; 1.79\,MHz \\
+R/W\_    &  2 &  7 & GPIO2  & IN  & HIGH = lettura \\
+EXTSEL\_N & 41 & 46 & MTDI  & OUT & Dedicated GPIO output ch\,1; ex-JTAG, reclaimed \\
+MPD       & 42 & 48 & MTMS  & OUT & Dedicated GPIO output ch\,2; ex-JTAG, reclaimed \\
+ARESET   & 37 & 42 & GPIO37 & OUT & Reset sistema Atari (LOW asserito) \\
 \midrule
-\multicolumn{6}{l}{\textit{Segnali di controllo input — PHI2 e R/W\_ via U3; D1XX\_N, ROM\_SEL\_N, RAM\_SEL\_N diretti da 74LVC 3.3\,V}} \\
-PHI2        &  2 &  7 & GPIO2  & IN  & via U3 — glitch LOW 60\,µs \\
-R/W\_       & 17 & 23 & GPIO17 & IN  & via U3 — glitch LOW 60\,µs \\
-D1XX\_N     & 18 & 24 & GPIO18 & IN  & 74HCT+74LVC, uscita 3.3\,V diretta \\
-ROM\_SEL\_N & 21 & 27 & GPIO21 & IN  & 74HCT138+74LVC, uscita 3.3\,V diretta, PBI only \\
-RAM\_SEL\_N & 40 & 45 & MTDO   & IN  & 74HCT+74LVC, uscita 3.3\,V diretta, bank-1 bit 8, PBI only \\
+\multicolumn{6}{l}{\textit{Bus indirizzi A12--A15 — input via TXS0108E U4 (Bank-1)}} \\
+A12 & 33 & 38 & GPIO33  & IN & Bank-1 bit\,1; length matching con A13--A15 \\
+A13 & 34 & 39 & GPIO34  & IN & Bank-1 bit\,2 \\
+A14 & 47 & 53 & FSPICLK & IN & Bank-1 bit\,15; FSPI non usato (flash in-package) \\
+A15 & 48 & 54 & FSPID   & IN & Bank-1 bit\,16 \\
 \midrule
-\multicolumn{6}{l}{\textit{Segnali di controllo output}} \\
-EXTSEL\_N   &  0 &  5 & GPIO0  & OUT & via U3 A8/B8 — per-ciclo (D1xx e D6xx); strapping, pull-up 10\,k$\Omega$ \\
-DEV\_SEL\_N &  1 &  6 & GPIO1  & OUT & diretto a VERA CS (3.3\,V); glitch LOW 60\,µs \\
-MPD         & 42 & 48 & MTMS   & OUT & via U3 A6/B6 — Math Pack Disable; solo durante ROM \$D800--\$DFFF, bank-1 bit 10 \\
+\multicolumn{6}{l}{\textit{Segnali diretti (senza level shifter, 3.3\,V)}} \\
+DEV\_SEL\_N & 40 & 45 & MTDO  & OUT & VERA /CS; Dedicated GPIO output ch\,0; ex-JTAG \\
+CRESET     & 38 & 43 & GPIO38 & OUT & VERA /RESET \\
+CDONE      & 39 & 44 & MTCK  & IN  & VERA configurata (HIGH = OK); ex-JTAG \\
+RAMBO\_EN  &  3 &  8 & GPIO3  & IN  & RAMbo enable: pull-up 10\,k$\Omega$→VCC = presente \\
 \midrule
 \multicolumn{6}{l}{\textit{Debug}} \\
 UART TX & 43 & 49 & U0TXD & OUT & Serial debug @ 115200 baud \\
@@ -204,37 +217,24 @@ UART RX & 44 & 50 & U0RXD & IN  & non utilizzato in firmware \\
 \end{tabular}
 \end{center}
 
-\subsection*{Indirizzamento memoria}
+\subsection*{Decodifica indirizzo (16 bit)}
 
-\texttt{decode\_addr()} restituisce A0--A10 (11 bit). Le maschere di accesso ai buffer IRAM sono:
+\texttt{decode\_addr()} restituisce l'indirizzo completo A0--A15 (16\,bit), catturato in due letture APB (\texttt{GPIO.in} per A0--A9 e \texttt{GPIO.in1.val} per A10--A15) già eseguite per il campionamento di PHI2. Le maschere di accesso ai buffer IRAM sono:
 \[
 \text{ROM } \$\text{D800--\$DFFF}: \quad \texttt{pbi\_driver[addr \& 0x7FF]} \quad (2048\,\text{B},\; 11\,\text{bit A0--A10})
 \]
 \[
 \text{RAM } \$\text{D600--\$D7FF}: \quad \texttt{ram\_pbi[addr \& 0x1FF]} \quad (512\,\text{B},\; 9\,\text{bit A0--A8})
 \]
+\[
+\text{RAMbo } \$\text{4000--\$7FFF}: \quad \texttt{extended\_rambo\_256k[(bank} \ll 14) \mid \text{(addr \& 0x3FFF)]} \quad (256\,\text{KB},\; 16\,\text{banchi})
+\]
 
 \subsection*{GPIO disponibili}
 
-I seguenti GPIO non sono assegnati al progetto e sono liberi per usi futuri:
+Con A12--A15 aggiunti e \texttt{RAMBO\_EN} (GPIO\,3), tutti i GPIO utilizzabili sono ora assegnati. Non rimangono GPIO liberi per usi futuri (ad eccezione dei pin di strapping, che devono essere lasciati liberi).
 
-\begin{center}
-\begin{tabular}{ccll}
-\toprule
-\textbf{GPIO} & \textbf{Pin QFN56} & \textbf{IO MUX} & \textbf{Note} \\
-\midrule
-19 & 25 & USB\_D$-$ & Libero su PCB custom (USB CDC disabilitato) \\
-20 & 26 & USB\_D$+$ & Libero su PCB custom (USB CDC disabilitato) \\
-39 & 44 & MTCK     & JTAG clock — usabile come GPIO \\
-41 & 46 & MTDI     & JTAG data in — usabile come GPIO \\
-44 & 50 & U0RXD   & UART RX non usata \\
-47 & 53 & FSPICLK  & GPIO generico \\
-48 & 54 & FSPID    & GPIO generico \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-\noindent\textbf{Attenzione:} I pin QFN56 28 e 30--35 (GPIO26--32) sono collegati internamente alla flash Quad SPI in-package (variante FN8) e non devono mai essere connessi esternamente. GPIO3 (pin\,8) è pin di strapping JTAG senza pull interno: nel progetto è usato come \texttt{PIN\_RAMBO\_EN} (abilitazione hardware RAMbo 256\,KB) con resistenza di pull-up\,10\,k$\Omega$~→~VCC (RAMbo presente) oppure pull-down\,10\,k$\Omega$~→~GND (assente). GPIO45 e GPIO46 sono pin di strapping: lasciare liberi. I pin\,55 (\texttt{XTAL\_N}) e\,56 (\texttt{XTAL\_P}) sono pad analogici dedicati al quarzo 40\,MHz: riservati, non usabili come GPIO.
+\noindent\textbf{Attenzione:} I pin QFN56 28 e 30--35 (GPIO\,26--32) sono collegati internamente alla flash Quad SPI in-package (variante FN8) e non devono mai essere connessi esternamente. GPIO\,45 (pin\,51) e GPIO\,46 (pin\,52) sono pin di strapping: lasciare liberi. I pin\,55 (\texttt{XTAL\_N}) e\,56 (\texttt{XTAL\_P}) sono pad analogici dedicati al quarzo 40\,MHz: riservati, non usabili come GPIO (vedere sezione~\ref{sec:xtal}).
 
 \subsection{Quarzo oscillatore 40\,MHz (pin\,55--56)}
 \label{sec:xtal}
@@ -330,110 +330,126 @@ Il diagramma seguente illustra un tipico ciclo di lettura gestito dall'ESP32 in 
 
 % --- SEZIONE 5: CODICE SORGENTE ---
 \section{Frammento di Codice Sorgente}
-Di seguito è riportato un estratto del file \texttt{main.cpp} che mostra la struttura di selezione a compile-time della MCU e il cuore del \texttt{MonitorTask} in modalità PBI. Tutte le funzioni critiche sono marcate \texttt{IRAM\_ATTR} per garantire l'esecuzione dalla RAM interna, indipendentemente dallo stato della cache flash.
+Di seguito è riportato un estratto aggiornato del file \texttt{main.cpp} che mostra le definizioni dei pin e il cuore del \texttt{MonitorTask}. Tutte le funzioni critiche sono marcate \texttt{IRAM\_ATTR} per garantire l'esecuzione dalla RAM interna. L'indirizzo completo A0--A15 è decodificato interamente in software: nessuna logica esterna 74HCT/74LVC.
 
-\begin{lstlisting}[style=cppstyle, caption={Definizioni pin e macro MCU-specifiche per ESP32-S3FN8}, label=code:mcu_select]
-#if defined(MCU_ESP32_S3)
-  #define PIN_PHI2       2    /* bank-0 */
-  #define PIN_RW        17
-  #define PIN_BUS_SEL_N 18    /* D1XX_N, da 74HCT+74LVC diretta 3.3V */
-  #define PIN_ROM_SEL_N 21    /* da 74HCT138+74LVC, diretta 3.3V     */
-  #define PIN_RAM_SEL_N 40    /* MTDO, QFN56 pin45, bank-1 bit8      */
-  #define PIN_EXTSEL_N   0    /* output, strapping, pull-up 10kohm   */
-  #define PIN_DEV_SEL_N  1    /* VERA chip select, diretto           */
-  #define PIN_MPD       42    /* MTMS, QFN56 pin48, bank-1 bit10     */
-  #define PIN_UART_TX   43
+\begin{lstlisting}[style=cppstyle, caption={Definizioni pin ESP32-S3FN8 (QFN56) -- firmware corrente}, label=code:mcu_select]
+/* Bank 0 (GPIO.in) */
+#define PIN_PHI2        1    /* GPIO1, pin 6 -- Dedicated GPIO input ch 0  */
+#define PIN_RW          2    /* GPIO2, pin 7 -- R/W_, HIGH = read           */
+/* D0-D7: GPIO 4-11, bank-0 bit 4-11 */
+#define DBUS_MASK       0x00000FF0UL
+/* A0-A9: GPIO 12-21, bank-0 bit 12-21 */
+#define ABUS_LO_MASK    0x003FF000UL
 
-  /* MPD su bank-1: usare out1_w1tc/out1_w1ts */
-  #define MPD_ASSERT()   GPIO.out1_w1tc.val = (1UL << (PIN_MPD - 32))
-  #define MPD_DEASSERT() GPIO.out1_w1ts.val = (1UL << (PIN_MPD - 32))
-  /* RAM_SEL_N su bank-1 */
-  #define DECODE_IS_RAM(hi) (((hi) & (1UL << (PIN_RAM_SEL_N-32))) == 0)
+/* Bank 1 (GPIO.in1.val) */
+#define PIN_A10         35   /* GPIO35, pin 40  -- bank-1 bit 3  */
+#define PIN_A11         36   /* GPIO36, pin 41  -- bank-1 bit 4  */
+#define PIN_A12         33   /* GPIO33, pin 38  -- bank-1 bit 1  */
+#define PIN_A13         34   /* GPIO34, pin 39  -- bank-1 bit 2  */
+#define PIN_A14         47   /* GPIO47, pin 53  -- bank-1 bit 15 */
+#define PIN_A15         48   /* GPIO48, pin 54  -- bank-1 bit 16 */
+#define PIN_ARESET      37   /* GPIO37, pin 42  -- system reset  */
+#define PIN_CRESET      38   /* GPIO38, pin 43  -- VERA reset    */
+#define PIN_CDONE       39   /* GPIO39, pin 44  -- VERA done     */
+#define PIN_DEV_SEL_N   40   /* GPIO40, pin 45  -- Dedicated out ch 0 */
+#define PIN_EXTSEL_N    41   /* GPIO41, pin 46  -- Dedicated out ch 1 */
+#define PIN_MPD         42   /* GPIO42, pin 48  -- Dedicated out ch 2 */
+#define PIN_RAMBO_EN     3   /* GPIO3,  pin  8  -- RAMbo enable  */
 
-  #define DBUS_MASK  0x00000FF0UL   /* GPIO4-11, bank-0 bit 4-11 */
+/* Dedicated GPIO channel masks */
+#define DEDIC_IN_PHI2       (1u << 0)
+#define DEDIC_OUT_DEVSELN   (1u << 0)
+#define DEDIC_OUT_EXTSEL    (1u << 1)
+#define DEDIC_OUT_MPD       (1u << 2)
+#define DEDIC_OUT_CTRL_MASK 0x07u
+#define DEDIC_OUT_CTRL_IDLE 0x07u  /* tutti HIGH = deasserted */
 
-  /* A0-A5: GPIO.in1.val bit 1-6; A6-A10: GPIO.in bit 12-16 */
-  static inline uint16_t IRAM_ATTR decode_addr(uint32_t lo, uint32_t hi) {
-    uint16_t a = (uint16_t)((hi >> 1) & 0x3Fu);  /* A0-A5 GPIO33-38 */
-    a |= (uint16_t)(((lo>>12)&1u)<< 6);           /* A6    GPIO12    */
-    a |= (uint16_t)(((lo>>13)&1u)<< 7);           /* A7    GPIO13    */
-    a |= (uint16_t)(((lo>>14)&1u)<< 8);           /* A8    GPIO14    */
-    a |= (uint16_t)(((lo>>15)&1u)<< 9);           /* A9    GPIO15    */
-    a |= (uint16_t)(((lo>>16)&1u)<<10);           /* A10   GPIO16    */
+static inline uint16_t IRAM_ATTR decode_addr(uint32_t lo, uint32_t hi)
+{
+    uint16_t a = (uint16_t)((lo >> 12) & 0x3FFu);         /* A0-A9  */
+    a |= (uint16_t)(((hi >> (PIN_A10-32)) & 1u) << 10);   /* A10    */
+    a |= (uint16_t)(((hi >> (PIN_A11-32)) & 1u) << 11);   /* A11    */
+    a |= (uint16_t)(((hi >> (PIN_A12-32)) & 1u) << 12);   /* A12    */
+    a |= (uint16_t)(((hi >> (PIN_A13-32)) & 1u) << 13);   /* A13    */
+    a |= (uint16_t)(((hi >> (PIN_A14-32)) & 1u) << 14);   /* A14    */
+    a |= (uint16_t)(((hi >> (PIN_A15-32)) & 1u) << 15);   /* A15    */
     return a;
-  }
-  static inline uint8_t IRAM_ATTR decode_data(uint32_t lo) {
-    return (uint8_t)((lo >> 4) & 0xFFu); /* GPIO4-11 compatti */
-  }
-
-#else
-  #error "Set -D MCU_ESP32_S3"
-#endif
+}
 \end{lstlisting}
 
-\begin{lstlisting}[style=cppstyle, caption={Nucleo del MonitorTask (modalità PBI, semplificato)}, label=code:monitor_task]
+\begin{lstlisting}[style=cppstyle, caption={Nucleo del MonitorTask -- hot loop semplificato (PBI + RAMbo)}, label=code:monitor_task]
 static void IRAM_ATTR MonitorTask(void *arg)
 {
+    /* Bundle Dedicated GPIO: input [PHI2], output [DEV_SEL_N, EXTSEL_N, MPD] */
+    /* ... (setup bundle omesso per brevita') ... */
+    cpu_ll_write_dedic_gpio_mask(DEDIC_OUT_CTRL_MASK, DEDIC_OUT_CTRL_IDLE);
+
     bool selected = false;
-    GPIO.out_w1ts = (1UL<<PIN_EXTSEL_N)|(1UL<<PIN_DEV_SEL_N);
-    MPD_DEASSERT();
-    bus_release();   /* tristate data bus */
+    bus_release();
 
     for (;;) {
-        /* 1. Attesa fronte di salita PHI2; snapshot bank-0 e bank-1 */
-        uint32_t g_lo;
-        while (!((g_lo = GPIO.in) & (1UL << PIN_PHI2)));
+        /* 1. Attesa fronte di salita PHI2 via TIE (1 ciclo CPU) */
+        while (!(cpu_ll_read_dedic_gpio_in() & DEDIC_IN_PHI2));
+        uint32_t g_lo = GPIO.in;
         uint32_t g_hi = GPIO.in1.val;
 
-        /* 2. Decodifica segnali e indirizzo (A0-A10) */
-        bool is_read = (g_lo & (1UL << PIN_RW))        != 0;
-        bool is_d1xx = (g_lo & (1UL << PIN_BUS_SEL_N)) == 0;
-        bool is_rom  = (g_lo & (1UL << PIN_ROM_SEL_N))  == 0;
-        bool is_ram  = DECODE_IS_RAM(g_hi);
-        uint16_t addr = decode_addr(g_lo, g_hi);
-        uint8_t  off  = (uint8_t)(addr & 0xFFu);
-        bool is_d1ff       = is_d1xx && (off == 0xFFu);
-        bool is_vera_range = is_d1xx && (off <= 0x1Fu);
-        bool is_int_range  = is_d1xx && (off >= 0x20u) && (off <= 0xFEu);
+        /* 2. Decodifica indirizzo A0-A15 (16 bit, software puro) */
+        bool     is_read = (g_lo & (1UL << PIN_RW)) != 0;
+        uint16_t addr    = decode_addr(g_lo, g_hi);
+        uint8_t  off8    = (uint8_t)(addr & 0xFFu);
 
-        /* 3. EXTSEL_N per-ciclo: D1xx (escluso D1FF) e RAM D6xx */
-        if (selected && ((is_d1xx && !is_d1ff) || is_ram))
-            GPIO.out_w1tc = (1UL << PIN_EXTSEL_N);
+        bool is_d1xx       = (addr >= 0xD100u && addr <= 0xD1FFu);
+        bool is_d6xx       = (addr >= 0xD600u && addr <= 0xD7FFu);
+        bool is_d8xx       = (addr >= 0xD800u && addr <= 0xDFFFu);
+        bool is_vera_range = is_d1xx && (off8 <= 0x1Fu);
+        bool is_vcs_latch  = is_d1xx && (off8 == 0xFFu);
+        bool is_rambo_win  = (addr >= 0x4000u && addr <= 0x7FFFu);
+        bool rambo_active  = rambo_hw_enabled && ((PORTB & 0x10u) == 0u);
 
-        /* 4. MPD solo per ROM $D800-$DFFF con device selezionato */
-        if (selected && is_rom)
-            MPD_ASSERT();
-
-        /* 5. VERA CS per range $D100-$D11F (R e W) */
-        if (selected && is_vera_range)
-            GPIO.out_w1tc = (1UL << PIN_DEV_SEL_N);
-
-        /* 6. Ciclo di LETTURA */
-        if (is_read && selected) {
-            if      (is_rom)        bus_drive(pbi_driver[addr & 0x7FFu]);
-            else if (is_ram)        bus_drive(ram_pbi   [addr & 0x1FFu]);
-            else if (is_int_range)  bus_drive(int_regs  [off]);
-            /* is_vera_range: VERA guida il bus autonomamente */
+        /* 3. Asserzione segnali controllo (1 istruzione TIE) */
+        {
+            uint8_t ctrl = DEDIC_OUT_CTRL_IDLE;
+            if (selected) {
+                if ((is_d1xx && !is_vcs_latch) || is_d6xx)
+                    ctrl &= ~DEDIC_OUT_EXTSEL;
+                if (is_d8xx)   ctrl &= ~DEDIC_OUT_MPD;
+                if (is_vera_range) ctrl &= ~DEDIC_OUT_DEVSELN;
+            }
+            if (rambo_active && is_rambo_win)
+                ctrl &= ~DEDIC_OUT_EXTSEL;
+            cpu_ll_write_dedic_gpio_mask(DEDIC_OUT_CTRL_MASK, ctrl);
         }
-        /* 7. Ciclo di SCRITTURA */
-        else if (!is_read) {
+
+        /* 4. Ciclo di lettura */
+        if (is_read) {
+            if (selected && is_d8xx)
+                bus_drive(pbi_driver[addr & 0x7FFu]);
+            else if (selected && is_d6xx)
+                bus_drive(ram_pbi[addr & 0x1FFu]);
+            if (rambo_active && is_rambo_win) {
+                uint8_t bank = ((PORTB>>2)&3u)|((PORTB>>3)&0xCu);
+                bus_drive(extended_rambo_256k[((uint32_t)bank<<14)|(addr&0x3FFFu)]);
+            }
+        }
+        /* 5. Ciclo di scrittura */
+        else {
             uint8_t data = decode_data(GPIO.in);
-            if (is_d1ff) {
-                bool new_sel = (data == 0x80u); /* VCS latch */
-                if (new_sel != selected) {
-                    selected = new_sel;
-                    xQueueSend(eventQueue, &selected, 0);
-                }
-            } else if (selected && is_int_range) {
-                int_regs[off] = data;
+            if (is_vcs_latch) {
+                selected = (data == PBI_DEV_ID);
+            }
+            /* Snoop PIA 6520 (passivo -- il 6520 fisico risponde; ESP32 solo osserva) */
+            if (addr == 0xD303u) PBCTL = data;
+            if (addr == 0xD301u && (PBCTL & 0x04u)) PORTB = data;
+            if (rambo_active && is_rambo_win) {
+                uint8_t bank = ((PORTB>>2)&3u)|((PORTB>>3)&0xCu);
+                extended_rambo_256k[((uint32_t)bank<<14)|(addr&0x3FFFu)] = data;
             }
         }
 
-        /* 8. Fine ciclo: rilascia bus, deasserta tutti gli output */
-        while (GPIO.in & (1UL << PIN_PHI2));
+        /* 6. Fine ciclo: rilascia bus, deasserta controlli */
+        while (cpu_ll_read_dedic_gpio_in() & DEDIC_IN_PHI2);
         bus_release();
-        MPD_DEASSERT();
-        GPIO.out_w1ts = (1UL<<PIN_EXTSEL_N)|(1UL<<PIN_DEV_SEL_N);
+        cpu_ll_write_dedic_gpio_mask(DEDIC_OUT_CTRL_MASK, DEDIC_OUT_CTRL_IDLE);
     }
 }
 \end{lstlisting}
@@ -456,7 +472,7 @@ La logica principale del firmware è contenuta nel \texttt{MonitorTask}, che vie
     \node[term] (start) {Inizio \texttt{MonitorTask} (Core 1)};
     \node[proc, below=of start]      (init)      {Deassert: EXTSEL\_N HIGH, DEV\_SEL\_N HIGH, MPD HIGH; bus\_release()};
     \node[proc, below=of init]       (wait_phi2) {Spin-wait salita PHI2 + snapshot \texttt{GPIO.in}/\texttt{GPIO.in1.val}};
-    \node[proc, below=of wait_phi2]  (decode)    {Decode: addr(A0--A10), is\_read,\\is\_d1xx, is\_rom, is\_ram, is\_d1ff};
+    \node[proc, below=of wait_phi2]  (decode)    {Decode: addr(A0--A15), is\_read,\\is\_d1xx, is\_d6xx, is\_d8xx, is\_vera\_range,\\is\_rambo\_win, is\_vcs\_latch};
 
     \node[test, below=of decode]     (check_sel) {selected \&\& (D1xx o RAM)?};
     \node[proc, below=of check_sel]  (extsel)    {EXTSEL\_N LOW (per-ciclo)};
@@ -468,8 +484,8 @@ La logica principale del firmware è contenuta nel \texttt{MonitorTask}, che vie
     \node[proc, below=of check_vera] (vera_cs)   {DEV\_SEL\_N LOW (VERA CS)};
 
     \node[test, below=of vera_cs]    (check_rw)  {is\_read?};
-    \node[proc, below=of check_rw, xshift=-3cm]   (bus_drv)  {bus\_drive():\\ROM / RAM / int\_regs};
-    \node[proc, below=of check_rw, xshift=+3cm]   (wr_data)  {Cattura dato;\\aggiorna selected / int\_regs};
+    \node[proc, below=of check_rw, xshift=-3cm]   (bus_drv)  {bus\_drive():\\ROM / RAM PBI / RAMbo};
+    \node[proc, below=of check_rw, xshift=+3cm]   (wr_data)  {Cattura dato;\\aggiorna selected;\\snoop PBCTL/PORTB; RAMbo write};
 
     \node[proc, below=3.5cm of check_rw] (phi2_low)  {Spin-wait discesa PHI2};
     \node[proc, below=of phi2_low]       (release)   {bus\_release(); MPD HIGH;\\EXTSEL\_N HIGH; DEV\_SEL\_N HIGH};
@@ -516,15 +532,15 @@ L'analisi conferma che l'architettura hardware e software del progetto è solida
 La revisione del firmware e della mappatura hardware ha chiarito e corretto i seguenti aspetti:
 
 \begin{itemize}
-  \item \textbf{EXTSEL\_N} è un segnale \emph{per-ciclo}: viene asserito basso solo durante i cicli in cui il device è selezionato (\texttt{selected=true}) e l'accesso è nell'intervallo \$D100--\$D1FE (escluso \$D1FF) oppure nella RAM interna \$D600--\$D7FF. Viene sempre deassertato al termine del ciclo. Non è un segnale persistente legato allo stato del latch VCS.
+  \item \textbf{EXTSEL\_N} (GPIO\,41, Dedicated GPIO output ch\,1) è un segnale \emph{per-ciclo}: viene asserito basso quando il device è selezionato (\texttt{selected=true}) e l'accesso ricade in \$D100--\$D1FE (escluso \$D1FF) oppure in \$D600--\$D7FF; oppure quando RAMbo è attivo e l'accesso è nella finestra \$4000--\$7FFF (indipendentemente da \texttt{selected}). Viene sempre deassertato al termine del ciclo. Non è un segnale persistente legato allo stato del latch VCS.
 
-  \item \textbf{MPD (Math Pack Disable)} viene asserito basso esclusivamente quando il device è selezionato e l'accesso riguarda la ROM interna \$D800--\$DFFF. Non viene asserito per accessi alla RAM, ai registri interni o a VERA. È connesso al GPIO\,42 (MTMS, QFN56 pin\,48) nel bank-1 e utilizza \texttt{GPIO.out1\_w1tc.val} per l'asserzione.
+  \item \textbf{MPD (Math Pack Disable)} (GPIO\,42, Dedicated GPIO output ch\,2) viene asserito basso esclusivamente quando il device è selezionato e l'accesso riguarda la ROM interna \$D800--\$DFFF. Non viene asserito per accessi alla RAM, a VERA o alla finestra RAMbo. Viene asserito insieme a EXTSEL\_N e DEV\_SEL\_N in un'unica istruzione TIE (\texttt{cpu\_ll\_write\_dedic\_gpio\_mask}).
 
-  \item \textbf{RAM interna 512\,B} (\$D600--\$D7FF): indirizzata su 9 bit via \texttt{ram\_pbi[addr \& 0x1FFu]}. Il segnale \texttt{RAM\_SEL\_N} è connesso al GPIO\,40 (MTDO, QFN56 pin\,45, bank-1 bit\,8).
+  \item \textbf{RAM interna PBI 512\,B} (\$D600--\$D7FF): indirizzata su 9 bit via \texttt{ram\_pbi[addr \& 0x1FFu]}. Rilevata per confronto diretto dell'indirizzo a 16\,bit (\texttt{addr >= 0xD600u \&\& addr <= 0xD7FFu}): non esiste più il segnale hardware \texttt{RAM\_SEL\_N}. GPIO\,40 (MTDO, QFN56 pin\,45) è ora \texttt{DEV\_SEL\_N} (VERA chip select).
 
-  \item \textbf{Percorso 74HCT\,+\,74LVC}: i segnali \texttt{D1XX\_N}, \texttt{ROM\_SEL\_N} e \texttt{RAM\_SEL\_N} sono generati da IC 74HCT (5\,V) e portati a livello 3.3\,V da uno stadio 74LVC con ingressi 5V-tolerant. Le uscite 3.3\,V si collegano \emph{direttamente} ai GPIO dell'ESP32-S3 senza ulteriori level shifter (TXS0108E).
+  \item \textbf{Decodifica indirizzi software (nessuna logica 74HCT/74LVC):} il firmware precedente utilizzava IC 74HCT e 74LVC per pre-decodificare gli indirizzi e generare segnali (\texttt{D1XX\_N}, \texttt{ROM\_SEL\_N}, \texttt{RAM\_SEL\_N}) come ingressi ESP32. Nel firmware attuale questi segnali sono stati eliminati: l'ESP32 legge A0--A15 direttamente (tramite i quattro TXS0108E U1--U4, usati solo per adattamento di livello 5\,V\,$\leftrightarrow$\,3.3\,V) e decodifica tutto in software tramite \texttt{decode\_addr()}.
 
-  \item \textbf{Canali U3 liberati}: poiché \texttt{D1XX\_N} e \texttt{ROM\_SEL\_N} non passano più per U3~(TXS0108E), i canali A6/B6 e A7/B7 risultano disponibili. Il canale A6/B6 è ora assegnato a MPD (GPIO\,42, output ESP32 \texttt{→} bus Atari 5\,V); A7/B7 rimane di riserva.
+  \item \textbf{Ruolo attuale di U3:} il TXS0108E U3 trasporta A8, A9, A10, A11 (ingressi B→A), PHI2, R/W\_ (ingressi B→A), EXTSEL\_N e MPD (uscite A→B) e ARESET (uscita A→B). Tutti gli 8 canali di U3 sono occupati; nessun canale è disponibile. La quarta istanza di TXS0108E (U4) è dedicata esclusivamente a A12--A15.
 
   \item \textbf{Snooping passivo della PIA 6520 — PBCTL\,(\$D303) e PORTB\,(\$D301):}
   il chip \textbf{6520 PIA è fisicamente presente} sulla scheda madre dell'Atari e
