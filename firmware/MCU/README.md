@@ -85,11 +85,20 @@ Per la mappatura completa GPIO→QFN-56 vedere `PIN-MAPPING.md` nella root.
 
 ```
 firmware/MCU/
-├── platformio.ini          # Configurazione build (due target: pbi, cctl)
+├── platformio.ini               # Configurazione build (due target: pbi, cctl)
 ├── include/
-│   └── pbi-driver.h        # Strutture dati e costanti del protocollo PBI
-└── src/
-    └── main.cpp            # Sorgente principale del firmware
+│   ├── pbi-driver.h             # Strutture dati e costanti del protocollo PBI
+│   └── vera_pbi_handler.h       # ROM 6502 compilata come array C (generato da make)
+├── src/
+│   └── main.cpp                 # Sorgente principale del firmware ESP32
+└── 6502/
+    ├── Makefile                 # Compila il driver e genera vera_pbi_handler.h
+    ├── pbi-driver.ld            # Script linker (indirizzo base $D800, 2 KB)
+    ├── inc/
+    │   ├── vera_common.inc      # Simboli condivisi VERA/PBI (registri, costanti)
+    │   └── pbi-driver.h        # Header interfaccia driver
+    └── src/
+        └── vera_pbi_handler.s   # Driver ROM PBI per la scheda FPGA VERA (ca65)
 ```
 
 ---
@@ -137,10 +146,23 @@ pio device monitor
 
 ## 6. Driver 6502 per ATARI
 
-Il driver in assembly 6502 risiede in `6502/src/pbi-driver.s` e viene
-compilato separatamente con la toolchain `cc65`:
+Il driver ROM risiede in `6502/src/vera_pbi_handler.s` ed è scritto in
+assembly 6502 per la toolchain **ca65/ld65** (suite `cc65`). Occupa
+$D800–$DFFF (2 KB) quando la scheda è selezionata tramite il latch PBI $D1FF.
+
+Il `Makefile` nella directory `6502/`:
+1. Assembla `vera_pbi_handler.s` (con `vera_common.inc` come dipendenza)
+2. Linka il binario a $D800 tramite `pbi-driver.ld`
+3. Converte il `.bin` in un array C `vera_pbi_handler[]` e lo copia in
+   `../include/vera_pbi_handler.h`, pronto per essere incluso nel firmware ESP32
 
 ```bash
-cd ../../6502
+cd 6502
 make
+
+# Pulizia degli artefatti intermedi
+make clean
 ```
+
+> **Dipendenze**: `ca65`, `ld65` (pacchetto `cc65`) e `hexdump` devono essere
+> nel `PATH`.
