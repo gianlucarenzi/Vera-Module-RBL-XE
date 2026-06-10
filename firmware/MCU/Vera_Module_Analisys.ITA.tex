@@ -107,19 +107,19 @@ Il sistema si basa sull'interazione di due componenti principali.
     \end{itemize}
 \end{itemize}
 
-\subsection{Modalità operative (BUS\_MODE)}
-Il firmware supporta due modalità operative, selezionate a compile-time tramite la macro \texttt{BUS\_MODE}:
+\subsection{Modalità operative (VERA\_BOARD\_IS\_PBI)}
+Il firmware supporta due modalità operative, selezionate a compile-time tramite la macro \texttt{VERA\_BOARD\_IS\_PBI} in \texttt{main.cpp}:
 
 \begin{itemize}
-    \item \textbf{PBI mode (\texttt{BUS\_MODE=0}):} Il modulo si collega al connettore ECI della serie XL/XE.
+    \item \textbf{PBI mode (\texttt{VERA\_BOARD\_IS\_PBI=1}, default):} Il modulo si collega al connettore ECI della serie XL/XE.
     \begin{itemize}
         \item \textbf{VCS latch:} scrittura di \$80 a \$D1FF attiva il dispositivo; qualsiasi altro valore lo disattiva.
-        \item \textbf{ROM \$D800--\$DFFF (2\,KB, 11 bit A0--A10):} il segnale \texttt{ROM\_SEL\_N} (dalla 74HCT138 via 74LVC) attiva il serving. \texttt{MPD} (Math Pack Disable, GPIO42) viene asserito basso per ogni ciclo ROM con device selezionato, disabilitando la ROM Math Pack interna all'Atari.
-        \item \textbf{RAM \$D600--\$D7FF (512\,B, 9 bit A0--A8):} il segnale \texttt{RAM\_SEL\_N} (GPIO40) attiva il buffer IRAM. \texttt{EXTSEL\_N} viene asserito per-ciclo.
-        \item \textbf{Registri VERA \$D100--\$D11F} (A0--A4, 32 registri) e \textbf{registri interni ESP32 \$D120--\$D1FE}: gestiti via \texttt{D1XX\_N}. \texttt{EXTSEL\_N} viene asserito per ogni ciclo in questo intervallo (escluso \$D1FF).
-        \item \textbf{EXTSEL\_N (GPIO0):} segnale \emph{per-ciclo} che disabilita MMU/Freddie dell'Atari per accessi D1xx e D6xx. Non è un segnale persistente.
+        \item \textbf{ROM \$D800--\$DFFF (2\,KB, 11 bit A0--A10):} \texttt{MPD} (Math Pack Disable, GPIO42) viene asserito basso per ogni ciclo ROM con device selezionato, disabilitando la ROM Math Pack interna all'Atari.
+        \item \textbf{RAM \$D600--\$D7FF (512\,B, 9 bit A0--A8):} buffer IRAM esposto al 6502. \texttt{EXTSEL\_N} viene asserito per-ciclo.
+        \item \textbf{Registri VERA \$D100--\$D11F} (A0--A4, 32 registri) e \textbf{registri interni ESP32 \$D120--\$D1FE}: \texttt{EXTSEL\_N} viene asserito per ogni ciclo in questo intervallo (escluso \$D1FF).
+        \item \textbf{EXTSEL\_N (GPIO41):} segnale \emph{per-ciclo} che disabilita MMU/Freddie dell'Atari per accessi D1xx e D6xx. Non è un segnale persistente.
     \end{itemize}
-    \item \textbf{CCTL mode (\texttt{BUS\_MODE=1}):} Il modulo si collega alla porta cartuccia. Il firmware decodifica i 5 bit bassi dell'indirizzo nell'area \$D500--\$D5FF tramite il segnale \texttt{CCTL\_N} e genera il chip-select per il chip VERA.
+    \item \textbf{CCTL mode (\texttt{VERA\_BOARD\_IS\_PBI=0}):} Il modulo si collega alla porta cartuccia. Il firmware decodifica i 5 bit bassi dell'indirizzo nell'area \$D500--\$D5FF tramite il segnale \texttt{CCTL\_N} e genera il chip-select per il chip VERA.
 \end{itemize}
 
 \subsection{Ambiente di build PlatformIO}
