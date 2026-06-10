@@ -1,117 +1,146 @@
-# Progetto: Vera-Module-RBL-XE Firmware
+# Vera-Module-RBL-XE — Firmware MCU
 
 ## 1. Introduzione
 
-Questo repository contiene il firmware per il `Vera-Module-RBL-XE`, un 
-modulo di espansione hardware custom per i computer **ATARI della serie XE**.
+Firmware per il microcontrollore **ESP32-S3FN8** (QFN-56, 8 MB flash integrata,
+dual-core Xtensa LX7 @ 240 MHz) montato sul modulo Vera-Module-RBL-XE.
 
-Questo progetto implementa un'interfaccia hardware che si collega 
-alla **Parallel Bus Interface (PBI)** dell'ATARI. 
-Il sistema è composto da due parti principali che lavorano in sinergia:
-
-1.  Un **firmware per un microcontrollore moderno** (ESP32-S3FN8).
-2.  Una FPGA **programmata con il bitstream VERA** (Commander X16).
-3.  Un **driver in assembly 6502** che gira sull'ATARI per comunicare con il modulo.
-
-L'obiettivo del modulo è probabilmente quello di estendere le capacità 
-dell'ATARI, offloadando compiti complessi o fornendo nuove funzionalità 
-hardware (come grafica avanzata, storage, audio a 16 bit, ecc.) 
-gestite dal potente microcontrollore ed una FPGA.
+Il modulo si collega al computer **ATARI XE** tramite il connettore **PBI**
+(Parallel Bus Interface) oppure tramite il segnale **CCTL** (Cartridge Control),
+a seconda dell'immagine firmware compilata.
 
 ---
 
-## 2. Architettura del Progetto
+## 2. Architettura del Firmware
 
-Il progetto ha un'architettura ibrida, con due codebase distinte.
+### Hot loop (Core 1, priorità massima FreeRTOS)
 
-### Firmware del Microcontrollore (MCU)
+Il task `MonitorTask()` gira sul Core 1 con priorità `configMAX_PRIORITIES - 1`.
+Ad ogni ciclo di clock del 6502 (PHI2 @ 1,79 MHz, finestra utile ≈ 279 ns a
+240 MHz di CPU):
 
-Questa è la parte principale del progetto, gestita con **PlatformIO**.
+1. Attende il fronte di salita di PHI2 tramite **Dedicated GPIO in**
+   (`ee.get_gpio_in`, 1 ciclo CPU anziché ~6 cicli via APB).
+2. Legge il bus indirizzi A0–A11 e la linea R/W dai registri `GPIO.in` /
+   `GPIO.in1.val` (due letture APB sequenziali).
+3. Decodifica l'indirizzo via software (`decode_addr()`) e determina se l'accesso
+   riguarda VERA ($D100–$D11F), il range di interrupt ($D120–$D1FE), il range
+   esteso ($D600–$D7FF) o la ROM mappata ($D800–$DFFF).
+4. Afferma in modo atomico i segnali di controllo attivi-LOW (EXTSEL\_N,
+   DEV\_SEL\_N, MPD) tramite **Dedicated GPIO out**
+   (`ee.wr_mask_gpio_out`, 1 ciclo CPU — tutti e tre i segnali in un'unica
+   istruzione TIE).
+5. Se l'accesso è in lettura verso VERA, guida il bus dati (D0–D7) con
+   `bus_drive()`, che scrive `GPIO.out` e `GPIO.enable_w1ts` (2 scritture APB,
+   ottimizzato rispetto alle 3 scritture precedenti).
+6. Attende il fronte di discesa di PHI2, rilascia il bus e de-afferma i
+   segnali di controllo con un'altra `ee.wr_mask_gpio_out`.
 
--   **Scheda:** Il file `platformio.ini` specifica che il microcontrollore 
-    target è un **ESP32-S3FN8** (QFN56, 8 MB flash integrata, LX7 @ 240 MHz).
--   **Codice Sorgente:** Il file `src/main.cpp` è il punto di ingresso del 
-    firmware. Questo codice C++ gestisce la logica principale del modulo.
--   **Interfaccia:** Il file `include/pbi-driver.h` definisce le strutture 
-    dati, le costanti e le firme delle funzioni che l'MCU usa per comunicare 
-    con il driver 6502 sull'ATARI.
+### Dedicated GPIO (modulo ESP32-S3)
 
-La logica in `main.cpp` è responsabile di:
--   Inizializzare l'hardware dell'ESP32-S3.
--   Mettersi in ascolto di comandi provenienti dall'ATARI attraverso la 
-    comunicazione tramite protocollo PBI.
--   Eseguire le operazioni richieste.
--   Restituire i risultati all'ATARI.
+Il modulo Dedicated GPIO dell'ESP32-S3 assegna fino a 8 canali in ingresso e
+8 in uscita per core. L'accesso avviene tramite le istruzioni Xtensa TIE:
 
-### Driver 6502 per ATARI
+| Istruzione TIE              | Helper C (IDF ≤ 5.0)                             | Latenza |
+|-----------------------------|--------------------------------------------------|---------|
+| `ee.get_gpio_in`            | `cpu_ll_read_dedic_gpio_in()`                    | 1 ciclo |
+| `ee.wr_mask_gpio_out`       | `cpu_ll_write_dedic_gpio_mask(mask, val)`        | 1 ciclo |
 
-Questa parte del progetto risiede nella cartella `6502/`.
+I canali configurati nel firmware:
 
--   **Codice Sorgente:** Il file `6502/src/pbi-driver.s` è un driver scritto 
-    in **assembly 6502**. Questo codice viene eseguito direttamente 
-    dalla CPU dell'ATARI.
--   **Scopo:** La sua funzione è quella di gestire la comunicazione a basso 
-    livello con il modulo hardware attraverso la PBI. Inizializza il bus, 
-    invia comandi al modulo MCU e legge le risposte.
--   **Compilazione:** Il `Makefile` presente nella cartella `6502/` fa si 
-    che il driver viene compilato utilizzando un toolchain custom (`ca65` o simili) 
-    per creare un file binario eseguibile dall'ATARI.
+| Bundle  | Canale | GPIO           | Segnale     | Nota                  |
+|---------|--------|----------------|-------------|-----------------------|
+| Input   | bit 0  | GPIO 1 (pin 6) | PHI2        | Clock 6502            |
+| Output  | bit 0  | GPIO 40 (pin 45)| DEV\_SEL\_N | Chip-select VERA      |
+| Output  | bit 1  | GPIO 41 (pin 46)| EXTSEL\_N   | Disabilita MMU ATARI  |
+| Output  | bit 2  | GPIO 42 (pin 48)| MPD         | Disabilita Math Pack  |
+
+I pin GPIO 39–42 erano originariamente riservati a JTAG; vengono liberati in
+`setup()` tramite `gpio_reset_pin()` prima della creazione del bundle.
+
+### Mappatura del bus (riepilogo)
+
+| Segnale      | GPIO        | QFN-56 pin | Note                              |
+|--------------|-------------|------------|-----------------------------------|
+| PHI2         | 1           | 6          | Input dedicated                   |
+| R/W          | 2           | 7          | Input                             |
+| D0–D7        | 4–11        | 9–16       | Bus dati bidirezionale            |
+| A0–A9        | 12–21       | 17–27      | GPIO 19=USB D−, 20=USB D+ (USB disabilitato) |
+| A10          | 35          | 40         | Address bit 10                    |
+| A11          | 36          | 41         | Address bit 11                    |
+| ARESET       | 37          | 42         | System reset ATARI (output)       |
+| CRESET       | 38          | 43         | Chip reset VERA (output)          |
+| CDONE        | 39          | 44         | VERA programmata (input)          |
+| DEV\_SEL\_N  | 40          | 45         | Chip-select VERA (output, dedicated) |
+| EXTSEL\_N    | 41          | 46         | Disabilita MMU (output, dedicated)|
+| MPD          | 42          | 48         | Disabilita Math Pack (dedicated)  |
+| Debug TX     | 43          | 49         | UART0 TX (Serial)                 |
+| Debug RX     | 44          | 50         | UART0 RX (Serial)                 |
+
+Per la mappatura completa GPIO→QFN-56 vedere `PIN-MAPPING.md` nella root.
 
 ---
 
-## 3. Struttura dei File Principali
+## 3. Struttura dei File
 
 ```
-/
-├── platformio.ini            # File di configurazione di PlatformIO (target: ESP32-S3FN8)
-├── 6502/
-│   ├── Makefile              # Makefile per compilare il driver 6502
-│   └── src/
-│       └── pbi-driver.s      # Codice assembly del driver PBI per ATARI
+firmware/MCU/
+├── platformio.ini          # Configurazione build (due target: pbi, cctl)
 ├── include/
-│   └── pbi-driver.h          # Header C++ con l'interfaccia di comunicazione
+│   └── pbi-driver.h        # Strutture dati e costanti del protocollo PBI
 └── src/
-    └── main.cpp              # Codice sorgente C++ principale per l'MCU
+    └── main.cpp            # Sorgente principale del firmware
 ```
 
 ---
 
-## 4. Tecnologie Utilizzate
+## 4. Modalità di Build
 
--   **Linguaggi:** C++, Assembly 6502
--   **Piattaforma Embedded:** PlatformIO
--   **Hardware MCU:** ESP32-S3FN8
--   **Hardware Host:** ATARI XE (con interfaccia per protocollo PBI)
--   **Build System:** `make` (per il codice 6502)
+Il progetto definisce due ambienti PlatformIO in `platformio.ini`:
+
+| Ambiente         | `BUS_MODE` | Descrizione                                |
+|------------------|------------|--------------------------------------------|
+| `esp32s3fn8-pbi` | `0`        | Interfaccia PBI (indirizzo completo A0–A11)|
+| `esp32s3fn8-cctl`| `1`        | Modalità CCTL (cartuccia)                  |
+
+Entrambi usano `-D USE_DEDICATED_GPIO` e `-D USE_ESP32_REGISTER_ACCESS` per
+abilitare l'hot loop ottimizzato.
 
 ---
 
-## 5. Compilazione del Progetto
+## 5. Compilazione e Flashing
 
-Per compilare le due parti del progetto, sono necessari due approcci diversi.
-
-### Compilazione Firmware MCU
-
-È necessario avere **PlatformIO Core** installato.
+È necessario avere **PlatformIO Core** installato (`pip install platformio`).
 
 ```bash
-# Compila il progetto per il ESP32-S3FN8 (PBI mode)
-platformio run -e esp32s3fn8-pbi
+# Compila per modalità PBI
+pio run -e esp32s3fn8-pbi
 
-# Carica il firmware sulla scheda (UART0: GPIO43=TX, GPIO44=RX)
-platformio run -e esp32s3fn8-pbi --target upload
+# Compila per modalità CCTL
+pio run -e esp32s3fn8-cctl
+
+# Carica il firmware (PBI) — UART0: GPIO43=TX, GPIO44=RX
+pio run -e esp32s3fn8-pbi --target upload
+
+# Carica il firmware (CCTL)
+pio run -e esp32s3fn8-cctl --target upload
+
+# Monitor seriale (115200 baud)
+pio device monitor
 ```
 
-### Compilazione Driver 6502
+> **Nota:** USB CDC è disabilitato (`ARDUINO_USB_CDC_ON_BOOT=0`) perché
+> GPIO 19 (USB D−) e GPIO 20 (USB D+) sono riutilizzati come linee indirizzo
+> A7 e A8. Usare un adattatore UART esterno collegato ai pin GPIO 43/44.
 
-È necessario avere una toolchain di sviluppo per 6502 (es. `cc65`) installata
-e configurata nel proprio `PATH`.
+---
+
+## 6. Driver 6502 per ATARI
+
+Il driver in assembly 6502 risiede in `6502/src/pbi-driver.s` e viene
+compilato separatamente con la toolchain `cc65`:
 
 ```bash
-# Entra nella cartella del driver
-cd 6502
-
-# Compila il driver utilizzando il Makefile
+cd ../../6502
 make
 ```
-Questo produrrà un file binario che può essere caricato ed eseguito su un computer ATARI.
