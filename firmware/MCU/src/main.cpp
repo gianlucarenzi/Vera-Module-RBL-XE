@@ -122,9 +122,11 @@ static inline uint8_t IRAM_ATTR decode_data(uint32_t lo)
  * =========================================================================== */
 
 #if BUS_MODE == 0
-static IRAM_ATTR uint32_t lut_drive[256];   /* Lookup table for fast data bus drive */
-static IRAM_ATTR uint8_t  int_regs[256];    /* ESP32 internal registers */
-static IRAM_ATTR uint8_t  ram_pbi[512];     /* 512B RAM at $D600-$D7FF */
+static IRAM_ATTR uint32_t lut_drive[256];                  /* Lookup table for fast data bus drive */
+static IRAM_ATTR uint8_t  int_regs[256];                   /* ESP32 internal registers */
+static IRAM_ATTR uint8_t  ram_pbi[512];                    /* 512B RAM at $D600-$D7FF */
+/* IRAM BSS: risiede in IRAM ma non occupa Flash (zero-init dal boot senza immagine Flash). */
+static uint8_t extended_rambo_256k[256 * 1024] __attribute__((section(".iram0.bss")));
 #endif
 
 static QueueHandle_t eventQueue;
@@ -360,8 +362,9 @@ void setup(void)
 
 #if BUS_MODE == 0
     Serial.println("[VeraX16] Initializing PBI Mode (Parallel Bus Interface)");
-    memset(int_regs, 0x00, sizeof(int_regs));
-    memset(ram_pbi,  0x00, sizeof(ram_pbi));
+    memset(int_regs,           0x00, sizeof(int_regs));
+    memset(ram_pbi,            0x00, sizeof(ram_pbi));
+    memset(extended_rambo_256k, 0x00, sizeof(extended_rambo_256k));
     build_drive_lut();
     eventQueue = xQueueCreate(8, sizeof(bool));
 #else
