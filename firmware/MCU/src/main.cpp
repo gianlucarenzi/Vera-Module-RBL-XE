@@ -1,63 +1,21 @@
 /**
  * esp32-main.cpp  --  Atari PBI / CCTL  VeraX16 Bus Controller
+ * 
+ * Target MCU: ESP32-S3FN8 (QFN56)
  *
- * Compile-time selection via BUS_MODE:
- *
- *   BUS_MODE 0  (default) -- PBI mode
- *     Connector : XL/XE ECI
- *     Signals   : D1XX_N, ROM_SEL_N, RAM_SEL_N, EXTSEL_N, MPD
- *     Selection : D1FF one-hot write -- 0x80 selects this device (VCS latch)
- *     ROM       : 2 KB image served from IRAM at $D800-$DFFF
- *                 MPD (Math Pack Disable) asserted ONLY during ROM cycles
- *     RAM       : 512 B buffer at $D600-$D7FF
- *                 EXTSEL_N asserted during RAM cycles (disables MMU/Freddie)
- *     VERA regs : $D100-$D11F (A0-A4, 32 registers) -- DEV_SEL_N asserted
- *                 EXTSEL_N asserted during D1xx cycles (excl. D1FF latch reg)
- *
- *   BUS_MODE 1             -- CCTL mode
- *     Connector : 400/800 or XL/XE cartridge port
- *     Signals   : CCTL_N (same pin as D1XX_N)
- *     Selection : always active when CCTL_N asserted ($D500-$D5FF)
- *     ROM       : none
- *     VERA regs : $D500-$D51F -- DEV_SEL_N asserted on A0-A4 range
- *
- * Supported MCUs:
- *
- *   MCU_ESP32_S3  --  ESP32-S3FN8, QFN56
- *   -------------------------------------------------------
- *   D0-D7         : GPIO  4,  5,  6,  7,  8,  9, 10, 11  (bank-0 bits 4-11)
- *   A0-A5         : GPIO 33, 34, 35, 36, 37, 38           (bank-1 bits 1-6)
- *   A6-A10        : GPIO 12, 13, 14, 15, 16               (bank-0, PBI only)
- *                              GPIO15/16 = pad XTAL_32K_P/N: usati come GPIO normali;
- *                              nessun quarzo 32 kHz; MCU su RC interno a 240 MHz
- *   PHI2          : GPIO  2   (bank-0)
- *   R/W_          : GPIO 17   (bank-0)
- *   D1XX_N/CCTL_N : GPIO 18   (bank-0, direct da 74LVC 3.3V)
- *   ROM_SEL_N     : GPIO 21   (bank-0, direct da 74LVC 3.3V, PBI only)
- *   RAM_SEL_N     : GPIO 40   (bank-1, MTDO, QFN56 pin 45, direct da 74LVC 3.3V, PBI only)
- *   EXTSEL_N      : GPIO  0   (output) -- disabilita MMU/Freddie per D1xx e D6xx
- *                              add 10 kohm pull-up to 3.3 V (strapping pin)
- *   DEV_SEL_N     : GPIO  1   (output) -- VERA chip select
- *   MPD           : GPIO 42   (bank-1, MTMS, QFN56 pin 48, output, active LOW)
- *                              Math Pack Disable -- solo durante accessi ROM $D800-$DFFF
- *                              via U3 canale A6/B6 (liberato da D1XX_N → 74LVC)
- *   UART TX       : GPIO 43
- *   WARNING GPIO0 : strapping (download mode if LOW at reset) -- 10 kohm pull-up
- *   WARNING GPIO3 : strapping (JTAG source), floats at reset -- tie GND via 10 kohm
- *   WARNING GPIO1 : 60 us LOW glitch at power-up -- hold VERA in reset during boot
- *   WARNING GPIO26-32: in-package Quad SPI flash -- never connect externally
- *
- * Architecture:
- *   Core 1: MonitorTask -- IRAM, no blocking calls, ~54-cycle decode path.
- *   Core 0: loop()      -- serial debug via FreeRTOS queue.
- *
- * Timing (NTSC 6502 @ 1.7897 MHz):
- *   PHI2 high period ~= 279 ns -- every decode+drive path must stay in IRAM.
- *   MPD must be asserted BEFORE bus_drive() to tristate Atari bus buffer first.
+ * This firmware allows an ESP32-S3 to interface with the 6502 bus of an
+ * Atari XL/XE computer via the Parallel Bus Interface (PBI) or 
+ * Cartridge Control Line (CCTL).
+ * 
+ * This version uses a definitive 30-GPIO mapping (plus Serial on 43/44)
+ * with software-based 12-bit address decoding.
+ * 
+ * Style: Allman
+ * Language: English
  */
 
 #ifndef BUS_MODE
-#define BUS_MODE 0   /* 0 = PBI,  1 = CCTL */
+#define BUS_MODE 0   /* 0 = PBI mode, 1 = CCTL mode */
 #endif
 
 #include <Arduino.h>
@@ -67,348 +25,344 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
+
 #if BUS_MODE == 0
 #include "pbi-driver.h"
 #endif
 
-// ===========================================================================
-// MCU-specific pin definitions, bitmasks and decode helpers
-// ===========================================================================
+/* ===========================================================================
+ * Hardware Pin Mapping (ESP32-S3FN8 QFN56)
+ * =========================================================================== */
 
-#if defined(MCU_ESP32_S3)
-/* ---- ESP32-S3FN8 -------------------------------------------------------- */
-#define PIN_PHI2        2
-#define PIN_RW         17
-#define PIN_BUS_SEL_N  18
-#define PIN_DEV_SEL_N   1
-#define PIN_ROM_SEL_N  21
-#define PIN_RAM_SEL_N  40   /* MTDO, QFN56 pin 45 -- /RAM_SEL ($D600-$D7FF) */
-#define PIN_EXTSEL_N    0
-#define PIN_MPD        42   /* MTMS, QFN56 pin 48 -- Memory Port Data, active LOW */
-                             /* Level shifting 3.3 V -> 5 V required on PCB      */
-#define PIN_UART_TX    43
+/* --- Bank 0 Signals (GPIO 0-31) --- */
+#define PIN_PHI2        1    /* CPU Clock Phase 2 (Pin 16) */
+#define PIN_RW          2    /* Read/Write, High = Read (Pin 17) */
 
-/* D0-D7: GPIO4-11, bank-0 bits 4-11, DBUS_MASK = 0x00000FF0 */
-#define DBUS_MASK \
-    ((1UL<<4)|(1UL<<5)|(1UL<<6)|(1UL<<7)|(1UL<<8)|(1UL<<9)|(1UL<<10)|(1UL<<11))
-static const uint8_t DBUS_PINS[8] = {4, 5, 6, 7, 8, 9, 10, 11};
+/* D0-D7: GPIO 4 to 11 (Pins 19-26, contiguous in Bank 0) */
+#define DBUS_MASK       0x00000FF0UL 
+static const uint8_t DBUS_PINS[8] = { 4, 5, 6, 7, 8, 9, 10, 11 };
 
-/* A0-A5: GPIO33-38 (bank-1 bits 1-6);  A6-A10: GPIO12-16 (bank-0) */
+/* A0-A9: GPIO 12 to 21 (Pins 27-36, contiguous in Bank 0) */
+#define ABUS_LO_MASK    0x003FF000UL
+
+/* --- Bank 1 Signals (GPIO 32-48) --- */
+#define PIN_A10         35   /* Address Bit 10 (Pin 37) */
+#define PIN_A11         36   /* Address Bit 11 (Pin 38) */
+#define PIN_ARESET      37   /* Atari System Reset Output (Pin 39) */
+#define PIN_CRESET      38   /* Vera Chip Reset Output (Pin 40) */
+#define PIN_CDONE       39   /* Vera Programmed Status Input (Pin 41) */
+#define PIN_DEV_SEL_N   40   /* Vera Chip Select Output (Pin 42, active LOW) */
+#define PIN_EXTSEL_N    41   /* Atari MMU Disable Output (Pin 43, active LOW) */
+#define PIN_MPD         42   /* Math Pack Disable Output (Pin 44, active LOW) */
+
+/* Serial Debug (UART0 default pins on ESP32-S3 QFN56) */
+#define PIN_UART_TX     43   /* UART0 TX (Pin 49) */
+#define PIN_UART_RX     44   /* UART0 RX (Pin 50) */
+
+/* Spare Pins */
+#define PIN_SPARE1      47   /* GPIO 47 (Pin 53) */
+#define PIN_SPARE2      48   /* GPIO 48 (Pin 54) */
+
+/* ===========================================================================
+ * Helper Macros & Inline Functions
+ * =========================================================================== */
+
+/**
+ * Decode A0-A11 from GPIO input snapshots.
+ * A0-A9 are in Bank 0 bits 12-21.
+ * A10-A11 are in Bank 1 bits 3-4 (since 35-32=3, 36-32=4).
+ */
 static inline uint16_t IRAM_ATTR decode_addr(uint32_t lo, uint32_t hi)
 {
-    uint16_t a = (uint16_t)((hi >> 1) & 0x3Fu);       /* A0-A5  GPIO33-38 */
-    a |= (uint16_t)(((lo >> 12) & 1u) <<  6);          /* A6     GPIO12    */
-    a |= (uint16_t)(((lo >> 13) & 1u) <<  7);          /* A7     GPIO13    */
-    a |= (uint16_t)(((lo >> 14) & 1u) <<  8);          /* A8     GPIO14    */
-    a |= (uint16_t)(((lo >> 15) & 1u) <<  9);          /* A9     GPIO15 (XTAL_32K_P) */
-    a |= (uint16_t)(((lo >> 16) & 1u) << 10);          /* A10    GPIO16 (XTAL_32K_N) */
+    uint16_t a = (uint16_t)((lo >> 12) & 0x3FFu);      /* A0-A9   */
+    a |= (uint16_t)(((hi >> (PIN_A10 - 32)) & 1u) << 10); /* A10     */
+    a |= (uint16_t)(((hi >> (PIN_A11 - 32)) & 1u) << 11); /* A11     */
     return a;
 }
-static inline uint8_t IRAM_ATTR decode_offset_cctl(uint32_t hi)
-{
-    return (uint8_t)((hi >> 1) & 0x1Fu);  /* GPIO33-37 (in1 bits 1-5) = A0-A4 */
-}
+
+/**
+ * Decode D0-D7 from Bank 0 snapshot.
+ */
 static inline uint8_t IRAM_ATTR decode_data(uint32_t lo)
 {
-    return (uint8_t)((lo >> 4) & 0xFFu);  /* GPIO4-11 compact read */
+    return (uint8_t)((lo >> 4) & 0xFFu);
 }
 
-/* MPD is GPIO42 (bank-1, bit 10). Must use out1_w1tc/w1ts for GPIO32+. */
-#define MPD_ASSERT()   GPIO.out1_w1tc.val = (1UL << (PIN_MPD - 32))
-#define MPD_DEASSERT() GPIO.out1_w1ts.val = (1UL << (PIN_MPD - 32))
+/* Control Signal Assert/Deassert Macros (Bank 1) */
+#define MPD_ASSERT()       GPIO.out1_w1tc.val = (1UL << (PIN_MPD - 32))
+#define MPD_DEASSERT()     GPIO.out1_w1ts.val = (1UL << (PIN_MPD - 32))
 
-/* RAM_SEL_N is GPIO40 (bank-1, bit 8) -- read from g_hi snapshot. */
-#define DECODE_IS_RAM(g_hi) (((g_hi) & (1UL << (PIN_RAM_SEL_N - 32))) == 0)
+#define EXTSEL_ASSERT()    GPIO.out1_w1tc.val = (1UL << (PIN_EXTSEL_N - 32))
+#define EXTSEL_DEASSERT()  GPIO.out1_w1ts.val = (1UL << (PIN_EXTSEL_N - 32))
 
-/* gpio_config bitmasks */
-#define CFG_INPUTS_SHARED \
-    ((uint64_t)DBUS_MASK | (1ULL<<PIN_PHI2) | (1ULL<<PIN_RW) | \
-     (1ULL<<PIN_BUS_SEL_N) | \
-     (1ULL<<33)|(1ULL<<34)|(1ULL<<35)|(1ULL<<36)|(1ULL<<37)|(1ULL<<38))
-/* ROM_SEL_N + A6-A10 + RAM_SEL_N (GPIO40) -- inputs, PBI only */
-#define CFG_INPUTS_PBI_ONLY \
-    ((1ULL<<PIN_ROM_SEL_N) | \
-     (1ULL<<12)|(1ULL<<13)|(1ULL<<14)|(1ULL<<15)|(1ULL<<16) | \
-     (1ULL<<PIN_RAM_SEL_N))
+#define VERA_CS_ASSERT()   GPIO.out1_w1tc.val = (1UL << (PIN_DEV_SEL_N - 32))
+#define VERA_CS_DEASSERT() GPIO.out1_w1ts.val = (1UL << (PIN_DEV_SEL_N - 32))
 
-#elif defined(MCU_ESP32_CLASSIC)
-#  error "MCU_ESP32_CLASSIC (NodeMCU/PICO-D4) is no longer supported. Use MCU_ESP32_S3."
-#else
-#  error "Set -D MCU_ESP32_S3 in build_flags"
-#endif
+/* ===========================================================================
+ * Shared Data
+ * =========================================================================== */
 
-/* PBI device configuration */
-#define DEVICE_MASK    0x80u   /* one-hot: PBI slot 7 */
-#define VERA_REG_MAX   0x1Fu   /* VERA registers at $D100-$D11F (A0-A4, 32 regs) */
-#define INT_REG_LO     0x20u   /* ESP32 internal regs $D120-$D1FE (PBI only) */
-#define INT_REG_HI     0xFEu
-
-// ---------------------------------------------------------------------------
-// IRAM-resident data (PBI mode only -- conserve IRAM in CCTL mode)
-// ---------------------------------------------------------------------------
 #if BUS_MODE == 0
-static IRAM_ATTR uint32_t lut_drive[256];   /* byte value -> GPIO drive bitmask */
-static IRAM_ATTR uint8_t  int_regs[256];    /* ESP32 internal register file      */
-static IRAM_ATTR uint8_t  ram_pbi[512];     /* 512 B RAM visible at $D600-$D7FF  */
+static IRAM_ATTR uint32_t lut_drive[256];   /* Lookup table for fast data bus drive */
+static IRAM_ATTR uint8_t  int_regs[256];    /* ESP32 internal registers */
+static IRAM_ATTR uint8_t  ram_pbi[512];     /* 512B RAM at $D600-$D7FF */
 #endif
 
 static QueueHandle_t eventQueue;
 
-// ---------------------------------------------------------------------------
-// build_drive_lut()  (PBI mode only)
-// ---------------------------------------------------------------------------
+/* ===========================================================================
+ * Bus Drive/Release Logic
+ * =========================================================================== */
+
 #if BUS_MODE == 0
+/**
+ * Precalculate bitmasks for each possible byte to avoid runtime logic.
+ */
 static void build_drive_lut(void)
 {
-    for (int v = 0; v < 256; v++) {
+    for (int v = 0; v < 256; v++)
+    {
         uint32_t m = 0;
         for (int b = 0; b < 8; b++)
-            if (v & (1 << b)) m |= (1UL << DBUS_PINS[b]);
+        {
+            if (v & (1 << b))
+            {
+                m |= (1UL << DBUS_PINS[b]);
+            }
+        }
         lut_drive[v] = m;
     }
 }
-#endif
 
-// ---------------------------------------------------------------------------
-// bus_drive() / bus_release()
-//
-// IMPORTANT: assert MPD BEFORE calling bus_drive() so the Atari MMU
-// tristates its bus buffer before the ESP32 drives the data lines.
-// Failure to assert MPD causes bus contention and may corrupt data or
-// damage hardware.
-// ---------------------------------------------------------------------------
-#if BUS_MODE == 0
+/**
+ * Drive the data bus with a byte value.
+ * Uses atomic register writes for maximum performance.
+ */
 static inline void IRAM_ATTR bus_drive(uint8_t val)
 {
     uint32_t mask = lut_drive[val];
-    GPIO.out_w1tc = DBUS_MASK & ~mask;   /* clear outputs that must be 0 */
-    GPIO.out_w1ts = mask;                /* set   outputs that must be 1 */
-    GPIO.enable_w1ts = DBUS_MASK;        /* tristate -> driven            */
+    GPIO.out_w1tc = DBUS_MASK & ~mask;
+    GPIO.out_w1ts = mask;
+    GPIO.enable_w1ts = DBUS_MASK;
 }
 #endif
 
+/**
+ * Release the data bus (set to High-Z).
+ */
 static inline void IRAM_ATTR bus_release(void)
 {
-    GPIO.enable_w1tc = DBUS_MASK;        /* driven -> tristate */
+    GPIO.enable_w1tc = DBUS_MASK;
 }
 
-// ============================================================================
-// MonitorTask -- Core 1, IRAM
-// ============================================================================
-static void IRAM_ATTR MonitorTask(void * /*arg*/)
+/* ===========================================================================
+ * MonitorTask -- Core 1, IRAM-resident
+ * =========================================================================== */
+static void IRAM_ATTR MonitorTask(void *arg)
 {
 #if BUS_MODE == 0
-    /* ------------------------------------------------------------------ */
-    /* PBI mode                                                            */
-    /* ------------------------------------------------------------------ */
-    bool selected = false;   /* VCS latch: true = device selected */
+    /* PBI Mode Implementation */
+    bool selected = false;
 
-    /* Deassert all outputs before starting */
-    GPIO.out_w1ts = (1UL << PIN_EXTSEL_N) | (1UL << PIN_DEV_SEL_N);
+    /* Initial state: Deassert all outputs */
+    EXTSEL_DEASSERT();
+    VERA_CS_DEASSERT();
     MPD_DEASSERT();
     bus_release();
 
     for (;;)
     {
-        /* 1. Spin-wait for PHI2 rising edge; capture bank-0 snapshot */
+        /* 1. Wait for PHI2 rising edge and capture snapshots */
         uint32_t g_lo;
         while (!((g_lo = GPIO.in) & (1UL << PIN_PHI2)));
-
-        /* 2. Capture bank-1 snapshot (address and RAM_SEL_N stable before PHI2) */
         uint32_t g_hi = GPIO.in1.val;
 
-        /* 3. Decode control signals */
-        bool is_read  = (g_lo & (1UL << PIN_RW))         != 0;
-        bool is_d1xx  = (g_lo & (1UL << PIN_BUS_SEL_N))  == 0;
-        bool is_rom   = (g_lo & (1UL << PIN_ROM_SEL_N))   == 0;  /* $D800-$DFFF */
-        bool is_ram   = DECODE_IS_RAM(g_hi);                      /* $D600-$D7FF */
-
-        /* 4. Decode address (A0-A10, 11 bits covers 2 KB ROM / 512 B RAM) */
+        /* 2. Decode Address and Signals */
+        bool is_read = (g_lo & (1UL << PIN_RW)) != 0;
         uint16_t addr = decode_addr(g_lo, g_hi);
         uint8_t  off8 = (uint8_t)(addr & 0xFFu);
 
-        bool is_d1ff       = is_d1xx && (off8 == 0xFFu);
-        bool is_vera_range = is_d1xx && (off8 <= VERA_REG_MAX);
-        bool is_int_range  = is_d1xx && (off8 >= INT_REG_LO) && (off8 <= INT_REG_HI);
+        /* Address range decoding within $Dxxx page ($D000 is base 0x000 in decode) */
+        bool is_d1xx  = (addr >= 0x100u && addr <= 0x1FFu);
+        bool is_d6xx  = (addr >= 0x600u && addr <= 0x7FFu);
+        bool is_d8xx  = (addr >= 0x800u && addr <= 0xFFFu);
 
-        /* 5. EXTSEL_N -- per-cycle, not persistent.
-              Disabilita MMU/Freddie per accesso D1xx (escluso D1FF latch)
-              e per accesso RAM $D600-$D7FF. */
-        if (selected && ((is_d1xx && !is_d1ff) || is_ram))
-            GPIO.out_w1tc = (1UL << PIN_EXTSEL_N);
+        bool is_vera_range = is_d1xx && (off8 <= 0x1Fu);
+        bool is_int_range  = is_d1xx && (off8 >= 0x20u && off8 <= 0xFEu);
+        bool is_vcs_latch  = is_d1xx && (off8 == 0xFFu);
 
-        /* 6. MPD (Math Pack Disable) -- solo durante accessi ROM $D800-$DFFF.
-              Disabilita la ROM interna Atari per far vincere la ROM dell'ESP32. */
-        if (selected && is_rom)
+        /* 3. EXTSEL Logic: Asserted for D1xx (except latch) and D6xx (RAM) */
+        if (selected && ((is_d1xx && !is_vcs_latch) || is_d6xx))
+        {
+            EXTSEL_ASSERT();
+        }
+
+        /* 4. MPD Logic: Asserted for D8xx (ROM) */
+        if (selected && is_d8xx)
+        {
             MPD_ASSERT();
+        }
 
-        /* 7. Assert VERA CS per range D1xx VERA ($D100-$D11F), R e W. */
+        /* 5. Vera CS Logic: Asserted for VERA register range */
         if (selected && is_vera_range)
-            GPIO.out_w1tc = (1UL << PIN_DEV_SEL_N);
+        {
+            VERA_CS_ASSERT();
+        }
 
-        /* 8. READ cycle */
+        /* 6. Cycle Handling */
         if (is_read)
         {
             if (selected)
             {
-                if (is_rom)
-                    bus_drive(pbi_driver[addr & 0x7FFu]);  /* 2 KB ROM */
-                else if (is_ram)
-                    bus_drive(ram_pbi[addr & 0x1FFu]);     /* 512 B RAM */
+                if (is_d8xx)
+                {
+                    bus_drive(pbi_driver[addr & 0x7FFu]);
+                }
+                else if (is_d6xx)
+                {
+                    bus_drive(ram_pbi[addr & 0x1FFu]);
+                }
                 else if (is_int_range)
-                    bus_drive(int_regs[off8]);             /* registri interni */
-                /* is_vera_range: VERA guida il bus autonomamente */
+                {
+                    bus_drive(int_regs[off8]);
+                }
             }
         }
-        /* 9. WRITE cycle -- re-read GPIO.in per dati stabili */
         else
         {
+            /* Write cycle: Sample data bus */
             uint8_t data = decode_data(GPIO.in);
 
-            if (is_d1ff) {
-                /* VCS latch: $80 = seleziona device, qualsiasi altro = deseleziona.
-                   EXTSEL_N e MPD sono segnali per-ciclo, non si toccano qui. */
-                bool new_sel = (data == DEVICE_MASK);
-                if (new_sel != selected) {
+            if (is_vcs_latch)
+            {
+                bool new_sel = (data == 0x80u);
+                if (new_sel != selected)
+                {
                     selected = new_sel;
                     xQueueSend(eventQueue, &selected, 0);
                 }
             }
-            else if (selected && is_int_range) {
+            else if (selected && is_int_range)
+            {
                 int_regs[off8] = data;
             }
-            /* is_vera_range write: DEV_SEL_N gia' asserito (step 7);
-               VERA cattura i dati sul fronte discendente di PHI2. */
         }
 
-        /* 10. Fine ciclo: rilascia bus, deasserta tutti gli output */
+        /* 7. Cycle Completion: Wait for PHI2 falling edge and release bus */
         while (GPIO.in & (1UL << PIN_PHI2));
         bus_release();
         MPD_DEASSERT();
-        GPIO.out_w1ts = (1UL << PIN_EXTSEL_N) | (1UL << PIN_DEV_SEL_N);
+        EXTSEL_DEASSERT();
+        VERA_CS_DEASSERT();
     }
 
-#else   /* BUS_MODE == 1 */
-    /* ------------------------------------------------------------------ */
-    /* CCTL mode                                                           */
-    /* ------------------------------------------------------------------ */
-
-    GPIO.out_w1ts = (1UL << PIN_DEV_SEL_N);
+#else
+    /* CCTL Mode Implementation */
+    VERA_CS_DEASSERT();
     bus_release();
 
     for (;;)
     {
-        /* 1. Spin-wait for PHI2 rising edge */
         uint32_t g_lo;
         while (!((g_lo = GPIO.in) & (1UL << PIN_PHI2)));
+        uint32_t g_hi = GPIO.in1.val;
 
-        /* 2. Check CCTL_N -- skip if not our address space */
-        if (g_lo & (1UL << PIN_BUS_SEL_N)) {
-            while (GPIO.in & (1UL << PIN_PHI2));
-            continue;
+        uint16_t addr = decode_addr(g_lo, g_hi);
+        
+        /* CCTL usually triggers on the whole $D5xx range (0x500 offset) */
+        if (addr >= 0x500u && addr <= 0x5FFu)
+        {
+            uint8_t off = (uint8_t)(addr & 0xFFu);
+            if (off <= 0x1Fu)
+            {
+                VERA_CS_ASSERT();
+            }
         }
 
-        /* 3. Decode A0-A4 from bank-1 */
-        uint8_t off = decode_offset_cctl(GPIO.in1.val);
-
-        /* 4. Assert VERA CS if within 32-register range */
-        if (off <= VERA_REG_MAX)
-            GPIO.out_w1tc = (1UL << PIN_DEV_SEL_N);
-
-        /* 5. Wait PHI2 low, deassert VERA CS */
         while (GPIO.in & (1UL << PIN_PHI2));
-        bus_release();
-        GPIO.out_w1ts = (1UL << PIN_DEV_SEL_N);
+        VERA_CS_DEASSERT();
     }
 #endif
 }
 
-// ============================================================================
-// setup()
-// ============================================================================
+/* ===========================================================================
+ * System Setup
+ * =========================================================================== */
 void setup(void)
 {
-    /* Disable JTAG on pins 39-42 to reclaim them as regular GPIOs */
-    gpio_reset_pin(GPIO_NUM_39);
-    gpio_reset_pin(GPIO_NUM_40);
-    gpio_reset_pin(GPIO_NUM_41);
-    gpio_reset_pin(GPIO_NUM_42);
+    /* Reclaim JTAG pins (GPIO 39-42) for regular GPIO usage */
+    gpio_reset_pin((gpio_num_t)PIN_CDONE);     /* GPIO 39 */
+    gpio_reset_pin((gpio_num_t)PIN_DEV_SEL_N); /* GPIO 40 */
+    gpio_reset_pin((gpio_num_t)PIN_EXTSEL_N);  /* GPIO 41 */
+    gpio_reset_pin((gpio_num_t)PIN_MPD);       /* GPIO 42 */
 
-    /* Initialize Serial on GPIO 43 (TX) and 44 (RX) */
-    Serial.begin(115200, SERIAL_8N1, 44, 43);
+    /* Initialize Serial for Debug (UART0 default pins 43/44) */
+    Serial.begin(115200, SERIAL_8N1, PIN_UART_RX, PIN_UART_TX);
 
 #if BUS_MODE == 0
-    Serial.println("[VeraX16] PBI mode -- ECI connector");
+    Serial.println("[VeraX16] Initializing PBI Mode (Parallel Bus Interface)");
     memset(int_regs, 0x00, sizeof(int_regs));
     memset(ram_pbi,  0x00, sizeof(ram_pbi));
     build_drive_lut();
     eventQueue = xQueueCreate(8, sizeof(bool));
 #else
-    Serial.println("[VeraX16] CCTL mode -- cartridge connector");
+    Serial.println("[VeraX16] Initializing CCTL Mode (Cartridge Control)");
     eventQueue = xQueueCreate(1, sizeof(bool));
 #endif
 
+    /* Configure GPIO Modes */
     gpio_config_t cfg = {};
     cfg.intr_type    = GPIO_INTR_DISABLE;
     cfg.pull_up_en   = GPIO_PULLUP_DISABLE;
     cfg.pull_down_en = GPIO_PULLDOWN_DISABLE;
     cfg.mode         = GPIO_MODE_INPUT;
 
-    /* Inputs shared by both modes: data bus, PHI2, RW, BUS_SEL, A0-A5 */
-    cfg.pin_bit_mask = CFG_INPUTS_SHARED;
+    /* Bank 0 inputs: PHI2, RW, D0-D7, A0-A9 */
+    cfg.pin_bit_mask = (1ULL << PIN_PHI2) | (1ULL << PIN_RW) | DBUS_MASK | ABUS_LO_MASK;
     gpio_config(&cfg);
 
-#if BUS_MODE == 0
-    /* PBI-only inputs: ROM_SEL_N, A6-A10, RAM_SEL_N */
-    cfg.pin_bit_mask = CFG_INPUTS_PBI_ONLY;
+    /* Bank 1 inputs: A10, A11, CDONE */
+    cfg.pin_bit_mask = (1ULL << PIN_A10) | (1ULL << PIN_A11) | (1ULL << PIN_CDONE);
     gpio_config(&cfg);
 
-    /* EXTSEL_N: output, deasserted HIGH at boot */
+    /* Output Signal Initialization */
+    pinMode(PIN_ARESET, OUTPUT);
+    digitalWrite(PIN_ARESET, HIGH);
+    
+    pinMode(PIN_CRESET, OUTPUT);
+    digitalWrite(PIN_CRESET, HIGH);
+
     pinMode(PIN_EXTSEL_N, OUTPUT);
     digitalWrite(PIN_EXTSEL_N, HIGH);
 
-#ifdef PIN_MPD
-    /* MPD: output, deasserted HIGH at boot (active LOW signal) */
-    pinMode(PIN_MPD, OUTPUT);
-    digitalWrite(PIN_MPD, HIGH);
-#endif
-
-#else  /* CCTL mode */
-    /* PBI-only inputs not connected in CCTL mode -- pull up to avoid float */
-    cfg.pull_up_en   = GPIO_PULLUP_ENABLE;
-    cfg.pin_bit_mask = CFG_INPUTS_PBI_ONLY;
-    gpio_config(&cfg);
-
-    /* EXTSEL_N not driven in CCTL mode -- keep HIGH to avoid floating */
-    pinMode(PIN_EXTSEL_N, OUTPUT);
-    digitalWrite(PIN_EXTSEL_N, HIGH);
-#endif
-
-    /* DEV_SEL_N: output, deasserted (HIGH) */
     pinMode(PIN_DEV_SEL_N, OUTPUT);
     digitalWrite(PIN_DEV_SEL_N, HIGH);
 
+    pinMode(PIN_MPD, OUTPUT);
+    digitalWrite(PIN_MPD, HIGH);
+
+    /* Start High-Priority Monitor Task on Core 1 (dedicated bus management) */
     xTaskCreatePinnedToCore(
-        MonitorTask, "PBI_Monitor",
+        MonitorTask, "BusMonitor",
         4096, NULL,
         configMAX_PRIORITIES - 1,
         NULL, 1
     );
 
-    Serial.println("[VeraX16] Monitor active on Core 1");
+    Serial.println("[VeraX16] Bus Monitor active on Core 1");
 }
 
-// ============================================================================
-// loop()  -- Core 0
-// ============================================================================
+/* ===========================================================================
+ * Main Loop -- Core 0, Debug & Event Monitoring
+ * =========================================================================== */
 void loop(void)
 {
 #if BUS_MODE == 0
     bool state;
     if (xQueueReceive(eventQueue, &state, portMAX_DELAY))
-        Serial.printf("[PBI] D1FF -> VCS %s (FP ROM %s)\n",
-                      state ? "SELECTED ($80)" : "DESELECTED",
-                      state ? "OFF" : "ON");
+    {
+        Serial.printf("[Event] VCS Selection: %s\n", state ? "ENABLED" : "DISABLED");
+    }
 #else
     vTaskDelay(pdMS_TO_TICKS(1000));
 #endif
