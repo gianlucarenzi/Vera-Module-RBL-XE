@@ -9,7 +9,7 @@ Target MCU: **ESP32-S3FN8** — QFN56 package, 45 GPIOs, 8 MB in-package Quad SP
 
 | GPIO | QFN56 pin | Signal | Risk |
 |------|-----------|--------|------|
-| **GPIO 3** | 8 | (unused) | Strapping pin (JTAG source) — **no internal pull resistor, floats at reset**. Tie to GND via 10 kΩ. |
+| **GPIO 3** | 8 | RAMBO\_EN | Strapping pin (JTAG source, no internal pull) — usato come **RAMbo hardware enable**: pull-up 10 kΩ → VCC = RAMbo presente; pull-down 10 kΩ → GND = assente. Letto una volta in `setup()`. |
 | **GPIO 26–32** | 28, 30–35 | — | Hard-wired to in-package Quad SPI flash (FN8 variant). **Never connect externally**. |
 | **GPIO 45** | 51 | (unused) | Strapping pin (VDD_SPI select) — internal weak pull-down selects VDD_SPI = 3.3 V. Leave unconnected. |
 | **GPIO 46** | 52 | (unused) | Strapping pin (boot mode) — internal weak pull-down. Leave unconnected. |
@@ -133,13 +133,15 @@ Con A0–A15 completi il decode è esatto: nessuna ambiguità di pagina.
 
 La modalità operativa (PBI o CCTL) è selezionata a compile time con `VERA_BOARD_IS_PBI`
 (vedere sezione 2). In PBI mode tutti e tre i segnali (EXTSEL\_N, DEV\_SEL\_N, MPD) sono
-attivi; in CCTL mode solo DEV\_SEL\_N è usato.
+attivi; in CCTL mode solo DEV\_SEL\_N è usato. Il RAMbo 256 KB è abilitato a runtime
+tramite `RAMBO_EN` (GPIO 3, vedere sezione 2).
 
 | Signal | GPIO | QFN56 pin | IO MUX | Direction | Active | Level shift | Description |
 |---|---|---|---|---|---|---|---|
 | PHI2 | 1 | 6 | GPIO1 | Input | HIGH | via U3 | Clock fase 2 CPU 6502 — 1.79 MHz |
 | R/W\_ | 2 | 7 | GPIO2 | Input | HIGH=read | via U3 | Read / Not-Write |
-| EXTSEL\_N | 41 | 46 | MTDI | **Output** | LOW | via U3 | Disabilita MMU/Freddie per $D1xx e $D6xx — **solo PBI mode**. Ex-JTAG, reclaimed. |
+| RAMBO\_EN | 3 | 8 | GPIO3 | Input | HIGH | **direct** | RAMbo 256 KB enable — pull-up 10 kΩ→VCC = presente; pull-down 10 kΩ→GND = assente. Letto in `setup()`. |
+| EXTSEL\_N | 41 | 46 | MTDI | **Output** | LOW | via U3 | Disabilita MMU/Freddie per $D1xx, $D6xx e finestra RAMbo $4000–$7FFF. **Solo PBI mode** per VERA; RAMbo in entrambe le modalità. Ex-JTAG, reclaimed. |
 | DEV\_SEL\_N | 40 | 45 | MTDO | **Output** | LOW | **direct** | VERA chip select (3.3 V); PBI: VERA regs $D1xx; CCTL: range $D5xx. Ex-JTAG, reclaimed. |
 | MPD | 42 | 48 | MTMS | **Output** | LOW | via U3 | Math Pack Disable — disabilita ROM Atari $D800–$DFFF — **solo PBI mode**. Ex-JTAG, reclaimed. |
 | ARESET | 37 | 42 | GPIO37 | **Output** | LOW | via U3 | Atari System Reset — pilota /RESET bus Atari (open-drain + pull-up consigliati). |
@@ -256,13 +258,12 @@ Pin non assegnati al progetto, esclusi strapping e flash in-package.
 |---|---|---|---|
 | 22–25 | — | — | Non esistono su ESP32-S3 |
 
-> Tutti gli altri GPIO non riservati (33, 34, 47, 48) sono ora assegnati ad A12–A15.
+> Tutti i GPIO non riservati sono ora assegnati: GPIO 3 = RAMBO\_EN; GPIO 33, 34, 47, 48 = A12–A15.
 
 **Pin esclusi (non utilizzabili):**
 
 | GPIO | QFN56 pin | Motivo |
 |---|---|---|
-| 3  | 8      | Strapping JTAG — pull-down fisso 10 kΩ a GND |
 | 26–32 | 28, 30–35 | Flash in-package — mai connettere esternamente |
 | 45 | 51 | Strapping VDD\_SPI — lasciare libero |
 | 46 | 52 | Strapping boot mode — lasciare libero |
@@ -282,7 +283,7 @@ Riferimento rapido ESP32-S3FN8 QFN56 (56 pin segnale + pad GND centrale).
 | 5   | GPIO 0 | NC (strapping, non usato) |
 | 6   | GPIO 1 | PHI2 input (via U3) |
 | 7   | GPIO 2 | R/W\_ input (via U3) |
-| 8   | GPIO 3 | Pull-down 10 kΩ a GND (strapping JTAG) |
+| 8   | GPIO 3 | RAMBO\_EN — pull-up 10 kΩ → VCC = RAMbo presente; pull-down 10 kΩ → GND = assente |
 | 9   | GPIO 4 | D0 (via U1) |
 | 10  | GPIO 5 | D1 (via U1) |
 | 11  | GPIO 6 | D2 (via U1) |

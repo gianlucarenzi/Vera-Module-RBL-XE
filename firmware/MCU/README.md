@@ -9,8 +9,10 @@ Il modulo si collega al computer **ATARI XE** tramite il connettore **PBI**
 (Parallel Bus Interface) oppure tramite il segnale **CCTL** (Cartridge Control).
 La modalità operativa è selezionata a **tempo di compilazione** tramite la macro
 `VERA_BOARD_IS_PBI` in `main.cpp`: `1` per PBI (default), `0` per CCTL.
-L'emulatore RAMbo 256 KB è abilitato separatamente tramite la macro `USE_RAMBO_256K`
-e funziona indipendentemente dalla modalità PBI/CCTL.
+L'emulatore RAMbo 256 KB è sempre compilato nel firmware e abilitato a **runtime**
+tramite il pin hardware `PIN_RAMBO_EN` (GPIO 3, QFN56 pin 8): pull-up 10 kΩ verso
+VCC = RAMbo presente, pull-down 10 kΩ verso GND = assente. Funziona
+indipendentemente dalla modalità PBI/CCTL.
 Il bus indirizzi A0–A15 è decodificato completamente via software in entrambe
 le modalità.
 
@@ -78,6 +80,7 @@ I pin GPIO 39–42 erano originariamente riservati a JTAG; vengono liberati in
 | ARESET       | 37          | 42         | System reset ATARI (output)       |
 | CRESET       | 38          | 43         | Chip reset VERA (output)          |
 | CDONE        | 39          | 44         | VERA programmata (input)          |
+| RAMBO\_EN    | 3           | 8          | RAMbo hardware enable (input, pull esterno 10 kΩ) |
 | DEV\_SEL\_N  | 40          | 45         | Chip-select VERA (output, dedicated) |
 | EXTSEL\_N    | 41          | 46         | Disabilita MMU (output, dedicated)|
 | MPD          | 42          | 48         | Disabilita Math Pack (dedicated)  |
@@ -118,13 +121,20 @@ firmware/MCU/
 
 ## 4. Modalità di Build
 
-Il progetto compila un unico ambiente PlatformIO (`esp32s3fn8`). Le macro di
-configurazione si trovano nella sezione **Compile-time Configuration** di `main.cpp`:
+Il progetto compila un unico ambiente PlatformIO (`esp32s3fn8`). La modalità
+PBI/CCTL è scelta tramite la macro in `main.cpp`:
 
 ```cpp
 #define VERA_BOARD_IS_PBI 0x01   /* 1 = PBI (default), 0 = CCTL */
-#define USE_RAMBO_256K           /* definire per abilitare RAMbo 256 KB */
 ```
+
+L'abilitazione del RAMbo non richiede ricompilazione: è determinata dal livello
+del pin **GPIO 3** (`PIN_RAMBO_EN`, QFN56 pin 8) letto una volta in `setup()`.
+
+| GPIO 3 al boot | Effetto |
+|----------------|---------|
+| Pull-up 10 kΩ → VCC (HIGH) | `rambo_hw_enabled = true` — RAMbo attivo, segue bit 4 di PORTB |
+| Pull-down 10 kΩ → GND (LOW) | `rambo_hw_enabled = false` — $4000–$7FFF non intercettato |
 
 ### Modalità PBI (`VERA_BOARD_IS_PBI = 1`)
 
@@ -138,7 +148,7 @@ configurazione si trovano nella sezione **Compile-time Configuration** di `main.
 
 `build_drive_lut()` precalcola al boot le bitmask per D0–D7, rendendo
 `bus_drive()` una sola scrittura APB a `GPIO.out`. Viene chiamata in PBI mode, e
-anche in CCTL mode se `USE_RAMBO_256K` è definita (RAMbo richiede `bus_drive()`).
+anche in CCTL mode se RAMbo è abilitato via `PIN_RAMBO_EN` (le letture RAMbo richiedono `bus_drive()`).
 
 ### Modalità CCTL (`VERA_BOARD_IS_PBI = 0`)
 
@@ -148,13 +158,15 @@ anche in CCTL mode se `USE_RAMBO_256K` è definita (RAMbo richiede `bus_drive()`
 | $D5FF         | latch CCTL — write `0x80` per selezionare | —                    |
 
 L'ESP32 non guida D0–D7 per i propri registri in CCTL mode; nessuna RAM
-(`ram_pbi`) né ROM (`pbi_driver`) esposta al 6502. Con `USE_RAMBO_256K` attiva,
-`bus_drive()` viene comunque usata per la finestra RAMbo $4000–$7FFF.
+(`ram_pbi`) né ROM (`pbi_driver`) esposta al 6502. Se RAMbo è abilitato via
+`PIN_RAMBO_EN`, `bus_drive()` viene comunque usata per la finestra RAMbo $4000–$7FFF.
 
-### Emulatore RAMbo 256 KB (`USE_RAMBO_256K`)
+### Emulatore RAMbo 256 KB (`PIN_RAMBO_EN`)
 
 L'ESP32 emula una scheda **RAMbo 256 KB** bank-switched a $4000–$7FFF.
 Funziona sia in PBI mode sia in CCTL mode — è indipendente da `VERA_BOARD_IS_PBI`.
+Il codice è sempre compilato nel firmware; l'abilitazione è hardware tramite
+`PIN_RAMBO_EN` (GPIO 3, QFN56 pin 8), letto una sola volta in `setup()`.
 Il meccanismo è identico all'hardware originale:
 
 | PORTB bit | Significato |
@@ -199,8 +211,8 @@ sistema operativo non esegue il primo write a $D301.
 `ram_pbi[512]` — esposta a $D600–$D7FF in PBI mode — è l'area di
 scambio dati tra ESP32 e 6502.
 
-`extended_rambo_256k[256 KB]` — in IRAM BSS (zero Flash cost) — compilato solo
-quando `USE_RAMBO_256K` è definita; funziona in entrambe le modalità PBI e CCTL.
+`extended_rambo_256k[256 KB]` — in IRAM BSS (zero Flash cost) — sempre presente
+nel firmware; attivato a runtime solo se `PIN_RAMBO_EN` è HIGH al boot.
 
 ### Pre-build automatico del driver 6502
 

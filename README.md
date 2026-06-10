@@ -425,6 +425,17 @@ The operating mode is selected at compile time via `VERA_BOARD_IS_PBI` in `main.
 | `1` (default) | PBI | $D100–$D1FF, $D600–$D7FF, $D800–$DFFF | write `0x80` to $D1FF |
 | `0`           | CCTL | $D500–$D5FF                           | write `0x80` to $D5FF |
 
+The **RAMbo 256 KB** emulator is always compiled in and enabled at runtime via **GPIO 3**
+(`PIN_RAMBO_EN`, QFN56 pin 8) — no recompilation needed:
+
+| GPIO 3 at boot | Effect |
+|----------------|--------|
+| Pull-up 10 kΩ → VCC (HIGH) | RAMbo enabled — 256 KB bank-switched at $4000–$7FFF; PORTB ($D301) bit 4 selects active/inactive |
+| Pull-down 10 kΩ → GND (LOW) | RAMbo disabled — $4000–$7FFF not intercepted |
+
+Works in both PBI and CCTL mode. `portb_rambo` initialises to `0xFF` (bit 4 = 1) so RAMbo
+starts inactive even when enabled, until the OS writes $D301.
+
 #### Programming ESP32
 The firmware is built with **PlatformIO** (install via `pip install platformio`):
 ```bash
@@ -999,6 +1010,17 @@ La modalità operativa è scelta a **tempo di compilazione** tramite `VERA_BOARD
 |---------------------|----------|--------------|-----------------|
 | `1` (default) | PBI  | $D100–$D1FF, $D600–$D7FF, $D800–$DFFF | write `0x80` su $D1FF |
 | `0`           | CCTL | $D500–$D5FF                           | write `0x80` su $D5FF |
+
+L'emulatore **RAMbo 256 KB** è sempre compilato nel firmware e abilitato a runtime tramite
+**GPIO 3** (`PIN_RAMBO_EN`, QFN56 pin 8) — nessuna ricompilazione necessaria:
+
+| GPIO 3 al boot | Effetto |
+|----------------|---------|
+| Pull-up 10 kΩ → VCC (HIGH) | RAMbo abilitato — 256 KB bank-switched a $4000–$7FFF; bit 4 di PORTB ($D301) seleziona attivo/inattivo |
+| Pull-down 10 kΩ → GND (LOW) | RAMbo disabilitato — $4000–$7FFF non intercettato |
+
+Funziona in entrambe le modalità PBI e CCTL. `portb_rambo` si inizializza a `0xFF`
+(bit 4 = 1) quindi RAMbo parte inattivo anche se abilitato, finché l'OS non scrive $D301.
 
 #### Programmazione ESP32
 Il firmware viene compilato con **PlatformIO** (installare con `pip install platformio`):
