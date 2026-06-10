@@ -143,7 +143,9 @@ La modalità PBI/CCTL non è più selezionata da ambienti separati ma dalla macr
 \subsection{Interfacciamento Bus}
 L'ESP32 legge il bus indirizzi completo \textbf{A0--A15} e i segnali \texttt{PHI2} e \texttt{R/W\_} direttamente dai propri GPIO ad ogni ciclo di clock. \textbf{Non esiste alcuna logica esterna di pre-decodifica degli indirizzi}: i segnali \texttt{D1XX\_N}, \texttt{ROM\_SEL\_N} e \texttt{RAM\_SEL\_N} del progetto precedente sono stati eliminati. La decodifica è interamente software in \texttt{decode\_addr()}, che restituisce un indirizzo a 16\,bit senza ambiguità di pagina.
 
+\begin{sloppypar}
 I quattro TXS0108E (U1--U4) svolgono esclusivamente adattamento di livello 5\,V\,$\leftrightarrow$\,3.3\,V:
+\end{sloppypar}
 
 \begin{itemize}
     \item {\bfseries U1 — Bus Dati D0--D7 (GPIO\,4--11, Bank-0 bit 4--11):} bidirezionale. Il firmware abilita le uscite con \texttt{GPIO.enable\_w1ts} solo durante i cicli di lettura che richiedono risposta dell'ESP32 (ROM \$D800--\$DFFF, RAM \$D600--\$D7FF, RAMbo \$4000--\$7FFF).
@@ -163,6 +165,7 @@ I pin fisici del package QFN56 sono numerati 1--56 (più il pad GND centrale). L
 \textbf{Nota importante:} il MCU \emph{richiede} un \textbf{quarzo esterno a 40\,MHz} collegato ai pin dedicati analogici \textbf{XTAL\_P} (pin\,56) e \textbf{XTAL\_N} (pin\,55). L'oscillatore RC interno è limitato al dominio RTC e non è in grado di pilotare il PLL della CPU a 240\,MHz; senza quarzo il chip non si avvia. Vedere la sezione~\ref{sec:xtal} per il circuito consigliato.
 
 \begin{center}
+\resizebox{\linewidth}{!}{%
 \begin{tabular}{lcclll}
 \toprule
 \textbf{Segnale} & \textbf{GPIO} & \textbf{Pin QFN56} & \textbf{IO MUX} & \textbf{Dir.} & \textbf{Note} \\
@@ -214,7 +217,8 @@ RAMBO\_EN  &  3 &  8 & GPIO3  & IN  & RAMbo enable: pull-up 10\,k$\Omega$→VCC 
 UART TX & 43 & 49 & U0TXD & OUT & Serial debug @ 115200 baud \\
 UART RX & 44 & 50 & U0RXD & IN  & non utilizzato in firmware \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{center}
 
 \subsection*{Decodifica indirizzo (16 bit)}
@@ -226,9 +230,11 @@ UART RX & 44 & 50 & U0RXD & IN  & non utilizzato in firmware \\
 \[
 \text{RAM } \$\text{D600--\$D7FF}: \quad \texttt{ram\_pbi[addr \& 0x1FF]} \quad (512\,\text{B},\; 9\,\text{bit A0--A8})
 \]
-\[
-\text{RAMbo } \$\text{4000--\$7FFF}: \quad \texttt{extended\_rambo\_256k[(bank} \ll 14) \mid \text{(addr \& 0x3FFF)]} \quad (256\,\text{KB},\; 16\,\text{banchi})
-\]
+\begin{multline*}
+\text{RAMbo } \$\text{4000--\$7FFF}: \\
+\quad\texttt{extended\_rambo\_256k[(bank} \ll 14) \mid \text{(addr \& 0x3FFF)]}
+\quad (256\,\text{KB},\; 16\,\text{banchi})
+\end{multline*}
 
 \subsection*{GPIO disponibili}
 
@@ -242,7 +248,7 @@ Con A12--A15 aggiunti e \texttt{RAMBO\_EN} (GPIO\,3), tutti i GPIO utilizzabili 
 L'ESP32-S3FN8 richiede un quarzo esterno da \textbf{40\,MHz} per generare il riferimento PLL interno che alimenta la CPU a 240\,MHz, l'interfaccia flash e i divisori UART. I pin sono \emph{analogici dedicati}: non configurabili via software, non condivisi con GPIO.
 
 \begin{center}
-\begin{tabular}{ccl}
+\begin{tabular}{ccp{8cm}}
 \toprule
 \textbf{Pin QFN56} & \textbf{Segnale} & \textbf{Note} \\
 \midrule
@@ -264,6 +270,7 @@ XTAL_N (55) --[C2 10pF]-- GND
 \end{center}
 
 \begin{center}
+\resizebox{\linewidth}{!}{%
 \begin{tabular}{lll}
 \toprule
 \textbf{Componente} & \textbf{Valore} & \textbf{Note} \\
@@ -272,7 +279,8 @@ X1 -- quarzo & 40\,MHz, SMD 3225 o 2016 & $\pm$10\,ppm; verificare $C_L$ dal dat
 C1, C2 -- condensatori di carico & 10\,pF, 0402, $\pm$5\,\% & $C_{ext}=2C_L - C_{stray}$;\; $C_{stray}\approx 3$--5\,pF \\
 Rs -- resistenza serie & 0--33\,$\Omega$ (opzionale) & Limita il drive dell'oscillatore \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{center}
 
 \noindent\textbf{Regole di layout PCB:} tracce XTAL\_P/N più corte possibile ($<$5\,mm); condensatori di carico posizionati ai pad del chip, non al corpo del quarzo; piano di massa solido sotto l'area del quarzo; isolamento dalle tracce PHI2, clock CPU 240\,MHz e bus dati D0--D7.
@@ -461,8 +469,8 @@ La logica principale del firmware è contenuta nel \texttt{MonitorTask}, che vie
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}[
-    scale=0.65, transform shape,
-    node distance=1.6cm and 1.2cm,
+    scale=0.50, transform shape,
+    node distance=1.2cm and 1.0cm,
     base/.style={draw, text width=5cm, align=center, minimum height=0.9cm},
     proc/.style={base, rectangle, fill=blue!10},
     test/.style={base, diamond, aspect=2, text width=4cm, fill=orange!15},
@@ -487,7 +495,7 @@ La logica principale del firmware è contenuta nel \texttt{MonitorTask}, che vie
     \node[proc, below=of check_rw, xshift=-3cm]   (bus_drv)  {bus\_drive():\\ROM / RAM PBI / RAMbo};
     \node[proc, below=of check_rw, xshift=+3cm]   (wr_data)  {Cattura dato;\\aggiorna selected;\\snoop PBCTL/PORTB; RAMbo write};
 
-    \node[proc, below=3.5cm of check_rw] (phi2_low)  {Spin-wait discesa PHI2};
+    \node[proc, below=2.5cm of check_rw] (phi2_low)  {Spin-wait discesa PHI2};
     \node[proc, below=of phi2_low]       (release)   {bus\_release(); MPD HIGH;\\EXTSEL\_N HIGH; DEV\_SEL\_N HIGH};
 
     % Connessioni principali
@@ -548,6 +556,7 @@ La revisione del firmware e della mappatura hardware ha chiarito e corretto i se
   \textbf{snoopa} in modo passivo. La distinzione operativa è:
 
   \begin{center}
+  \resizebox{\linewidth}{!}{%
   \begin{tabular}{lll}
   \toprule
   \textbf{Indirizzo} & \textbf{Chi risponde} & \textbf{Ruolo ESP32} \\
@@ -555,7 +564,8 @@ La revisione del firmware e della mappatura hardware ha chiarito e corretto i se
   \$D301 / \$D303 & 6520 PIA (hardware reale) & Solo snooping — non pilota mai D0--D7 \\
   \$4000--\$7FFF  & ESP32 (RAMbo window)      & Attivo: EXTSEL\_N + pilota D0--D7 \\
   \bottomrule
-  \end{tabular}
+  \end{tabular}%
+  }
   \end{center}
 
   Quando il 6502 scrive a \$D303 o \$D301, il 6520 riceve e processa la transazione;
@@ -582,10 +592,12 @@ La revisione del firmware e della mappatura hardware ha chiarito e corretto i se
   \item \textbf{GPIO\,15 e GPIO\,16} (pad RTC \texttt{XTAL\_32K\_P}/\texttt{N}): il progetto non impiega quarzo da 32\,kHz; i pad sono utilizzati come normali GPIO per segnali indirizzo. Il MCU richiede invece un quarzo esterno a \textbf{40\,MHz} sulle pad dedicate \textbf{XTAL\_P} (pin\,56) e \textbf{XTAL\_N} (pin\,55) — senza di esso il chip non si avvia (vedere sezione~\ref{sec:xtal}).
 \end{itemize}
 
+\begin{sloppypar}
 Il firmware supporta le due modalità (\texttt{VERA\_BOARD\_IS\_PBI=1} PBI,
 \texttt{VERA\_BOARD\_IS\_PBI=0} CCTL) in un unico ambiente di build
 (\texttt{esp32s3fn8}), senza duplicazione di codice. La tabella dei pin fisici
 del package QFN56 consente di realizzare il PCB direttamente dalla documentazione
 senza ambiguità tra numero GPIO logico e pad fisico.
+\end{sloppypar}
 
 \end{document}
