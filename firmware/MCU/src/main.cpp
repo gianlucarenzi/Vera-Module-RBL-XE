@@ -232,6 +232,32 @@ static void IRAM_ATTR MonitorTask(void *arg)
 
     bool vera_board_is_pbi = VERA_BOARD_IS_PBI;
 
+    /*
+     * Startup sync sequence — executed once before the hot loop:
+     *  1. Release VERA FPGA from reset → starts loading bitstream from SPI flash.
+     *  2. Poll CDONE until HIGH (ICE40UP5K typically < 100 ms).
+     *  3. Release Atari from reset → bus goes live; hot loop must be ready.
+     */
+    GPIO.out1_w1ts.val = (1UL << (PIN_CRESET - 32));
+    Serial.println("[VeraX16] VERA: released from reset, waiting CDONE...");
+    {
+        uint32_t elapsed_ms = 0u;
+        while (!(GPIO.in1.val & (1UL << (PIN_CDONE - 32))))
+        {
+            vTaskDelay(1);
+            elapsed_ms += portTICK_PERIOD_MS;
+            if (elapsed_ms >= 5000u)
+            {
+                Serial.println("[VeraX16] VERA: CDONE timeout — FPGA not configured!");
+                break;
+            }
+        }
+        if (elapsed_ms < 5000u)
+            Serial.printf("[VeraX16] VERA: CDONE OK (~%u ms)\n", elapsed_ms);
+    }
+    GPIO.out1_w1ts.val = (1UL << (PIN_ARESET - 32));
+    Serial.println("[VeraX16] ATARI: released from reset — bus active");
+
     for (;;)
     {
         /* 1. Wait for PHI2 rising edge.
@@ -383,6 +409,13 @@ void setup(void)
     gpio_reset_pin((gpio_num_t)PIN_EXTSEL_N);  /* GPIO 41 */
     gpio_reset_pin((gpio_num_t)PIN_MPD);       /* GPIO 42 */
 
+    /* Hold Atari and VERA in reset immediately — released by MonitorTask
+     * only after CDONE confirms the FPGA bitstream is loaded. */
+    pinMode(PIN_ARESET, OUTPUT);
+    digitalWrite(PIN_ARESET, LOW);
+    pinMode(PIN_CRESET, OUTPUT);
+    digitalWrite(PIN_CRESET, LOW);
+
     /* Initialize Serial for Debug (UART0 default pins 43/44) */
     Serial.begin(115200, SERIAL_8N1, PIN_UART_RX, PIN_UART_TX);
 
@@ -427,12 +460,6 @@ void setup(void)
     gpio_config(&cfg);
 
     /* Output Signal Initialization */
-    pinMode(PIN_ARESET, OUTPUT);
-    digitalWrite(PIN_ARESET, HIGH);
-
-    pinMode(PIN_CRESET, OUTPUT);
-    digitalWrite(PIN_CRESET, HIGH);
-
     pinMode(PIN_EXTSEL_N, OUTPUT);
     digitalWrite(PIN_EXTSEL_N, HIGH);
 
