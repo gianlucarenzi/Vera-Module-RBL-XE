@@ -437,8 +437,11 @@ The **RAMbo 256 KB** emulator is always compiled in and enabled at runtime via *
 | Pull-up 10 kΩ → VCC (HIGH) | RAMbo enabled — 256 KB bank-switched at $4000–$7FFF; PORTB ($D301) bit 4 selects active/inactive |
 | Pull-down 10 kΩ → GND (LOW) | RAMbo disabled — $4000–$7FFF not intercepted |
 
-Works in both PBI and CCTL mode. `portb_rambo` initialises to `0xFF` (bit 4 = 1) so RAMbo
-starts inactive even when enabled, until the OS writes $D301.
+Works in both PBI and CCTL mode. The hot loop snoops both **PBCTL** (`$D303`) and
+**PORTB** (`$D301`): writes to `$D301` update the bank-selection register **only when**
+PBCTL bit 2 = 1 (output register selected). When bit 2 = 0, `$D301` addresses the PIA
+6520 DDR and the write is ignored for bank-switching purposes. `PORTB` initialises to
+`0xFF` (RAME = 1, RAMbo inactive); `PBCTL` to `0x00` (bit 2 = 0, DDR exposed).
 
 #### Programming ESP32
 The firmware is built with **PlatformIO** (install via `pip install platformio`):
@@ -1027,8 +1030,11 @@ L'emulatore **RAMbo 256 KB** è sempre compilato nel firmware e abilitato a runt
 | Pull-up 10 kΩ → VCC (HIGH) | RAMbo abilitato — 256 KB bank-switched a $4000–$7FFF; bit 4 di PORTB ($D301) seleziona attivo/inattivo |
 | Pull-down 10 kΩ → GND (LOW) | RAMbo disabilitato — $4000–$7FFF non intercettato |
 
-Funziona in entrambe le modalità PBI e CCTL. `portb_rambo` si inizializza a `0xFF`
-(bit 4 = 1) quindi RAMbo parte inattivo anche se abilitato, finché l'OS non scrive $D301.
+Funziona in entrambe le modalità PBI e CCTL. Il hot loop snoopa sia **PBCTL** (`$D303`)
+sia **PORTB** (`$D301`): le write a `$D301` aggiornano il registro di selezione banco
+**solo se** PBCTL bit 2 = 1 (Output Register selezionato). Quando bit 2 = 0, `$D301`
+indirizza il DDR della PIA 6520 e la write viene ignorata. `PORTB` si inizializza a
+`0xFF` (RAME = 1, RAMbo inattivo); `PBCTL` a `0x00` (bit 2 = 0, DDR esposto).
 
 #### Programmazione ESP32
 Il firmware viene compilato con **PlatformIO** (installare con `pip install platformio`):

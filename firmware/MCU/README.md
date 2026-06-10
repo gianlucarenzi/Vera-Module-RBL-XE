@@ -188,13 +188,20 @@ L'ESP32 emula una scheda **RAMbo 256 KB** bank-switched a $4000–$7FFF.
 Funziona sia in PBI mode sia in CCTL mode — è indipendente da `VERA_BOARD_IS_PBI`.
 Il codice è sempre compilato nel firmware; l'abilitazione è hardware tramite
 `PIN_RAMBO_EN` (GPIO 3, QFN56 pin 8), letto una sola volta in `setup()`.
-Il meccanismo è identico all'hardware originale:
+Il meccanismo è identico all'hardware originale. La PIA 6520 dell'Atari espone due
+registri sovrapposti a `$D301` — Output Register e Data Direction Register (DDR) — la
+scelta dipende da **PBCTL** (`$D303`) bit 2 (CRB-2):
 
-| PORTB bit | Significato |
-|-----------|-------------|
-| 4 = **0** | RAMbo **attivo** — finestra $4000–$7FFF → banco selezionato |
-| 4 = **1** | RAMbo disabilitato — RAM interna Atari risponde normalmente |
-| 6,5,3,2   | Selezione banco (0–15): `bank = ((portb>>2)&0x03)\|((portb>>3)&0x0C)` |
+| PBCTL bit 2 | Registro accessibile a $D301 |
+|-------------|------------------------------|
+| **0** | Data Direction Register (DDR) — write **ignorate** ai fini del bank-switching |
+| **1** | Output Register = **PORTB** — write **catturate** come selezione banco |
+
+| PORTB bit | Nome | Significato |
+|-----------|------|-------------|
+| 4 = **0** | **RAME** | RAMbo **attivo** — finestra $4000–$7FFF → banco selezionato; EXTSEL\_N asserito |
+| 4 = **1** | RAME | RAMbo disabilitato — RAM interna Atari risponde normalmente |
+| 6,5,3,2   | B3:B0 | Selezione banco (0–15): `bank = ((portb>>2)&0x03)\|((portb>>3)&0x0C)` |
 
 Tabella dei 16 valori PORTB ($D301):
 
@@ -217,15 +224,25 @@ Tabella dei 16 valori PORTB ($D301):
 | 14 | $EB | 11101011 | bit 3,5,6 |
 | 15 | $EF | 11101111 | bit 2,3,5,6 |
 
-Il firmware:
-1. **Snoopa** ogni write a $D301 nel hot loop e aggiorna `portb_rambo`.
-2. Quando `rambo_active` (bit 4 = 0) e l'indirizzo è in $4000–$7FFF:
+Il firmware nel hot loop:
+1. **Snoopa `$D303`** (PBCTL) ad ogni write e aggiorna `PBCTL`.
+2. **Snoopa `$D301`** (PORTB) solo se `PBCTL` bit 2 = 1 — altrimenti è un write DDR e viene ignorato.
+3. Quando `rambo_active` (RAME = 0 e hardware presente) e l'indirizzo è in $4000–$7FFF:
    - Asserisce **EXTSEL\_N** per silenziare la RAM interna dell'Atari.
-   - **Lettura**: guida D0–D7 con il byte dal banco corrispondente in `extended_rambo_256k`.
+   - **Lettura**: guida D0–D7 con il byte dal banco in `extended_rambo_256k`.
    - **Scrittura**: memorizza il dato nel banco corrispondente.
 
-`portb_rambo` è inizializzato a `0xFF` (bit 4 = 1 → RAMbo disabilitato) finché il
-sistema operativo non esegue il primo write a $D301.
+Sequenza tipica di init del sistema operativo Atari:
+
+| Step | Write | Effetto |
+|------|-------|---------|
+| 1 | `$00` → `$D303` | PBCTL bit 2 = 0 → DDR selezionato a $D301 |
+| 2 | `$FF` → `$D301` | Write DDR (tutti output) — **ignorata** dal firmware |
+| 3 | `$34` → `$D303` | PBCTL bit 2 = 1 → Output Register selezionato a $D301 |
+| 4 | `$NN` → `$D301` | Selezione banco — **catturata** e salvata in `PORTB` |
+
+`PORTB` è inizializzato a `0xFF` (RAME = 1 → RAMbo disabilitato);
+`PBCTL` a `0x00` (bit 2 = 0 → DDR esposto a $D301).
 
 ### Area RAM PBI
 

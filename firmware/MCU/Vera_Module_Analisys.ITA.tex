@@ -526,9 +526,25 @@ La revisione del firmware e della mappatura hardware ha chiarito e corretto i se
 
   \item \textbf{Canali U3 liberati}: poiché \texttt{D1XX\_N} e \texttt{ROM\_SEL\_N} non passano più per U3~(TXS0108E), i canali A6/B6 e A7/B7 risultano disponibili. Il canale A6/B6 è ora assegnato a MPD (GPIO\,42, output ESP32 \texttt{→} bus Atari 5\,V); A7/B7 rimane di riserva.
 
+  \item \textbf{Emulazione PIA 6520 — PBCTL\,(\$D303) e PORTB\,(\$D301):}
+  la PIA 6520 dell'Atari espone due registri sovrapposti a \$D301:
+  il \emph{Data Direction Register} (DDR) quando PBCTL bit\,2\,=\,0,
+  e l'\emph{Output Register} (PORTB, bank selection) quando PBCTL bit\,2\,=\,1.
+  Il firmware snoopa \$D303 ad ogni write cycle e aggiorna \texttt{PBCTL};
+  le write a \$D301 aggiornano \texttt{PORTB} \textbf{solo} quando
+  \texttt{PBCTL\,\&\,0x04\,!=\,0}.
+  Senza questa qualifica, le write DDR della sequenza di init del sistema operativo
+  (tipicamente \texttt{0xFF}~→~\$D301 con \texttt{PBCTL}~=~0) verrebbero
+  erroneamente interpretate come selezioni di banco.
+  Rif.: datasheet Motorola\,6520 PIA; Altirra Hardware Reference Manual~\S8.
+
   \item \textbf{GPIO\,15 e GPIO\,16} (pad RTC \texttt{XTAL\_32K\_P}/\texttt{N}): il progetto non impiega quarzo da 32\,kHz; i pad sono utilizzati come normali GPIO per segnali indirizzo. Il MCU richiede invece un quarzo esterno a \textbf{40\,MHz} sulle pad dedicate \textbf{XTAL\_P} (pin\,56) e \textbf{XTAL\_N} (pin\,55) — senza di esso il chip non si avvia (vedere sezione~\ref{sec:xtal}).
 \end{itemize}
 
-Il firmware supporta le due modalità (\texttt{BUS\_MODE=0} PBI, \texttt{BUS\_MODE=1} CCTL) e garantisce portabilità su hardware diverso senza duplicazione di codice. La tabella dei pin fisici del package QFN56 consente di realizzare il PCB direttamente dalla documentazione senza ambiguità tra numero GPIO logico e pad fisico.
+Il firmware supporta le due modalità (\texttt{VERA\_BOARD\_IS\_PBI=1} PBI,
+\texttt{VERA\_BOARD\_IS\_PBI=0} CCTL) in un unico ambiente di build
+(\texttt{esp32s3fn8}), senza duplicazione di codice. La tabella dei pin fisici
+del package QFN56 consente di realizzare il PCB direttamente dalla documentazione
+senza ambiguità tra numero GPIO logico e pad fisico.
 
 \end{document}
