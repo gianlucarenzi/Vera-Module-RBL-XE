@@ -122,6 +122,16 @@ static IRAM_ATTR uint8_t  ram_pbi[512];     /* 512B RAM at $D600-$D7FF */
 /* 256 KB extended RAM (RAMbo) — IRAM BSS: risiede in IRAM senza occupare Flash. */
 static uint8_t extended_rambo_256k[256 * 1024] __attribute__((section(".iram0.bss")));
 
+/*
+ * PORTB ($D301) snapshot — usato per il bank switching RAMbo.
+ * Bit 4 = 0: RAMbo attivo ($4000-$7FFF → banco selezionato).
+ * Bit 4 = 1: RAMbo disabilitato (RAM interna Atari risponde).
+ * Bank (0-15) estratto dai bit 6,5,3,2 di PORTB:
+ *   bank = ((portb >> 2) & 0x03) | ((portb >> 3) & 0x0C)
+ * Inizializzato a 0xFF = RAMbo disabilitato fino al primo write del 6502.
+ */
+static IRAM_ATTR uint8_t portb_rambo = 0xFFu;
+
 static QueueHandle_t eventQueue;
 
 #define PBI_DEV_ID 0x80u /* PBI Device ID bit 7 */
@@ -240,6 +250,12 @@ static void IRAM_ATTR MonitorTask(void *arg)
         bool is_cctl_range = is_d5xx && (off8 != 0xFFu);
         bool is_cctl_latch = is_d5xx && (off8 == 0xFFu);
 
+        /* RAMbo: 256 KB bank-switched at $4000-$7FFF (PBI mode only).
+         * Active when bit 4 of PORTB ($D301) = 0.
+         * Bank (0-15) from PORTB bits 6,5,3,2: bank = ((portb>>2)&0x03)|((portb>>3)&0x0C) */
+        bool is_rambo_window = (addr >= 0x4000u && addr <= 0x7FFFu);
+        bool rambo_active    = vera_board_is_pbi && ((portb_rambo & 0x10u) == 0u);
+
         /* 3. Assert control signals atomically in one ee.wr_mask_gpio_out instruction.
          *    Previously: up to 3 separate APB writes (~18 cycles total).
          *    Now: 1 TIE instruction (~1 cycle). */
@@ -262,6 +278,10 @@ static void IRAM_ATTR MonitorTask(void *arg)
                     if (is_vera_range)
                         ctrl &= ~DEDIC_OUT_DEVSELN;
                 }
+
+                /* RAMbo: suppress Atari internal RAM in the bank window */
+                if (rambo_active && is_rambo_window)
+                    ctrl &= ~DEDIC_OUT_EXTSEL;
             }
             else
             {
@@ -287,6 +307,11 @@ static void IRAM_ATTR MonitorTask(void *arg)
                     bus_drive(ram_pbi[addr & 0x1FFu]);
                 }
             }
+            if (rambo_active && is_rambo_window)
+            {
+                uint8_t bank = ((portb_rambo >> 2) & 0x03u) | ((portb_rambo >> 3) & 0x0Cu);
+                bus_drive(extended_rambo_256k[((uint32_t)bank << 14) | (addr & 0x3FFFu)]);
+            }
             /* CCTL mode: no data bus driving */
         }
         else
@@ -306,6 +331,9 @@ static void IRAM_ATTR MonitorTask(void *arg)
                         xQueueSend(eventQueue, &selected, 0);
                     }
                 }
+                /* RAMbo bank switch: snoop PORTB writes at $D301 */
+                if (addr == 0xD301u)
+                    portb_rambo = data;
             }
             else
             {
@@ -318,6 +346,12 @@ static void IRAM_ATTR MonitorTask(void *arg)
                         xQueueSend(eventQueue, &selected, 0);
                     }
                 }
+            }
+            /* RAMbo write: store data into the active bank */
+            if (rambo_active && is_rambo_window)
+            {
+                uint8_t bank = ((portb_rambo >> 2) & 0x03u) | ((portb_rambo >> 3) & 0x0Cu);
+                extended_rambo_256k[((uint32_t)bank << 14) | (addr & 0x3FFFu)] = data;
             }
         }
 

@@ -146,13 +146,55 @@ operativa è scelta tramite la macro `VERA_BOARD_IS_PBI` in `main.cpp`:
 L'ESP32 non guida mai D0–D7 in CCTL mode; `build_drive_lut()` non viene
 chiamata. Nessuna RAM (`ram_pbi`) né ROM (`pbi_driver`) esposta al 6502.
 
-### Area RAM condivisa
+### Emulatore RAMbo 256 KB (solo PBI mode)
 
-`ram_pbi[512]` — esposta a $D600–$D7FF in PBI mode — è l'unica area di
-scambio dati tra ESP32 e 6502; non esiste un array di registri interni separato.
+L'ESP32 emula una scheda **RAMbo 256 KB** bank-switched a $4000–$7FFF.
+Il meccanismo è identico all'hardware originale:
 
-`extended_rambo_256k[256 KB]` — in IRAM BSS (zero Flash cost) — è disponibile
-in entrambe le modalità come buffer interno all'ESP32.
+| PORTB bit | Significato |
+|-----------|-------------|
+| 4 = **0** | RAMbo **attivo** — finestra $4000–$7FFF → banco selezionato |
+| 4 = **1** | RAMbo disabilitato — RAM interna Atari risponde normalmente |
+| 6,5,3,2   | Selezione banco (0–15): `bank = ((portb>>2)&0x03)\|((portb>>3)&0x0C)` |
+
+Tabella dei 16 valori PORTB ($D301):
+
+| Banco | PORTB (hex) | PORTB (bin) | Bit attivi |
+|-------|-------------|-------------|------------|
+| 0  | $83 | 10000011 | — |
+| 1  | $87 | 10000111 | bit 2 |
+| 2  | $8B | 10001011 | bit 3 |
+| 3  | $8F | 10001111 | bit 2,3 |
+| 4  | $A3 | 10100011 | bit 5 |
+| 5  | $A7 | 10100111 | bit 2,5 |
+| 6  | $AB | 10101011 | bit 3,5 |
+| 7  | $AF | 10101111 | bit 2,3,5 |
+| 8  | $C3 | 11000011 | bit 6 |
+| 9  | $C7 | 11000111 | bit 2,6 |
+| 10 | $CB | 11001011 | bit 3,6 |
+| 11 | $CF | 11001111 | bit 2,3,6 |
+| 12 | $E3 | 11100011 | bit 5,6 |
+| 13 | $E7 | 11100111 | bit 2,5,6 |
+| 14 | $EB | 11101011 | bit 3,5,6 |
+| 15 | $EF | 11101111 | bit 2,3,5,6 |
+
+Il firmware:
+1. **Snoopa** ogni write a $D301 nel hot loop e aggiorna `portb_rambo`.
+2. Quando `rambo_active` (bit 4 = 0) e l'indirizzo è in $4000–$7FFF:
+   - Asserisce **EXTSEL\_N** per silenziare la RAM interna dell'Atari.
+   - **Lettura**: guida D0–D7 con il byte dal banco corrispondente in `extended_rambo_256k`.
+   - **Scrittura**: memorizza il dato nel banco corrispondente.
+
+`portb_rambo` è inizializzato a `0xFF` (bit 4 = 1 → RAMbo disabilitato) finché il
+sistema operativo non esegue il primo write a $D301.
+
+### Area RAM PBI
+
+`ram_pbi[512]` — esposta a $D600–$D7FF in PBI mode — è l'area di
+scambio dati tra ESP32 e 6502.
+
+`extended_rambo_256k[256 KB]` — in IRAM BSS (zero Flash cost) — usato
+dall'emulatore RAMbo in PBI mode.
 
 ### Pre-build automatico del driver 6502
 
