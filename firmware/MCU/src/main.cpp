@@ -117,13 +117,17 @@ static inline uint8_t IRAM_ATTR decode_data(uint32_t lo)
  * =========================================================================== */
 
 static IRAM_ATTR uint32_t lut_drive[256];   /* Lookup table for fast data bus drive */
-static IRAM_ATTR uint8_t  int_regs[256];    /* ESP32 internal registers */
 static IRAM_ATTR uint8_t  ram_pbi[512];     /* 512B RAM at $D600-$D7FF */
 
 /* 256 KB extended RAM (RAMbo) — IRAM BSS: risiede in IRAM senza occupare Flash. */
 static uint8_t extended_rambo_256k[256 * 1024] __attribute__((section(".iram0.bss")));
 
 static QueueHandle_t eventQueue;
+
+#define PBI_DEV_ID 0x80u /* PBI Device ID bit 7 */
+
+#define VERA_BOARD_IS_PBI 0x01 /* Default as PBI */
+//#define VERA_BOARD_IS_PBI 0x00 /* if CCTL */
 
 /* ===========================================================================
  * Bus Drive/Release Logic
@@ -207,6 +211,8 @@ static void IRAM_ATTR MonitorTask(void *arg)
     bool selected = false;
     bus_release();
 
+    bool vera_board_is_pbi = VERA_BOARD_IS_PBI;
+
     for (;;)
     {
         /* 1. Wait for PHI2 rising edge.
@@ -227,11 +233,12 @@ static void IRAM_ATTR MonitorTask(void *arg)
         bool is_d8xx = (addr >= 0xD800u && addr <= 0xDFFFu);
 
         bool is_vera_range = is_d1xx && (off8 <= 0x1Fu);
-        bool is_int_range  = is_d1xx && (off8 >= 0x20u && off8 <= 0xFEu);
         bool is_vcs_latch  = is_d1xx && (off8 == 0xFFu);
 
-        /* CCTL address range */
-        bool is_d5xx = (addr >= 0xD500u && addr <= 0xD51Fu);
+        /* CCTL address range ($D500-$D5FF, latch at $D5FF) */
+        bool is_d5xx       = (addr >= 0xD500u && addr <= 0xD5FFu);
+        bool is_cctl_range = is_d5xx && (off8 != 0xFFu);
+        bool is_cctl_latch = is_d5xx && (off8 == 0xFFu);
 
         /* 3. Assert control signals atomically in one ee.wr_mask_gpio_out instruction.
          *    Previously: up to 3 separate APB writes (~18 cycles total).
@@ -239,24 +246,29 @@ static void IRAM_ATTR MonitorTask(void *arg)
         {
             uint8_t ctrl = DEDIC_OUT_CTRL_IDLE;
 
-            if (selected)
+            if (vera_board_is_pbi)
             {
-                /* Disable MMU for PBI accesses to D1xx (except VCS latch) and D6xx */
-                if ((is_d1xx && !is_vcs_latch) || is_d6xx)
-                    ctrl &= ~DEDIC_OUT_EXTSEL;
+                if (selected)
+                {
+                    /* Disable MMU for D1xx (except VCS latch) and D6xx */
+                    if ((is_d1xx && !is_vcs_latch) || is_d6xx)
+                        ctrl &= ~DEDIC_OUT_EXTSEL;
 
-                /* Disable Math Pack for ROM area */
-                if (is_d8xx)
-                    ctrl &= ~DEDIC_OUT_MPD;
+                    /* Disable Math Pack for ROM area */
+                    if (is_d8xx)
+                        ctrl &= ~DEDIC_OUT_MPD;
 
-                /* Chip-select VERA for register accesses */
-                if (is_vera_range)
+                    /* Chip-select VERA for register accesses */
+                    if (is_vera_range)
+                        ctrl &= ~DEDIC_OUT_DEVSELN;
+                }
+            }
+            else
+            {
+                /* CCTL: assert DEV_SEL_N only when selected and in non-latch range */
+                if (selected && is_cctl_range)
                     ctrl &= ~DEDIC_OUT_DEVSELN;
             }
-
-            /* CCTL: assert DEV_SEL_N for D5xx regardless of PBI selection state */
-            if (is_d5xx)
-                ctrl &= ~DEDIC_OUT_DEVSELN;
 
             cpu_ll_write_dedic_gpio_mask(DEDIC_OUT_CTRL_MASK, ctrl);
         }
@@ -264,7 +276,7 @@ static void IRAM_ATTR MonitorTask(void *arg)
         /* 4. Cycle Handling */
         if (is_read)
         {
-            if (selected)
+            if (vera_board_is_pbi && selected)
             {
                 if (is_d8xx)
                 {
@@ -274,11 +286,8 @@ static void IRAM_ATTR MonitorTask(void *arg)
                 {
                     bus_drive(ram_pbi[addr & 0x1FFu]);
                 }
-                else if (is_int_range)
-                {
-                    bus_drive(int_regs[off8]);
-                }
             }
+            /* CCTL mode: no data bus driving */
         }
         else
         {
@@ -286,18 +295,29 @@ static void IRAM_ATTR MonitorTask(void *arg)
              * the PHI2 rising edge (6502 data is stable during all of PHI2 high). */
             uint8_t data = decode_data(GPIO.in);
 
-            if (is_vcs_latch)
+            if (vera_board_is_pbi)
             {
-                bool new_sel = (data == 0x80u);
-                if (new_sel != selected)
+                if (is_vcs_latch)
                 {
-                    selected = new_sel;
-                    xQueueSend(eventQueue, &selected, 0);
+                    bool new_sel = (data == PBI_DEV_ID);
+                    if (new_sel != selected)
+                    {
+                        selected = new_sel;
+                        xQueueSend(eventQueue, &selected, 0);
+                    }
                 }
             }
-            else if (selected && is_int_range)
+            else
             {
-                int_regs[off8] = data;
+                if (is_cctl_latch)
+                {
+                    bool new_sel = (data == PBI_DEV_ID);
+                    if (new_sel != selected)
+                    {
+                        selected = new_sel;
+                        xQueueSend(eventQueue, &selected, 0);
+                    }
+                }
             }
         }
 
@@ -324,12 +344,19 @@ void setup(void)
     /* Initialize Serial for Debug (UART0 default pins 43/44) */
     Serial.begin(115200, SERIAL_8N1, PIN_UART_RX, PIN_UART_TX);
 
-    Serial.println("[VeraX16] Initializing Bus Monitor (PBI $D1xx + CCTL $D5xx)");
-
     memset(extended_rambo_256k, 0x00, sizeof(extended_rambo_256k));
-    memset(int_regs, 0x00, sizeof(int_regs));
-    memset(ram_pbi,  0x00, sizeof(ram_pbi));
-    build_drive_lut();
+
+    if (VERA_BOARD_IS_PBI)
+    {
+        Serial.println("[VeraX16] Mode: PBI ($D1xx / $D6xx / $D8xx, latch $D1FF)");
+        memset(ram_pbi, 0x00, sizeof(ram_pbi));
+        build_drive_lut();
+    }
+    else
+    {
+        Serial.println("[VeraX16] Mode: CCTL ($D5xx, latch $D5FF)");
+    }
+
     eventQueue = xQueueCreate(8, sizeof(bool));
 
     /* Configure GPIO Modes */

@@ -6,9 +6,11 @@ Firmware per il microcontrollore **ESP32-S3FN8** (QFN-56, 8 MB flash integrata,
 dual-core Xtensa LX7 @ 240 MHz) montato sul modulo Vera-Module-RBL-XE.
 
 Il modulo si collega al computer **ATARI XE** tramite il connettore **PBI**
-(Parallel Bus Interface) e tramite il segnale **CCTL** (Cartridge Control).
-Entrambi gli spazi di indirizzo sono gestiti dallo **stesso firmware** a runtime,
-grazie alla decodifica completa del bus indirizzi A0–A15.
+(Parallel Bus Interface) oppure tramite il segnale **CCTL** (Cartridge Control).
+La modalità operativa è selezionata a **tempo di compilazione** tramite la macro
+`VERA_BOARD_IS_PBI` in `main.cpp`: `1` per PBI (default), `0` per CCTL.
+Il bus indirizzi A0–A15 è decodificato completamente via software in entrambe
+le modalità.
 
 ---
 
@@ -24,16 +26,14 @@ Ad ogni ciclo di clock del 6502 (PHI2 @ 1,79 MHz, finestra utile ≈ 279 ns a
    (`ee.get_gpio_in`, 1 ciclo CPU anziché ~6 cicli via APB).
 2. Legge il bus indirizzi A0–A15 e la linea R/W dai registri `GPIO.in` /
    `GPIO.in1.val` (due letture APB sequenziali).
-3. Decodifica l'indirizzo via software (`decode_addr()`) e determina se l'accesso
-   riguarda VERA ($D100–$D11F), il range di interrupt ($D120–$D1FE), il range
-   esteso ($D600–$D7FF), la ROM mappata ($D800–$DFFF) oppure CCTL ($D500–$D51F).
-4. Afferma in modo atomico i segnali di controllo attivi-LOW (EXTSEL\_N,
-   DEV\_SEL\_N, MPD) tramite **Dedicated GPIO out**
-   (`ee.wr_mask_gpio_out`, 1 ciclo CPU — tutti e tre i segnali in un'unica
-   istruzione TIE).
-5. Se l'accesso è in lettura verso VERA, guida il bus dati (D0–D7) con
-   `bus_drive()`, che scrive `GPIO.out` e `GPIO.enable_w1ts` (2 scritture APB,
-   ottimizzato rispetto alle 3 scritture precedenti).
+3. Decodifica l'indirizzo via software (`decode_addr()`) e determina il range
+   attivo in base alla modalità selezionata.
+4. Afferma in modo atomico i segnali di controllo attivi-LOW tramite
+   **Dedicated GPIO out** (`ee.wr_mask_gpio_out`, 1 ciclo CPU — tutti i segnali
+   in un'unica istruzione TIE).
+5. **Solo PBI:** se l'accesso è in lettura verso la ROM ($D800–$DFFF) o la RAM
+   ($D600–$D7FF), guida il bus dati D0–D7 con `bus_drive()` (2 scritture APB).
+   In CCTL mode l'ESP32 non tocca mai il bus dati — è la FPGA a rispondere.
 6. Attende il fronte di discesa di PHI2, rilascia il bus e de-afferma i
    segnali di controllo con un'altra `ee.wr_mask_gpio_out`.
 
@@ -114,21 +114,45 @@ firmware/MCU/
 
 ---
 
-## 4. Firmware Unificato
+## 4. Modalità di Build
 
-Il progetto definisce un singolo ambiente PlatformIO in `platformio.ini`:
+Il progetto compila un unico ambiente PlatformIO (`esp32s3fn8`). La modalità
+operativa è scelta tramite la macro `VERA_BOARD_IS_PBI` in `main.cpp`:
 
-| Ambiente      | Descrizione                                               |
-|---------------|-----------------------------------------------------------|
-| `esp32s3fn8`  | PBI ($D1xx, $D6xx, $D8xx) + CCTL ($D5xx) — runtime       |
+```cpp
+#define VERA_BOARD_IS_PBI 0x01   /* 1 = PBI (default), 0 = CCTL */
+```
 
-Non esiste più la define `BUS_MODE`: lo stesso binario gestisce entrambi gli
-spazi di indirizzo. La distinzione avviene nel hot loop a ogni ciclo PHI2:
-- `$D100–$D1FF` → PBI: EXTSEL\_N, MPD, DEV\_SEL\_N, lettura/scrittura registri VERA
-- `$D500–$D51F` → CCTL: DEV\_SEL\_N (indipendente dallo stato di selezione PBI)
+### Modalità PBI (`VERA_BOARD_IS_PBI = 1`)
 
-Il flag `-D USE_DEDICATED_GPIO` e `-D USE_ESP32_REGISTER_ACCESS` abilitano
-l'hot loop ottimizzato.
+| Range         | Segnali affermati                       | Dati bus               |
+|---------------|-----------------------------------------|------------------------|
+| $D100–$D11F   | EXTSEL\_N + DEV\_SEL\_N (se selezionato) | VERA FPGA risponde     |
+| $D120–$D1FE   | EXTSEL\_N (se selezionato)               | non decodificato       |
+| $D1FF         | latch VCS — write `0x80` per selezionare| —                      |
+| $D600–$D7FF   | EXTSEL\_N (se selezionato)               | ESP32 → `ram_pbi[]`    |
+| $D800–$DFFF   | MPD (se selezionato)                    | ESP32 → `pbi_driver[]` |
+
+`build_drive_lut()` precalcola al boot le bitmask per D0–D7, rendendo
+`bus_drive()` una sola scrittura APB a `GPIO.out`. Solo necessaria in PBI mode.
+
+### Modalità CCTL (`VERA_BOARD_IS_PBI = 0`)
+
+| Range         | Segnali affermati                       | Dati bus               |
+|---------------|-----------------------------------------|------------------------|
+| $D500–$D5FE   | DEV\_SEL\_N (se selezionato)             | VERA FPGA risponde     |
+| $D5FF         | latch CCTL — write `0x80` per selezionare | —                    |
+
+L'ESP32 non guida mai D0–D7 in CCTL mode; `build_drive_lut()` non viene
+chiamata. Nessuna RAM (`ram_pbi`) né ROM (`pbi_driver`) esposta al 6502.
+
+### Area RAM condivisa
+
+`ram_pbi[512]` — esposta a $D600–$D7FF in PBI mode — è l'unica area di
+scambio dati tra ESP32 e 6502; non esiste un array di registri interni separato.
+
+`extended_rambo_256k[256 KB]` — in IRAM BSS (zero Flash cost) — è disponibile
+in entrambe le modalità come buffer interno all'ESP32.
 
 ### Pre-build automatico del driver 6502
 

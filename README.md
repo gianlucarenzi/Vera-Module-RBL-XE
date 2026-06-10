@@ -413,21 +413,22 @@ iceprog -c
 
 #### ESP32 Firmware
 The ESP32-S3FN8 (Core 1 hot loop) handles:
-- **Bus Decoding**: Full software decode of A0–A15 sampled on every PHI2 rising edge — no ambiguity between pages
+- **Bus Decoding**: Full software decode of A0–A15 sampled on every PHI2 rising edge — no page ambiguity
 - **Dedicated GPIO**: Control signals (EXTSEL\_N, DEV\_SEL\_N, MPD) asserted in a single Xtensa TIE instruction (`ee.wr_mask_gpio_out`, 1 CPU cycle) within the 279 ns PHI2-high window
-- **Data Bus Drive**: D0–D7 driven via direct `GPIO.out` register write (2 APB cycles)
+- **Data Bus Drive** *(PBI mode only)*: D0–D7 driven via `GPIO.out` for ROM ($D800–$DFFF) and RAM ($D600–$D7FF) reads; FPGA drives the bus in CCTL mode
 - **Debugging**: UART0 on GPIO43 (TX) / GPIO44 (RX), 115200 baud
 
-A single unified firmware handles both address spaces at runtime:
+The operating mode is selected at compile time via `VERA_BOARD_IS_PBI` in `main.cpp`:
 
-| Environment  | Description                                              |
-|--------------|----------------------------------------------------------|
-| `esp32s3fn8` | PBI ($D1xx, $D6xx, $D8xx) + CCTL ($D5xx) — runtime      |
+| `VERA_BOARD_IS_PBI` | Mode | Active ranges | Selection latch |
+|---------------------|------|---------------|-----------------|
+| `1` (default) | PBI | $D100–$D1FF, $D600–$D7FF, $D800–$DFFF | write `0x80` to $D1FF |
+| `0`           | CCTL | $D500–$D5FF                           | write `0x80` to $D5FF |
 
 #### Programming ESP32
 The firmware is built with **PlatformIO** (install via `pip install platformio`):
 ```bash
-# Build unified firmware (PBI + CCTL)
+# Build firmware (edit VERA_BOARD_IS_PBI in main.cpp before building)
 pio run -e esp32s3fn8
 
 # Flash firmware — connect UART adapter to GPIO43/44
@@ -989,19 +990,20 @@ iceprog -c
 L'ESP32-S3FN8 (hot loop sul Core 1) gestisce:
 - **Decodifica Bus**: Decodifica software completa di A0–A15 campionati ad ogni fronte di salita di PHI2 — nessuna ambiguità di pagina, nessun hardware decoder esterno
 - **Dedicated GPIO**: I segnali di controllo (EXTSEL\_N, DEV\_SEL\_N, MPD) vengono affermati in una singola istruzione Xtensa TIE (`ee.wr_mask_gpio_out`, 1 ciclo CPU) nella finestra PHI2-high di 279 ns
-- **Bus Dati**: D0–D7 pilotati tramite scrittura diretta al registro `GPIO.out` (2 cicli APB)
+- **Bus Dati** *(solo modalità PBI)*: D0–D7 pilotati via `GPIO.out` per letture ROM ($D800–$DFFF) e RAM ($D600–$D7FF); in modalità CCTL è la FPGA a guidare il bus
 - **Debug**: UART0 su GPIO43 (TX) / GPIO44 (RX), 115200 baud
 
-Un unico firmware unificato gestisce entrambi gli spazi di indirizzo a runtime:
+La modalità operativa è scelta a **tempo di compilazione** tramite `VERA_BOARD_IS_PBI` in `main.cpp`:
 
-| Ambiente      | Descrizione                                              |
-|---------------|----------------------------------------------------------|
-| `esp32s3fn8`  | PBI ($D1xx, $D6xx, $D8xx) + CCTL ($D5xx) — runtime      |
+| `VERA_BOARD_IS_PBI` | Modalità | Range attivi | Latch selezione |
+|---------------------|----------|--------------|-----------------|
+| `1` (default) | PBI  | $D100–$D1FF, $D600–$D7FF, $D800–$DFFF | write `0x80` su $D1FF |
+| `0`           | CCTL | $D500–$D5FF                           | write `0x80` su $D5FF |
 
 #### Programmazione ESP32
 Il firmware viene compilato con **PlatformIO** (installare con `pip install platformio`):
 ```bash
-# Compila firmware unificato (PBI + CCTL)
+# Compila firmware (modificare VERA_BOARD_IS_PBI in main.cpp prima di compilare)
 pio run -e esp32s3fn8
 
 # Carica firmware — adattatore UART su GPIO43/44
