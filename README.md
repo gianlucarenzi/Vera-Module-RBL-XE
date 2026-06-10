@@ -83,7 +83,7 @@ Commander X16 computer but has been adapted for ATARI systems. It provides:
 #### ATARI Compatibility
 - **PBI Interface**: Direct connection to ATARI XE systems
 - **Memory Mapping**: $D1XX-$DFXX address space
-- **Bus Decoder**: Full software address decoding in ESP32 — A0–A11 sampled every PHI2 cycle, no external hardware decoder required
+- **Bus Decoder**: Full software address decoding in ESP32 — A0–A15 sampled every PHI2 cycle, no external hardware decoder required
 - **Power Management**: Efficient 5V to 3.3V/1.2V conversion
 
 #### Storage & Programming
@@ -147,7 +147,7 @@ Commander X16 computer but has been adapted for ATARI systems. It provides:
 - **Connectivity**: Wi-Fi 802.11 b/g/n, Bluetooth 5 LE
 - **GPIO**: 45 total (38 usable), all bidirectional
 - **Package**: QFN-56 (7×7 mm)
-- **Role**: Full software 6502-bus controller — reads A0–A11, PHI2, R/W every cycle and drives EXTSEL\_N, DEV\_SEL\_N, MPD in real time
+- **Role**: Full software 6502-bus controller — reads A0–A15, PHI2, R/W every cycle and drives EXTSEL\_N, DEV\_SEL\_N, MPD in real time; handles PBI ($D1xx) and CCTL ($D5xx) in a single unified firmware
 - **Timing**: hot loop on Core 1 at max FreeRTOS priority; control signals asserted via **Dedicated GPIO** Xtensa TIE instructions (`ee.get_gpio_in` / `ee.wr_mask_gpio_out`, 1 CPU cycle) within the 279 ns PHI2-high window of the 1.79 MHz 6502 clock
 
 ### Interface Components
@@ -413,32 +413,25 @@ iceprog -c
 
 #### ESP32 Firmware
 The ESP32-S3FN8 (Core 1 hot loop) handles:
-- **Bus Decoding**: Full software decode of A0–A11 sampled on every PHI2 rising edge
+- **Bus Decoding**: Full software decode of A0–A15 sampled on every PHI2 rising edge — no ambiguity between pages
 - **Dedicated GPIO**: Control signals (EXTSEL\_N, DEV\_SEL\_N, MPD) asserted in a single Xtensa TIE instruction (`ee.wr_mask_gpio_out`, 1 CPU cycle) within the 279 ns PHI2-high window
 - **Data Bus Drive**: D0–D7 driven via direct `GPIO.out` register write (2 APB cycles)
 - **Debugging**: UART0 on GPIO43 (TX) / GPIO44 (RX), 115200 baud
 
-Two firmware images are available (select with PlatformIO environment):
+A single unified firmware handles both address spaces at runtime:
 
-| Environment       | Mode | Description                   |
-|-------------------|------|-------------------------------|
-| `esp32s3fn8-pbi`  | PBI  | Full A0–A11 address decode    |
-| `esp32s3fn8-cctl` | CCTL | Cartridge control mode        |
+| Environment  | Description                                              |
+|--------------|----------------------------------------------------------|
+| `esp32s3fn8` | PBI ($D1xx, $D6xx, $D8xx) + CCTL ($D5xx) — runtime      |
 
 #### Programming ESP32
 The firmware is built with **PlatformIO** (install via `pip install platformio`):
 ```bash
-# Build firmware (PBI mode)
-pio run -e esp32s3fn8-pbi
+# Build unified firmware (PBI + CCTL)
+pio run -e esp32s3fn8
 
-# Flash firmware (PBI mode) — connect UART adapter to GPIO43/44
-pio run -e esp32s3fn8-pbi --target upload
-
-# Build firmware (CCTL mode)
-pio run -e esp32s3fn8-cctl
-
-# Flash firmware (CCTL mode)
-pio run -e esp32s3fn8-cctl --target upload
+# Flash firmware — connect UART adapter to GPIO43/44
+pio run -e esp32s3fn8 --target upload
 ```
 
 > **Note**: USB CDC is disabled because GPIO 19 (USB D−) and GPIO 20 (USB D+) are reused
@@ -665,7 +658,7 @@ computer Commander X16 ma è stato adattato per i sistemi ATARI. Fornisce:
 #### Compatibilità ATARI
 - **Interfaccia PBI**: Connessione diretta ai sistemi ATARI XE/XL
 - **Mappatura Memoria**: Spazio indirizzi $D1XX-$DFXX
-- **Decodificatore Bus**: Decodifica software completa degli indirizzi nell'ESP32 — A0–A11 campionati ad ogni ciclo PHI2, nessun hardware decoder esterno richiesto
+- **Decodificatore Bus**: Decodifica software completa degli indirizzi nell'ESP32 — A0–A15 campionati ad ogni ciclo PHI2, nessun hardware decoder esterno richiesto
 - **Gestione Alimentazione**: Conversione efficiente da 5V a 3.3V/1.2V
 
 #### Storage e Programmazione
@@ -729,7 +722,7 @@ computer Commander X16 ma è stato adattato per i sistemi ATARI. Fornisce:
 - **Connettività**: Wi-Fi 802.11 b/g/n, Bluetooth 5 LE
 - **GPIO**: 45 totali (38 usabili), tutti bidirezionali
 - **Package**: QFN-56 (7×7 mm)
-- **Ruolo**: Controllore bus 6502 completamente software — campiona A0–A11, PHI2, R/W ad ogni ciclo e pilota EXTSEL\_N, DEV\_SEL\_N, MPD tramite istruzioni **Dedicated GPIO** Xtensa TIE (1 ciclo CPU) nella finestra PHI2-high di 279 ns
+- **Ruolo**: Controllore bus 6502 completamente software — campiona A0–A15, PHI2, R/W ad ogni ciclo e pilota EXTSEL\_N, DEV\_SEL\_N, MPD tramite istruzioni **Dedicated GPIO** Xtensa TIE (1 ciclo CPU) nella finestra PHI2-high di 279 ns; gestisce PBI ($D1xx) e CCTL ($D5xx) con un unico firmware unificato
 
 ### Componenti Interfaccia
 
@@ -994,32 +987,25 @@ iceprog -c
 
 #### Firmware ESP32
 L'ESP32-S3FN8 (hot loop sul Core 1) gestisce:
-- **Decodifica Bus**: Decodifica software completa di A0–A11 campionati ad ogni fronte di salita di PHI2 — nessun hardware decoder esterno
+- **Decodifica Bus**: Decodifica software completa di A0–A15 campionati ad ogni fronte di salita di PHI2 — nessuna ambiguità di pagina, nessun hardware decoder esterno
 - **Dedicated GPIO**: I segnali di controllo (EXTSEL\_N, DEV\_SEL\_N, MPD) vengono affermati in una singola istruzione Xtensa TIE (`ee.wr_mask_gpio_out`, 1 ciclo CPU) nella finestra PHI2-high di 279 ns
 - **Bus Dati**: D0–D7 pilotati tramite scrittura diretta al registro `GPIO.out` (2 cicli APB)
 - **Debug**: UART0 su GPIO43 (TX) / GPIO44 (RX), 115200 baud
 
-Sono disponibili due immagini firmware (selezionate tramite ambiente PlatformIO):
+Un unico firmware unificato gestisce entrambi gli spazi di indirizzo a runtime:
 
-| Ambiente          | Modo | Descrizione                      |
-|-------------------|------|----------------------------------|
-| `esp32s3fn8-pbi`  | PBI  | Decodifica completa A0–A11       |
-| `esp32s3fn8-cctl` | CCTL | Modalità cartuccia (CCTL)        |
+| Ambiente      | Descrizione                                              |
+|---------------|----------------------------------------------------------|
+| `esp32s3fn8`  | PBI ($D1xx, $D6xx, $D8xx) + CCTL ($D5xx) — runtime      |
 
 #### Programmazione ESP32
 Il firmware viene compilato con **PlatformIO** (installare con `pip install platformio`):
 ```bash
-# Compila firmware (modalità PBI)
-pio run -e esp32s3fn8-pbi
+# Compila firmware unificato (PBI + CCTL)
+pio run -e esp32s3fn8
 
-# Carica firmware (modalità PBI) — adattatore UART su GPIO43/44
-pio run -e esp32s3fn8-pbi --target upload
-
-# Compila firmware (modalità CCTL)
-pio run -e esp32s3fn8-cctl
-
-# Carica firmware (modalità CCTL)
-pio run -e esp32s3fn8-cctl --target upload
+# Carica firmware — adattatore UART su GPIO43/44
+pio run -e esp32s3fn8 --target upload
 ```
 
 > **Nota**: USB CDC è disabilitato perché GPIO 19 (USB D−) e GPIO 20 (USB D+) sono
