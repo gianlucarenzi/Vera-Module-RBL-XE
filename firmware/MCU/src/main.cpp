@@ -25,6 +25,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
+#include <driver/dedic_gpio.h>
+#include <hal/cpu_ll.h>
 
 #if BUS_MODE == 0
 #include "pbi-driver.h"
@@ -35,25 +37,25 @@
  * =========================================================================== */
 
 /* --- Bank 0 Signals (GPIO 0-31) --- */
-#define PIN_PHI2        1    /* CPU Clock Phase 2 (Pin 16) */
-#define PIN_RW          2    /* Read/Write, High = Read (Pin 17) */
+#define PIN_PHI2        1    /* CPU Clock Phase 2 (Pin 6) */
+#define PIN_RW          2    /* Read/Write, High = Read (Pin 7) */
 
-/* D0-D7: GPIO 4 to 11 (Pins 19-26, contiguous in Bank 0) */
-#define DBUS_MASK       0x00000FF0UL 
+/* D0-D7: GPIO 4 to 11 (Pins 9-16, contiguous in Bank 0) */
+#define DBUS_MASK       0x00000FF0UL
 static const uint8_t DBUS_PINS[8] = { 4, 5, 6, 7, 8, 9, 10, 11 };
 
-/* A0-A9: GPIO 12 to 21 (Pins 27-36, contiguous in Bank 0) */
+/* A0-A9: GPIO 12 to 21 (Pins 17-27, pin 20 = VDD3P3_RTC, not GPIO) */
 #define ABUS_LO_MASK    0x003FF000UL
 
 /* --- Bank 1 Signals (GPIO 32-48) --- */
-#define PIN_A10         35   /* Address Bit 10 (Pin 37) */
-#define PIN_A11         36   /* Address Bit 11 (Pin 38) */
-#define PIN_ARESET      37   /* Atari System Reset Output (Pin 39) */
-#define PIN_CRESET      38   /* Vera Chip Reset Output (Pin 40) */
-#define PIN_CDONE       39   /* Vera Programmed Status Input (Pin 41) */
-#define PIN_DEV_SEL_N   40   /* Vera Chip Select Output (Pin 42, active LOW) */
-#define PIN_EXTSEL_N    41   /* Atari MMU Disable Output (Pin 43, active LOW) */
-#define PIN_MPD         42   /* Math Pack Disable Output (Pin 44, active LOW) */
+#define PIN_A10         35   /* Address Bit 10 (Pin 40) */
+#define PIN_A11         36   /* Address Bit 11 (Pin 41) */
+#define PIN_ARESET      37   /* Atari System Reset Output (Pin 42) */
+#define PIN_CRESET      38   /* Vera Chip Reset Output (Pin 43) */
+#define PIN_CDONE       39   /* Vera Programmed Status Input (Pin 44) */
+#define PIN_DEV_SEL_N   40   /* Vera Chip Select Output (Pin 45, active LOW) */
+#define PIN_EXTSEL_N    41   /* Atari MMU Disable Output (Pin 46, active LOW) */
+#define PIN_MPD         42   /* Math Pack Disable Output (Pin 48, active LOW) */
 
 /* Serial Debug (UART0 default pins on ESP32-S3 QFN56) */
 #define PIN_UART_TX     43   /* UART0 TX (Pin 49) */
@@ -88,15 +90,26 @@ static inline uint8_t IRAM_ATTR decode_data(uint32_t lo)
     return (uint8_t)((lo >> 4) & 0xFFu);
 }
 
-/* Control Signal Assert/Deassert Macros (Bank 1) */
-#define MPD_ASSERT()       GPIO.out1_w1tc.val = (1UL << (PIN_MPD - 32))
-#define MPD_DEASSERT()     GPIO.out1_w1ts.val = (1UL << (PIN_MPD - 32))
-
-#define EXTSEL_ASSERT()    GPIO.out1_w1tc.val = (1UL << (PIN_EXTSEL_N - 32))
-#define EXTSEL_DEASSERT()  GPIO.out1_w1ts.val = (1UL << (PIN_EXTSEL_N - 32))
-
-#define VERA_CS_ASSERT()   GPIO.out1_w1tc.val = (1UL << (PIN_DEV_SEL_N - 32))
-#define VERA_CS_DEASSERT() GPIO.out1_w1ts.val = (1UL << (PIN_DEV_SEL_N - 32))
+/*
+ * Dedicated GPIO channel mapping — ESP32-S3 Xtensa LX7 TIE instructions
+ * (ee.get_gpio_in / ee.wr_mask_gpio_out bypass the APB bus: ~1 cycle vs ~6).
+ *
+ * Input channels  (bit index in cpu_ll_read_dedic_gpio_in() result):
+ *   Ch 0 = PHI2       (GPIO  1)
+ *
+ * Output channels (bit index in cpu_ll_write_dedic_gpio_mask() mask/val):
+ *   Ch 0 = DEV_SEL_N  (GPIO 40)  active LOW
+ *   Ch 1 = EXTSEL_N   (GPIO 41)  active LOW
+ *   Ch 2 = MPD        (GPIO 42)  active LOW
+ *
+ * Input and output channel spaces are independent on ESP32-S3.
+ */
+#define DEDIC_IN_PHI2        (1u << 0)
+#define DEDIC_OUT_DEVSELN    (1u << 0)
+#define DEDIC_OUT_EXTSEL     (1u << 1)
+#define DEDIC_OUT_MPD        (1u << 2)
+#define DEDIC_OUT_CTRL_MASK  0x07u
+#define DEDIC_OUT_CTRL_IDLE  0x07u   /* all HIGH = deasserted (active LOW) */
 
 /* ===========================================================================
  * Shared Data
@@ -136,13 +149,13 @@ static void build_drive_lut(void)
 
 /**
  * Drive the data bus with a byte value.
- * Uses atomic register writes for maximum performance.
+ * GPIO.out covers Bank 0 entirely; writing lut_drive[val] sets D0-D7 (bits 4-11)
+ * and zeros the remaining bits, which are all input-configured and ignore GPIO.out.
+ * This saves one APB write compared to the w1tc+w1ts pattern.
  */
 static inline void IRAM_ATTR bus_drive(uint8_t val)
 {
-    uint32_t mask = lut_drive[val];
-    GPIO.out_w1tc = DBUS_MASK & ~mask;
-    GPIO.out_w1ts = mask;
+    GPIO.out = lut_drive[val];
     GPIO.enable_w1ts = DBUS_MASK;
 }
 #endif
@@ -161,20 +174,47 @@ static inline void IRAM_ATTR bus_release(void)
 static void IRAM_ATTR MonitorTask(void *arg)
 {
 #if BUS_MODE == 0
-    /* PBI Mode Implementation */
-    bool selected = false;
+    /*
+     * Dedicated GPIO bundles — MUST be created on Core 1 (the executing core).
+     *
+     * Input  bundle: [PHI2]                    → input  ch 0 (bit 0 of ee.get_gpio_in)
+     * Output bundle: [DEV_SEL_N, EXTSEL_N, MPD] → output ch 0-2 (bits 0-2 of
+     *                                              ee.wr_mask_gpio_out)
+     *
+     * Input and output channel pools are independent; ch 0 means different pins
+     * in each pool.
+     */
+    static const int dedic_in_pins[]  = { PIN_PHI2 };
+    static const int dedic_out_pins[] = { PIN_DEV_SEL_N, PIN_EXTSEL_N, PIN_MPD };
+    dedic_gpio_bundle_handle_t dedic_in_bundle, dedic_out_bundle;
+    const dedic_gpio_bundle_config_t in_cfg =
+    {
+        .gpio_array = dedic_in_pins,
+        .array_size = 1,
+        .flags      = { .in_en = 1 }
+    };
+    const dedic_gpio_bundle_config_t out_cfg =
+    {
+        .gpio_array = dedic_out_pins,
+        .array_size = 3,
+        .flags      = { .out_en = 1 }
+    };
+    ESP_ERROR_CHECK(dedic_gpio_new_bundle(&in_cfg,  &dedic_in_bundle));
+    ESP_ERROR_CHECK(dedic_gpio_new_bundle(&out_cfg, &dedic_out_bundle));
+    /* Immediately set all control signals HIGH (deasserted) to prevent the brief
+     * glitch that would occur if the dedicated GPIO output register starts at 0. */
+    cpu_ll_write_dedic_gpio_mask(DEDIC_OUT_CTRL_MASK, DEDIC_OUT_CTRL_IDLE);
 
-    /* Initial state: Deassert all outputs */
-    EXTSEL_DEASSERT();
-    VERA_CS_DEASSERT();
-    MPD_DEASSERT();
+    bool selected = false;
     bus_release();
 
     for (;;)
     {
-        /* 1. Wait for PHI2 rising edge and capture snapshots */
-        uint32_t g_lo;
-        while (!((g_lo = GPIO.in) & (1UL << PIN_PHI2)));
+        /* 1. Wait for PHI2 rising edge.
+         *    ee.get_gpio_in is a single Xtensa TIE instruction (~1 cycle),
+         *    vs ~6 cycles for a GPIO.in read through the APB bus. */
+        while (!(cpu_ll_read_dedic_gpio_in() & DEDIC_IN_PHI2));
+        uint32_t g_lo = GPIO.in;
         uint32_t g_hi = GPIO.in1.val;
 
         /* 2. Decode Address and Signals */
@@ -182,7 +222,6 @@ static void IRAM_ATTR MonitorTask(void *arg)
         uint16_t addr = decode_addr(g_lo, g_hi);
         uint8_t  off8 = (uint8_t)(addr & 0xFFu);
 
-        /* Address range decoding within $Dxxx page ($D000 is base 0x000 in decode) */
         bool is_d1xx  = (addr >= 0x100u && addr <= 0x1FFu);
         bool is_d6xx  = (addr >= 0x600u && addr <= 0x7FFu);
         bool is_d8xx  = (addr >= 0x800u && addr <= 0xFFFu);
@@ -191,25 +230,28 @@ static void IRAM_ATTR MonitorTask(void *arg)
         bool is_int_range  = is_d1xx && (off8 >= 0x20u && off8 <= 0xFEu);
         bool is_vcs_latch  = is_d1xx && (off8 == 0xFFu);
 
-        /* 3. EXTSEL Logic: Asserted for D1xx (except latch) and D6xx (RAM) */
-        if (selected && ((is_d1xx && !is_vcs_latch) || is_d6xx))
+        /* 3. Assert control signals atomically in one ee.wr_mask_gpio_out instruction.
+         *    Previously: up to 3 separate APB writes (~18 cycles total).
+         *    Now: 1 TIE instruction (~1 cycle). */
+        if (selected)
         {
-            EXTSEL_ASSERT();
+            uint8_t ctrl = DEDIC_OUT_CTRL_IDLE;
+            if ((is_d1xx && !is_vcs_latch) || is_d6xx)
+            {
+                ctrl &= ~DEDIC_OUT_EXTSEL;
+            }
+            if (is_d8xx)
+            {
+                ctrl &= ~DEDIC_OUT_MPD;
+            }
+            if (is_vera_range)
+            {
+                ctrl &= ~DEDIC_OUT_DEVSELN;
+            }
+            cpu_ll_write_dedic_gpio_mask(DEDIC_OUT_CTRL_MASK, ctrl);
         }
 
-        /* 4. MPD Logic: Asserted for D8xx (ROM) */
-        if (selected && is_d8xx)
-        {
-            MPD_ASSERT();
-        }
-
-        /* 5. Vera CS Logic: Asserted for VERA register range */
-        if (selected && is_vera_range)
-        {
-            VERA_CS_ASSERT();
-        }
-
-        /* 6. Cycle Handling */
+        /* 4. Cycle Handling */
         if (is_read)
         {
             if (selected)
@@ -230,7 +272,8 @@ static void IRAM_ATTR MonitorTask(void *arg)
         }
         else
         {
-            /* Write cycle: Sample data bus */
+            /* Write cycle: re-read GPIO.in to ensure data has settled well after
+             * the PHI2 rising edge (6502 data is stable during all of PHI2 high). */
             uint8_t data = decode_data(GPIO.in);
 
             if (is_vcs_latch)
@@ -248,39 +291,49 @@ static void IRAM_ATTR MonitorTask(void *arg)
             }
         }
 
-        /* 7. Cycle Completion: Wait for PHI2 falling edge and release bus */
-        while (GPIO.in & (1UL << PIN_PHI2));
+        /* 5. Wait for PHI2 falling edge (1 cycle/iteration via TIE instruction). */
+        while (cpu_ll_read_dedic_gpio_in() & DEDIC_IN_PHI2);
+
+        /* 6. End of cycle: release data bus, deassert all controls in 1 instruction. */
         bus_release();
-        MPD_DEASSERT();
-        EXTSEL_DEASSERT();
-        VERA_CS_DEASSERT();
+        cpu_ll_write_dedic_gpio_mask(DEDIC_OUT_CTRL_MASK, DEDIC_OUT_CTRL_IDLE);
     }
 
 #else
-    /* CCTL Mode Implementation */
-    VERA_CS_DEASSERT();
-    bus_release();
+    /* CCTL Mode — Dedicated GPIO for PHI2 (input ch 0) and DEV_SEL_N (output ch 0). */
+    static const int dedic_in_pins[]  = { PIN_PHI2 };
+    static const int dedic_out_pins[] = { PIN_DEV_SEL_N };
+    dedic_gpio_bundle_handle_t dedic_in_bundle, dedic_out_bundle;
+    const dedic_gpio_bundle_config_t in_cfg =
+    {
+        .gpio_array = dedic_in_pins,
+        .array_size = 1,
+        .flags      = { .in_en = 1 }
+    };
+    const dedic_gpio_bundle_config_t out_cfg =
+    {
+        .gpio_array = dedic_out_pins,
+        .array_size = 1,
+        .flags      = { .out_en = 1 }
+    };
+    ESP_ERROR_CHECK(dedic_gpio_new_bundle(&in_cfg,  &dedic_in_bundle));
+    ESP_ERROR_CHECK(dedic_gpio_new_bundle(&out_cfg, &dedic_out_bundle));
+    cpu_ll_write_dedic_gpio_mask(0x01u, 0x01u); /* DEV_SEL_N HIGH = deasserted */
 
     for (;;)
     {
-        uint32_t g_lo;
-        while (!((g_lo = GPIO.in) & (1UL << PIN_PHI2)));
+        while (!(cpu_ll_read_dedic_gpio_in() & DEDIC_IN_PHI2));
+        uint32_t g_lo = GPIO.in;
         uint32_t g_hi = GPIO.in1.val;
 
         uint16_t addr = decode_addr(g_lo, g_hi);
-        
-        /* CCTL usually triggers on the whole $D5xx range (0x500 offset) */
-        if (addr >= 0x500u && addr <= 0x5FFu)
+        if (addr >= 0x500u && addr <= 0x5FFu && (addr & 0xFFu) <= 0x1Fu)
         {
-            uint8_t off = (uint8_t)(addr & 0xFFu);
-            if (off <= 0x1Fu)
-            {
-                VERA_CS_ASSERT();
-            }
+            cpu_ll_write_dedic_gpio_mask(0x01u, 0x00u); /* DEV_SEL_N asserted */
         }
 
-        while (GPIO.in & (1UL << PIN_PHI2));
-        VERA_CS_DEASSERT();
+        while (cpu_ll_read_dedic_gpio_in() & DEDIC_IN_PHI2);
+        cpu_ll_write_dedic_gpio_mask(0x01u, 0x01u); /* DEV_SEL_N deasserted */
     }
 #endif
 }
