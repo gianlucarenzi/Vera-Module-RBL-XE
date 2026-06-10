@@ -1,22 +1,20 @@
 /**
  * esp32-main.cpp  --  Atari PBI / CCTL  VeraX16 Bus Controller
- * 
+ *
  * Target MCU: ESP32-S3FN8 (QFN56)
  *
  * This firmware allows an ESP32-S3 to interface with the 6502 bus of an
- * Atari XL/XE computer via the Parallel Bus Interface (PBI) or 
- * Cartridge Control Line (CCTL).
- * 
+ * Atari XL/XE computer. Both address spaces are handled at runtime from
+ * the full 16-bit address bus (A0–A15):
+ *   - PBI ($D100–$D1FF, $D600–$D7FF, $D800–$DFFF): VERA card registers and ROM
+ *   - CCTL ($D500–$D51F): cartridge control line (DEV_SEL_N only)
+ *
  * This version uses a definitive 34-GPIO mapping (plus Serial on 43/44)
  * with software-based 16-bit address decoding.
- * 
+ *
  * Style: Allman
  * Language: English
  */
-
-#ifndef BUS_MODE
-#define BUS_MODE 0   /* 0 = PBI mode, 1 = CCTL mode */
-#endif
 
 #include <Arduino.h>
 #include <driver/gpio.h>
@@ -27,10 +25,7 @@
 #include "freertos/queue.h"
 #include <driver/dedic_gpio.h>
 #include <hal/cpu_ll.h>
-
-#if BUS_MODE == 0
 #include "pbi-driver.h"
-#endif
 
 /* ===========================================================================
  * Hardware Pin Mapping (ESP32-S3FN8 QFN56)
@@ -121,11 +116,9 @@ static inline uint8_t IRAM_ATTR decode_data(uint32_t lo)
  * Shared Data
  * =========================================================================== */
 
-#if BUS_MODE == 0
 static IRAM_ATTR uint32_t lut_drive[256];   /* Lookup table for fast data bus drive */
 static IRAM_ATTR uint8_t  int_regs[256];    /* ESP32 internal registers */
 static IRAM_ATTR uint8_t  ram_pbi[512];     /* 512B RAM at $D600-$D7FF */
-#endif
 
 /* 256 KB extended RAM (RAMbo) — IRAM BSS: risiede in IRAM senza occupare Flash. */
 static uint8_t extended_rambo_256k[256 * 1024] __attribute__((section(".iram0.bss")));
@@ -136,7 +129,6 @@ static QueueHandle_t eventQueue;
  * Bus Drive/Release Logic
  * =========================================================================== */
 
-#if BUS_MODE == 0
 /**
  * Precalculate bitmasks for each possible byte to avoid runtime logic.
  */
@@ -167,7 +159,6 @@ static inline void IRAM_ATTR bus_drive(uint8_t val)
     GPIO.out = lut_drive[val];
     GPIO.enable_w1ts = DBUS_MASK;
 }
-#endif
 
 /**
  * Release the data bus (set to High-Z).
@@ -182,7 +173,6 @@ static inline void IRAM_ATTR bus_release(void)
  * =========================================================================== */
 static void IRAM_ATTR MonitorTask(void *arg)
 {
-#if BUS_MODE == 0
     /*
      * Dedicated GPIO bundles — MUST be created on Core 1 (the executing core).
      *
@@ -226,37 +216,48 @@ static void IRAM_ATTR MonitorTask(void *arg)
         uint32_t g_lo = GPIO.in;
         uint32_t g_hi = GPIO.in1.val;
 
-        /* 2. Decode Address and Signals */
-        bool is_read = (g_lo & (1UL << PIN_RW)) != 0;
-        uint16_t addr = decode_addr(g_lo, g_hi);
-        uint8_t  off8 = (uint8_t)(addr & 0xFFu);
+        /* 2. Decode address and R/W */
+        bool     is_read = (g_lo & (1UL << PIN_RW)) != 0;
+        uint16_t addr    = decode_addr(g_lo, g_hi);
+        uint8_t  off8    = (uint8_t)(addr & 0xFFu);
 
-        bool is_d1xx  = (addr >= 0xD100u && addr <= 0xD1FFu);
-        bool is_d6xx  = (addr >= 0xD600u && addr <= 0xD7FFu);
-        bool is_d8xx  = (addr >= 0xD800u && addr <= 0xDFFFu);
+        /* PBI address ranges */
+        bool is_d1xx = (addr >= 0xD100u && addr <= 0xD1FFu);
+        bool is_d6xx = (addr >= 0xD600u && addr <= 0xD7FFu);
+        bool is_d8xx = (addr >= 0xD800u && addr <= 0xDFFFu);
 
         bool is_vera_range = is_d1xx && (off8 <= 0x1Fu);
         bool is_int_range  = is_d1xx && (off8 >= 0x20u && off8 <= 0xFEu);
         bool is_vcs_latch  = is_d1xx && (off8 == 0xFFu);
 
+        /* CCTL address range */
+        bool is_d5xx = (addr >= 0xD500u && addr <= 0xD51Fu);
+
         /* 3. Assert control signals atomically in one ee.wr_mask_gpio_out instruction.
          *    Previously: up to 3 separate APB writes (~18 cycles total).
          *    Now: 1 TIE instruction (~1 cycle). */
-        if (selected)
         {
             uint8_t ctrl = DEDIC_OUT_CTRL_IDLE;
-            if ((is_d1xx && !is_vcs_latch) || is_d6xx)
+
+            if (selected)
             {
-                ctrl &= ~DEDIC_OUT_EXTSEL;
+                /* Disable MMU for PBI accesses to D1xx (except VCS latch) and D6xx */
+                if ((is_d1xx && !is_vcs_latch) || is_d6xx)
+                    ctrl &= ~DEDIC_OUT_EXTSEL;
+
+                /* Disable Math Pack for ROM area */
+                if (is_d8xx)
+                    ctrl &= ~DEDIC_OUT_MPD;
+
+                /* Chip-select VERA for register accesses */
+                if (is_vera_range)
+                    ctrl &= ~DEDIC_OUT_DEVSELN;
             }
-            if (is_d8xx)
-            {
-                ctrl &= ~DEDIC_OUT_MPD;
-            }
-            if (is_vera_range)
-            {
+
+            /* CCTL: assert DEV_SEL_N for D5xx regardless of PBI selection state */
+            if (is_d5xx)
                 ctrl &= ~DEDIC_OUT_DEVSELN;
-            }
+
             cpu_ll_write_dedic_gpio_mask(DEDIC_OUT_CTRL_MASK, ctrl);
         }
 
@@ -307,44 +308,6 @@ static void IRAM_ATTR MonitorTask(void *arg)
         bus_release();
         cpu_ll_write_dedic_gpio_mask(DEDIC_OUT_CTRL_MASK, DEDIC_OUT_CTRL_IDLE);
     }
-
-#else
-    /* CCTL Mode — Dedicated GPIO for PHI2 (input ch 0) and DEV_SEL_N (output ch 0). */
-    static const int dedic_in_pins[]  = { PIN_PHI2 };
-    static const int dedic_out_pins[] = { PIN_DEV_SEL_N };
-    dedic_gpio_bundle_handle_t dedic_in_bundle, dedic_out_bundle;
-    const dedic_gpio_bundle_config_t in_cfg =
-    {
-        .gpio_array = dedic_in_pins,
-        .array_size = 1,
-        .flags      = { .in_en = 1 }
-    };
-    const dedic_gpio_bundle_config_t out_cfg =
-    {
-        .gpio_array = dedic_out_pins,
-        .array_size = 1,
-        .flags      = { .out_en = 1 }
-    };
-    ESP_ERROR_CHECK(dedic_gpio_new_bundle(&in_cfg,  &dedic_in_bundle));
-    ESP_ERROR_CHECK(dedic_gpio_new_bundle(&out_cfg, &dedic_out_bundle));
-    cpu_ll_write_dedic_gpio_mask(0x01u, 0x01u); /* DEV_SEL_N HIGH = deasserted */
-
-    for (;;)
-    {
-        while (!(cpu_ll_read_dedic_gpio_in() & DEDIC_IN_PHI2));
-        uint32_t g_lo = GPIO.in;
-        uint32_t g_hi = GPIO.in1.val;
-
-        uint16_t addr = decode_addr(g_lo, g_hi);
-        if (addr >= 0xD500u && addr <= 0xD51Fu)
-        {
-            cpu_ll_write_dedic_gpio_mask(0x01u, 0x00u); /* DEV_SEL_N asserted */
-        }
-
-        while (cpu_ll_read_dedic_gpio_in() & DEDIC_IN_PHI2);
-        cpu_ll_write_dedic_gpio_mask(0x01u, 0x01u); /* DEV_SEL_N deasserted */
-    }
-#endif
 }
 
 /* ===========================================================================
@@ -361,18 +324,13 @@ void setup(void)
     /* Initialize Serial for Debug (UART0 default pins 43/44) */
     Serial.begin(115200, SERIAL_8N1, PIN_UART_RX, PIN_UART_TX);
 
-    memset(extended_rambo_256k, 0x00, sizeof(extended_rambo_256k));
+    Serial.println("[VeraX16] Initializing Bus Monitor (PBI $D1xx + CCTL $D5xx)");
 
-#if BUS_MODE == 0
-    Serial.println("[VeraX16] Initializing PBI Mode (Parallel Bus Interface)");
+    memset(extended_rambo_256k, 0x00, sizeof(extended_rambo_256k));
     memset(int_regs, 0x00, sizeof(int_regs));
     memset(ram_pbi,  0x00, sizeof(ram_pbi));
     build_drive_lut();
     eventQueue = xQueueCreate(8, sizeof(bool));
-#else
-    Serial.println("[VeraX16] Initializing CCTL Mode (Cartridge Control)");
-    eventQueue = xQueueCreate(1, sizeof(bool));
-#endif
 
     /* Configure GPIO Modes */
     gpio_config_t cfg = {};
@@ -395,7 +353,7 @@ void setup(void)
     /* Output Signal Initialization */
     pinMode(PIN_ARESET, OUTPUT);
     digitalWrite(PIN_ARESET, HIGH);
-    
+
     pinMode(PIN_CRESET, OUTPUT);
     digitalWrite(PIN_CRESET, HIGH);
 
@@ -424,13 +382,9 @@ void setup(void)
  * =========================================================================== */
 void loop(void)
 {
-#if BUS_MODE == 0
     bool state;
     if (xQueueReceive(eventQueue, &state, portMAX_DELAY))
     {
         Serial.printf("[Event] VCS Selection: %s\n", state ? "ENABLED" : "DISABLED");
     }
-#else
-    vTaskDelay(pdMS_TO_TICKS(1000));
-#endif
 }

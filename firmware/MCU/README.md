@@ -6,8 +6,9 @@ Firmware per il microcontrollore **ESP32-S3FN8** (QFN-56, 8 MB flash integrata,
 dual-core Xtensa LX7 @ 240 MHz) montato sul modulo Vera-Module-RBL-XE.
 
 Il modulo si collega al computer **ATARI XE** tramite il connettore **PBI**
-(Parallel Bus Interface) oppure tramite il segnale **CCTL** (Cartridge Control),
-a seconda dell'immagine firmware compilata.
+(Parallel Bus Interface) e tramite il segnale **CCTL** (Cartridge Control).
+Entrambi gli spazi di indirizzo sono gestiti dallo **stesso firmware** a runtime,
+grazie alla decodifica completa del bus indirizzi A0–A15.
 
 ---
 
@@ -21,11 +22,11 @@ Ad ogni ciclo di clock del 6502 (PHI2 @ 1,79 MHz, finestra utile ≈ 279 ns a
 
 1. Attende il fronte di salita di PHI2 tramite **Dedicated GPIO in**
    (`ee.get_gpio_in`, 1 ciclo CPU anziché ~6 cicli via APB).
-2. Legge il bus indirizzi A0–A11 e la linea R/W dai registri `GPIO.in` /
+2. Legge il bus indirizzi A0–A15 e la linea R/W dai registri `GPIO.in` /
    `GPIO.in1.val` (due letture APB sequenziali).
 3. Decodifica l'indirizzo via software (`decode_addr()`) e determina se l'accesso
    riguarda VERA ($D100–$D11F), il range di interrupt ($D120–$D1FE), il range
-   esteso ($D600–$D7FF) o la ROM mappata ($D800–$DFFF).
+   esteso ($D600–$D7FF), la ROM mappata ($D800–$DFFF) oppure CCTL ($D500–$D51F).
 4. Afferma in modo atomico i segnali di controllo attivi-LOW (EXTSEL\_N,
    DEV\_SEL\_N, MPD) tramite **Dedicated GPIO out**
    (`ee.wr_mask_gpio_out`, 1 ciclo CPU — tutti e tre i segnali in un'unica
@@ -94,7 +95,7 @@ Per la mappatura completa GPIO→QFN-56 e lo schema level shifter U4 vedere
 
 ```
 firmware/MCU/
-├── platformio.ini               # Configurazione build (due target: pbi, cctl)
+├── platformio.ini               # Configurazione build (target unificato: esp32s3fn8)
 ├── pre_build_6502.py            # Script pre-build PlatformIO: esegue make in 6502/
 ├── include/
 │   ├── pbi-driver.h             # Strutture dati e costanti del protocollo PBI
@@ -113,17 +114,21 @@ firmware/MCU/
 
 ---
 
-## 4. Modalità di Build
+## 4. Firmware Unificato
 
-Il progetto definisce due ambienti PlatformIO in `platformio.ini`:
+Il progetto definisce un singolo ambiente PlatformIO in `platformio.ini`:
 
-| Ambiente         | `BUS_MODE` | Descrizione                                |
-|------------------|------------|--------------------------------------------|
-| `esp32s3fn8-pbi` | `0`        | Interfaccia PBI (indirizzo completo A0–A11)|
-| `esp32s3fn8-cctl`| `1`        | Modalità CCTL (cartuccia)                  |
+| Ambiente      | Descrizione                                               |
+|---------------|-----------------------------------------------------------|
+| `esp32s3fn8`  | PBI ($D1xx, $D6xx, $D8xx) + CCTL ($D5xx) — runtime       |
 
-Entrambi usano `-D USE_DEDICATED_GPIO` e `-D USE_ESP32_REGISTER_ACCESS` per
-abilitare l'hot loop ottimizzato.
+Non esiste più la define `BUS_MODE`: lo stesso binario gestisce entrambi gli
+spazi di indirizzo. La distinzione avviene nel hot loop a ogni ciclo PHI2:
+- `$D100–$D1FF` → PBI: EXTSEL\_N, MPD, DEV\_SEL\_N, lettura/scrittura registri VERA
+- `$D500–$D51F` → CCTL: DEV\_SEL\_N (indipendente dallo stato di selezione PBI)
+
+Il flag `-D USE_DEDICATED_GPIO` e `-D USE_ESP32_REGISTER_ACCESS` abilitano
+l'hot loop ottimizzato.
 
 ### Pre-build automatico del driver 6502
 
@@ -139,17 +144,11 @@ Il `make` è incrementale: se i sorgenti non sono cambiati non rigenera nulla.
 È necessario avere **PlatformIO Core** installato (`pip install platformio`).
 
 ```bash
-# Compila per modalità PBI
-pio run -e esp32s3fn8-pbi
+# Compila (firmware unificato PBI + CCTL)
+pio run -e esp32s3fn8
 
-# Compila per modalità CCTL
-pio run -e esp32s3fn8-cctl
-
-# Carica il firmware (PBI) — UART0: GPIO43=TX, GPIO44=RX
-pio run -e esp32s3fn8-pbi --target upload
-
-# Carica il firmware (CCTL)
-pio run -e esp32s3fn8-cctl --target upload
+# Carica il firmware — UART0: GPIO43=TX, GPIO44=RX
+pio run -e esp32s3fn8 --target upload
 
 # Monitor seriale (115200 baud)
 pio device monitor
