@@ -113,12 +113,24 @@ static inline uint8_t IRAM_ATTR decode_data(uint32_t lo)
 #define DEDIC_OUT_CTRL_IDLE  0x07u   /* all HIGH = deasserted (active LOW) */
 
 /* ===========================================================================
+ * Compile-time Configuration
+ * =========================================================================== */
+
+#define PBI_DEV_ID 0x80u /* PBI Device ID bit 7 */
+
+#define VERA_BOARD_IS_PBI 0x01 /* Default as PBI */
+//#define VERA_BOARD_IS_PBI 0x00 /* if CCTL */
+
+#define USE_RAMBO_256K /* Emulatore RAMbo 256 KB — indipendente da PBI/CCTL mode */
+
+/* ===========================================================================
  * Shared Data
  * =========================================================================== */
 
 static IRAM_ATTR uint32_t lut_drive[256];   /* Lookup table for fast data bus drive */
 static IRAM_ATTR uint8_t  ram_pbi[512];     /* 512B RAM at $D600-$D7FF */
 
+#ifdef USE_RAMBO_256K
 /* 256 KB extended RAM (RAMbo) — IRAM BSS: risiede in IRAM senza occupare Flash. */
 static uint8_t extended_rambo_256k[256 * 1024] __attribute__((section(".iram0.bss")));
 
@@ -131,13 +143,9 @@ static uint8_t extended_rambo_256k[256 * 1024] __attribute__((section(".iram0.bs
  * Inizializzato a 0xFF = RAMbo disabilitato fino al primo write del 6502.
  */
 static IRAM_ATTR uint8_t portb_rambo = 0xFFu;
+#endif /* USE_RAMBO_256K */
 
 static QueueHandle_t eventQueue;
-
-#define PBI_DEV_ID 0x80u /* PBI Device ID bit 7 */
-
-#define VERA_BOARD_IS_PBI 0x01 /* Default as PBI */
-//#define VERA_BOARD_IS_PBI 0x00 /* if CCTL */
 
 /* ===========================================================================
  * Bus Drive/Release Logic
@@ -250,11 +258,13 @@ static void IRAM_ATTR MonitorTask(void *arg)
         bool is_cctl_range = is_d5xx && (off8 != 0xFFu);
         bool is_cctl_latch = is_d5xx && (off8 == 0xFFu);
 
-        /* RAMbo: 256 KB bank-switched at $4000-$7FFF (PBI mode only).
+#ifdef USE_RAMBO_256K
+        /* RAMbo: 256 KB bank-switched at $4000-$7FFF, indipendente da PBI/CCTL.
          * Active when bit 4 of PORTB ($D301) = 0.
          * Bank (0-15) from PORTB bits 6,5,3,2: bank = ((portb>>2)&0x03)|((portb>>3)&0x0C) */
         bool is_rambo_window = (addr >= 0x4000u && addr <= 0x7FFFu);
-        bool rambo_active    = vera_board_is_pbi && ((portb_rambo & 0x10u) == 0u);
+        bool rambo_active    = ((portb_rambo & 0x10u) == 0u);
+#endif /* USE_RAMBO_256K */
 
         /* 3. Assert control signals atomically in one ee.wr_mask_gpio_out instruction.
          *    Previously: up to 3 separate APB writes (~18 cycles total).
@@ -278,10 +288,6 @@ static void IRAM_ATTR MonitorTask(void *arg)
                     if (is_vera_range)
                         ctrl &= ~DEDIC_OUT_DEVSELN;
                 }
-
-                /* RAMbo: suppress Atari internal RAM in the bank window */
-                if (rambo_active && is_rambo_window)
-                    ctrl &= ~DEDIC_OUT_EXTSEL;
             }
             else
             {
@@ -289,6 +295,11 @@ static void IRAM_ATTR MonitorTask(void *arg)
                 if (selected && is_cctl_range)
                     ctrl &= ~DEDIC_OUT_DEVSELN;
             }
+#ifdef USE_RAMBO_256K
+            /* RAMbo: suppress Atari internal RAM in the bank window */
+            if (rambo_active && is_rambo_window)
+                ctrl &= ~DEDIC_OUT_EXTSEL;
+#endif /* USE_RAMBO_256K */
 
             cpu_ll_write_dedic_gpio_mask(DEDIC_OUT_CTRL_MASK, ctrl);
         }
@@ -307,11 +318,13 @@ static void IRAM_ATTR MonitorTask(void *arg)
                     bus_drive(ram_pbi[addr & 0x1FFu]);
                 }
             }
+#ifdef USE_RAMBO_256K
             if (rambo_active && is_rambo_window)
             {
                 uint8_t bank = ((portb_rambo >> 2) & 0x03u) | ((portb_rambo >> 3) & 0x0Cu);
                 bus_drive(extended_rambo_256k[((uint32_t)bank << 14) | (addr & 0x3FFFu)]);
             }
+#endif /* USE_RAMBO_256K */
             /* CCTL mode: no data bus driving */
         }
         else
@@ -331,9 +344,6 @@ static void IRAM_ATTR MonitorTask(void *arg)
                         xQueueSend(eventQueue, &selected, 0);
                     }
                 }
-                /* RAMbo bank switch: snoop PORTB writes at $D301 */
-                if (addr == 0xD301u)
-                    portb_rambo = data;
             }
             else
             {
@@ -347,12 +357,17 @@ static void IRAM_ATTR MonitorTask(void *arg)
                     }
                 }
             }
+#ifdef USE_RAMBO_256K
+            /* RAMbo bank switch: snoop PORTB writes at $D301 */
+            if (addr == 0xD301u)
+                portb_rambo = data;
             /* RAMbo write: store data into the active bank */
             if (rambo_active && is_rambo_window)
             {
                 uint8_t bank = ((portb_rambo >> 2) & 0x03u) | ((portb_rambo >> 3) & 0x0Cu);
                 extended_rambo_256k[((uint32_t)bank << 14) | (addr & 0x3FFFu)] = data;
             }
+#endif /* USE_RAMBO_256K */
         }
 
         /* 5. Wait for PHI2 falling edge (1 cycle/iteration via TIE instruction). */
@@ -378,7 +393,9 @@ void setup(void)
     /* Initialize Serial for Debug (UART0 default pins 43/44) */
     Serial.begin(115200, SERIAL_8N1, PIN_UART_RX, PIN_UART_TX);
 
+#ifdef USE_RAMBO_256K
     memset(extended_rambo_256k, 0x00, sizeof(extended_rambo_256k));
+#endif
 
     if (VERA_BOARD_IS_PBI)
     {
@@ -389,6 +406,9 @@ void setup(void)
     else
     {
         Serial.println("[VeraX16] Mode: CCTL ($D5xx, latch $D5FF)");
+#ifdef USE_RAMBO_256K
+        build_drive_lut(); /* RAMbo reads need bus_drive() also in CCTL mode */
+#endif
     }
 
     eventQueue = xQueueCreate(8, sizeof(bool));
