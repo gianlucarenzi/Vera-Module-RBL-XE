@@ -526,17 +526,42 @@ La revisione del firmware e della mappatura hardware ha chiarito e corretto i se
 
   \item \textbf{Canali U3 liberati}: poiché \texttt{D1XX\_N} e \texttt{ROM\_SEL\_N} non passano più per U3~(TXS0108E), i canali A6/B6 e A7/B7 risultano disponibili. Il canale A6/B6 è ora assegnato a MPD (GPIO\,42, output ESP32 \texttt{→} bus Atari 5\,V); A7/B7 rimane di riserva.
 
-  \item \textbf{Emulazione PIA 6520 — PBCTL\,(\$D303) e PORTB\,(\$D301):}
-  la PIA 6520 dell'Atari espone due registri sovrapposti a \$D301:
+  \item \textbf{Snooping passivo della PIA 6520 — PBCTL\,(\$D303) e PORTB\,(\$D301):}
+  il chip \textbf{6520 PIA è fisicamente presente} sulla scheda madre dell'Atari e
+  risponde a \$D301/\$D303 normalmente. Il firmware \textbf{non emula} il 6520: lo
+  \textbf{snoopa} in modo passivo. La distinzione operativa è:
+
+  \begin{center}
+  \begin{tabular}{lll}
+  \toprule
+  \textbf{Indirizzo} & \textbf{Chi risponde} & \textbf{Ruolo ESP32} \\
+  \midrule
+  \$D301 / \$D303 & 6520 PIA (hardware reale) & Solo snooping — non pilota mai D0--D7 \\
+  \$4000--\$7FFF  & ESP32 (RAMbo window)      & Attivo: EXTSEL\_N + pilota D0--D7 \\
+  \bottomrule
+  \end{tabular}
+  \end{center}
+
+  Quando il 6502 scrive a \$D303 o \$D301, il 6520 riceve e processa la transazione;
+  l'ESP32 osserva gli stessi dati sul bus e aggiorna le shadow copy locali
+  (\texttt{PBCTL}, \texttt{PORTB}). Non vi è mai contesa sul bus perché l'ESP32 non
+  guida il bus dati per quegli indirizzi.
+
+  La PIA espone due registri sovrapposti a \$D301:
   il \emph{Data Direction Register} (DDR) quando PBCTL bit\,2\,=\,0,
   e l'\emph{Output Register} (PORTB, bank selection) quando PBCTL bit\,2\,=\,1.
   Il firmware snoopa \$D303 ad ogni write cycle e aggiorna \texttt{PBCTL};
   le write a \$D301 aggiornano \texttt{PORTB} \textbf{solo} quando
   \texttt{PBCTL\,\&\,0x04\,!=\,0}.
-  Senza questa qualifica, le write DDR della sequenza di init del sistema operativo
-  (tipicamente \texttt{0xFF}~→~\$D301 con \texttt{PBCTL}~=~0) verrebbero
-  erroneamente interpretate come selezioni di banco.
-  Rif.: datasheet Motorola\,6520 PIA; Altirra Hardware Reference Manual~\S8.
+
+  Il tracciamento di PBCTL è necessario \emph{precisamente perché} lo snooping è
+  passivo: dal bus, una write DDR e una write all'Output Register su \$D301 sono
+  \textbf{indistinguibili} (stesse linee, stesso ciclo). Senza lo stato di PBCTL,
+  le write DDR della sequenza di init del sistema operativo
+  (\texttt{0xFF}~→~\$D301 con \texttt{PBCTL\,=\,0}) verrebbero erroneamente
+  interpretate come selezioni di banco.
+  Rif.: datasheet Motorola\,6520 PIA; Altirra Hardware Reference Manual~\S8;
+  forum AtariAge (utente \textit{warerat}).
 
   \item \textbf{GPIO\,15 e GPIO\,16} (pad RTC \texttt{XTAL\_32K\_P}/\texttt{N}): il progetto non impiega quarzo da 32\,kHz; i pad sono utilizzati come normali GPIO per segnali indirizzo. Il MCU richiede invece un quarzo esterno a \textbf{40\,MHz} sulle pad dedicate \textbf{XTAL\_P} (pin\,56) e \textbf{XTAL\_N} (pin\,55) — senza di esso il chip non si avvia (vedere sezione~\ref{sec:xtal}).
 \end{itemize}

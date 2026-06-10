@@ -232,6 +232,29 @@ Il firmware nel hot loop:
    - **Lettura**: guida D0–D7 con il byte dal banco in `extended_rambo_256k`.
    - **Scrittura**: memorizza il dato nel banco corrispondente.
 
+#### Snooping passivo vs. pilotaggio attivo — nessun conflitto col 6520 fisico
+
+Il chip **6520 PIA è fisicamente presente** sulla scheda madre dell'Atari e risponde a `$D301`/`$D303` esattamente come farebbe senza il modulo. Il firmware **non emula** il 6520: lo **snoopa**.
+
+| Range | Chi risponde | Ruolo dell'ESP32 |
+|-------|-------------|-----------------|
+| `$D301` / `$D303` | 6520 PIA (hardware reale) | Solo snooping passivo — non pilota mai D0–D7 |
+| `$4000–$7FFF` (RAMbo window) | ESP32 | Attivo: asserisce EXTSEL\_N, pilota D0–D7 |
+
+Quando il 6502 scrive a `$D301` o `$D303`, il 6520 riceve e processa normalmente la transazione; l'ESP32 legge gli stessi dati sul bus e aggiorna le proprie shadow copy (`PORTB`, `PBCTL`). Non c'è mai contesa sul bus perché l'ESP32 non tenta mai di guidare D0–D7 per quegli indirizzi.
+
+Il motivo per cui il firmware deve tracciare PBCTL è proprio questo: essendo un osservatore passivo, non può interrogare il 6520 per sapere quale registro è esposto a `$D301`. Dal bus, una write DDR e una write all'Output Register sono **indistinguibili** — stesse linee, stesso ciclo. Solo tenendo traccia di quanto scritto a `$D303` è possibile qualificare correttamente le write a `$D301`.
+
+```
+CPU scrive $FF → $D301 con PBCTL=0x00:
+  ├── 6520: aggiorna il DDR (tutti pin output)  ← hardware reale
+  └── ESP32: PBCTL & 0x04 = 0 → ignora          ← snooping qualificato
+
+CPU scrive $83 → $D301 con PBCTL=0x34:
+  ├── 6520: aggiorna l'Output Register, porta Port B = $83  ← hardware reale
+  └── ESP32: PBCTL & 0x04 = 1 → PORTB = $83, banco 0       ← catturato
+```
+
 Sequenza tipica di init del sistema operativo Atari:
 
 | Step | Write | Effetto |

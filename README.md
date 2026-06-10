@@ -443,6 +443,14 @@ PBCTL bit 2 = 1 (output register selected). When bit 2 = 0, `$D301` addresses th
 6520 DDR and the write is ignored for bank-switching purposes. `PORTB` initialises to
 `0xFF` (RAME = 1, RAMbo inactive); `PBCTL` to `0x00` (bit 2 = 0, DDR exposed).
 
+**Passive snooping vs. active driving — no conflict with the physical 6520.** The real
+6520 PIA chip remains fully active on the Atari motherboard and responds to `$D301`/`$D303`
+normally. The ESP32 does **not** replace the 6520 — it only snoops those bus cycles
+(observes without driving). It only actively drives the data bus and asserts EXTSEL\_N
+for the `$4000–$7FFF` window, where the 6520 is not mapped. PBCTL tracking is necessary
+precisely because the snooping is passive: from the bus, a DDR write and an Output Register
+write to `$D301` are **indistinguishable** — PBCTL state is the only way to tell them apart.
+
 #### Programming ESP32
 The firmware is built with **PlatformIO** (install via `pip install platformio`):
 ```bash
@@ -1035,6 +1043,15 @@ sia **PORTB** (`$D301`): le write a `$D301` aggiornano il registro di selezione 
 **solo se** PBCTL bit 2 = 1 (Output Register selezionato). Quando bit 2 = 0, `$D301`
 indirizza il DDR della PIA 6520 e la write viene ignorata. `PORTB` si inizializza a
 `0xFF` (RAME = 1, RAMbo inattivo); `PBCTL` a `0x00` (bit 2 = 0, DDR esposto).
+
+**Snooping passivo vs. pilotaggio attivo — nessun conflitto col 6520 fisico.** Il chip
+6520 PIA rimane pienamente attivo sulla scheda madre dell'Atari e risponde a `$D301`/`$D303`
+normalmente. L'ESP32 **non sostituisce** il 6520: osserva passivamente quei cicli bus senza
+mai pilotare il bus dati per quegli indirizzi. Pilota attivamente D0–D7 e asserisce
+EXTSEL\_N solo per la finestra `$4000–$7FFF`, dove il 6520 non è mappato. Il tracciamento
+di PBCTL è necessario proprio perché lo snooping è passivo: dal bus, una write al DDR e una
+write all'Output Register su `$D301` sono **indistinguibili** — lo stato di PBCTL è l'unico
+modo per differenziarle.
 
 #### Programmazione ESP32
 Il firmware viene compilato con **PlatformIO** (installare con `pip install platformio`):
