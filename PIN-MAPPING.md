@@ -171,7 +171,46 @@ e il canale 0 in scrittura puntano a pin fisici diversi.
 
 ---
 
-## 5. Level Shifting (TXS0108E)
+## 5. Crystal Oscillator (40 MHz)
+
+The ESP32-S3FN8 requires an external **40 MHz crystal** to generate the
+internal PLL reference that drives the CPU at 240 MHz, the Flash interface,
+and the UART baud-rate dividers. Without it the chip does not boot.
+The pins are **dedicated analog** — not GPIO, not software-configurable.
+
+| QFN56 pin | Signal  | Notes                                          |
+|-----------|---------|------------------------------------------------|
+| 55        | XTAL\_N | Crystal − terminal (oscillator amplifier output) |
+| 56        | XTAL\_P | Crystal + terminal (oscillator amplifier input)  |
+
+### Schematic
+
+```
+           C1 (10 pF)
+XTAL_P (56) ──┤├── GND
+      │
+    [X1  40 MHz]   ← Rs 0–33 Ω optional, in series with crystal
+      │
+XTAL_N (55) ──┤├── GND
+           C2 (10 pF)
+```
+
+| Component | Value | Notes |
+|-----------|-------|-------|
+| X1 — crystal | 40 MHz, SMD 3225 or 2016 | ±10 ppm or better; note C\_L in datasheet |
+| C1, C2 — load caps | 10 pF 0402 ±5 % | C\_ext = 2 × C\_L − C\_stray ; C\_stray ≈ 3–5 pF |
+| Rs — series resistor | 0–33 Ω (optional) | Limits oscillator drive level; omit if crystal oscillates cleanly |
+
+**PCB layout:**
+- Keep XTAL\_P / XTAL\_N traces as short as possible (< 5 mm).
+- Place C1 and C2 **at the chip pins**, not near the crystal body.
+- Do not route other signals under or parallel to crystal traces.
+- Solid ground plane under the entire crystal area.
+- Keep away from PHI2 (1.79 MHz), the 240 MHz CPU clock distribution, and D0–D7.
+
+---
+
+## 6. Level Shifting (TXS0108E)
 
 Tre TXS0108E traducono tra bus Atari 5 V (lato B) e ESP32-S3 3.3 V (lato A).
 
@@ -250,7 +289,7 @@ Tutti ingressi B→A (Atari → ESP32).
 
 ---
 
-## 6. GPIO disponibili (ESP32-S3FN8 QFN56)
+## 7. GPIO disponibili (ESP32-S3FN8 QFN56)
 
 Pin non assegnati al progetto, esclusi strapping e flash in-package.
 
@@ -262,15 +301,16 @@ Pin non assegnati al progetto, esclusi strapping e flash in-package.
 
 **Pin esclusi (non utilizzabili):**
 
-| GPIO | QFN56 pin | Motivo |
+| GPIO / Funzione | QFN56 pin | Motivo |
 |---|---|---|
-| 26–32 | 28, 30–35 | Flash in-package — mai connettere esternamente |
-| 45 | 51 | Strapping VDD\_SPI — lasciare libero |
-| 46 | 52 | Strapping boot mode — lasciare libero |
+| GPIO 26–32 | 28, 30–35 | Flash in-package — mai connettere esternamente |
+| GPIO 45 | 51 | Strapping VDD\_SPI — lasciare libero |
+| GPIO 46 | 52 | Strapping boot mode — lasciare libero |
+| XTAL\_N / XTAL\_P | 55, 56 | Dedicated analog — quarzo 40 MHz. Vedere § 5. |
 
 ---
 
-## 7. QFN56 — Pinout completo
+## 8. QFN56 — Pinout completo
 
 Riferimento rapido ESP32-S3FN8 QFN56 (56 pin segnale + pad GND centrale).
 

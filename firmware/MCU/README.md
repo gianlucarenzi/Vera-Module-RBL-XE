@@ -5,6 +5,11 @@
 Firmware per il microcontrollore **ESP32-S3FN8** (QFN-56, 8 MB flash integrata,
 dual-core Xtensa LX7 @ 240 MHz) montato sul modulo Vera-Module-RBL-XE.
 
+> **Requisito hardware:** il chip richiede un **quarzo esterno 40 MHz** collegato
+> ai pin dedicati **XTAL\_P** (QFN56 pin 56) e **XTAL\_N** (QFN56 pin 55).
+> Senza di esso il chip non si avvia. Vedere `PIN-MAPPING.md` § 5 per il
+> circuito consigliato (condensatori di carico, resistenza serie, layout PCB).
+
 Il modulo si collega al computer **ATARI XE** tramite il connettore **PBI**
 (Parallel Bus Interface) oppure tramite il segnale **CCTL** (Cartridge Control).
 La modalità operativa è selezionata a **tempo di compilazione** tramite la macro
