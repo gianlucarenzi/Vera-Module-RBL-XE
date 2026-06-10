@@ -52,7 +52,7 @@ static const uint8_t DBUS_PINS[8] = { 4, 5, 6, 7, 8, 9, 10, 11 };
 #define PIN_CDONE       39   /* Vera Programmed Status Input (Pin 44) */
 #define PIN_DEV_SEL_N   40   /* Vera Chip Select Output (Pin 45, active LOW) */
 #define PIN_EXTSEL_N    41   /* Atari MMU Disable Output (Pin 46, active LOW) */
-#define PIN_MPD         42   /* Math Pack Disable Output (Pin 48, active LOW) */
+#define PIN_MPD         42   /* Math Pack Disable — disables internal Atari Math Pack ROM $D800-$DFFF (Pin 48, active LOW) */
 #define PIN_A14         47   /* Address Bit 14 (Pin 53) */
 #define PIN_A15         48   /* Address Bit 15 (Pin 54) */
 
@@ -136,14 +136,45 @@ static bool rambo_hw_enabled = false; /* set in setup() reading PIN_RAMBO_EN */
 static uint8_t extended_rambo_256k[256 * 1024] __attribute__((section(".iram0.bss")));
 
 /*
- * PORTB ($D301) snapshot — used for RAMbo bank switching.
- * Bit 4 = 0: RAMbo active ($4000-$7FFF → selected bank responds).
- * Bit 4 = 1: RAMbo disabled (Atari internal RAM responds normally).
- * Bank (0-15) from PORTB bits 6,5,3,2:
+ * PORTB ($D301) — PIA 6520 Output Register B, used for RAMbo bank switching.
+ * Accessible at $D301 only when PBCTL bit 2 (CRB-2) = 1; when bit 2 = 0,
+ * $D301 addresses the Data Direction Register (DDR) — those writes are ignored here.
+ *
+ * Bit 4 (RAME — RAM Enable):
+ *   0 = RAMbo active: all 16 banks of $4000-$7FFF accessible; EXTSEL_N asserted
+ *       to suppress Atari internal RAM in that window.
+ *   1 = RAMbo disabled: Atari internal RAM responds at $4000-$7FFF normally.
+ *
+ * Bank number (0-15) from PORTB bits 6, 5, 3, 2:
  *   bank = ((portb >> 2) & 0x03) | ((portb >> 3) & 0x0C)
- * Initialised to 0xFF (bit 4 = 1) — RAMbo disabled until first 6502 write to $D301.
+ *   Bit layout: 7   6   5   4    3   2   1   0
+ *               -   b3  b2  RAME b1  b0  -   -    (b3:b0 = bank number)
+ *
+ * Ref: RAMBO manual (atarimania.com/documents/rambo_manual.pdf), p.14;
+ *      Altirra Hardware Reference Manual §8; Motorola 6520 PIA datasheet.
+ * Initialised to 0xFF (RAME = 1) — RAMbo disabled until OS writes $D301.
  */
 static IRAM_ATTR uint8_t PORTB = 0xFFu;
+
+/*
+ * PBCTL ($D303) — PIA 6520 Control Register B.
+ * Bit 2 (CRB-2) selects which register is exposed at $D301:
+ *   0 → Data Direction Register (DDR): each bit selects pin direction
+ *       (0 = input, 1 = output); DDR writes are NOT bank-selection writes.
+ *   1 → Output Register (PORTB): bank-selection register.
+ *
+ * "For external PIA emulation, you must not only save the data destined for
+ *  $D301. You must also intercept and save writes to PBCTL $D303 bit 2 to
+ *  enable writing to $D301 *only* when PBCTL bit 2 = 1. This further
+ *  qualifies writes to the output register at $D301 (which is what you see
+ *  externally on the PIA), not the data direction register at $D301, as there
+ *  are two registers at the same location." — warerat, AtariAge forums.
+ *
+ * Ref: Motorola 6520 PIA datasheet; Altirra Hardware Reference Manual §8.
+ * Initialised to 0x00 (bit 2 = 0 → DDR exposed at $D301); the OS sets bit 2
+ * before using $D301 as the bank-selection register.
+ */
+static IRAM_ATTR uint8_t PBCTL = 0x00u;
 
 static QueueHandle_t eventQueue;
 
@@ -377,8 +408,25 @@ static void IRAM_ATTR MonitorTask(void *arg)
                     }
                 }
             }
-            /* RAMbo bank switch: snoop PORTB writes at $D301 */
-            if (addr == 0xD301u)
+            /*
+             * RAMbo PIA emulation: snoop PBCTL ($D303) and PORTB ($D301).
+             *
+             * $D303 must be intercepted first: it controls which register
+             * is accessible at $D301. Only update PORTB when PBCTL bit 2 = 1
+             * (output register mode). When bit 2 = 0, $D301 addresses the
+             * Data Direction Register — those writes must be silently discarded,
+             * otherwise the DDR value would corrupt the bank-selection state.
+             *
+             * Typical OS init sequence:
+             *   write 0x00 → $D303  (PBCTL bit2=0 → DDR selected at $D301)
+             *   write 0xFF → $D301  (set all PORTB pins as outputs — DDR write)
+             *   write 0x34 → $D303  (PBCTL bit2=1 → output register at $D301)
+             *   write 0xNN → $D301  (bank-selection write — now captured here)
+             */
+            if (addr == 0xD303u)
+                PBCTL = data;
+            /* Update bank-selection register only when PBCTL bit 2 (CRB-2) = 1. */
+            if (addr == 0xD301u && (PBCTL & 0x04u))
                 PORTB = data;
             /* RAMbo write: store data into the active bank */
             if (rambo_active && is_rambo_window)
