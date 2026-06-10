@@ -14,6 +14,7 @@
 \usepackage{tikz}
 \usepackage{tikz-timing}
 \usepackage{verbatim} % Aggiunto per commentare blocchi
+\usepackage{fancyvrb} % BVerbatim per ASCII art centrata
 \usepackage{float}
 \usepackage{booktabs}
 \usepackage{array}
@@ -121,21 +122,22 @@ Il firmware supporta due modalità operative, selezionate a compile-time tramite
     \item \textbf{CCTL mode (\texttt{BUS\_MODE=1}):} Il modulo si collega alla porta cartuccia. Il firmware decodifica i 5 bit bassi dell'indirizzo nell'area \$D500--\$D5FF tramite il segnale \texttt{CCTL\_N} e genera il chip-select per il chip VERA.
 \end{itemize}
 
-\subsection{Ambienti di build PlatformIO}
-Il file \texttt{platformio.ini} definisce due ambienti indipendenti:
+\subsection{Ambiente di build PlatformIO}
+Il file \texttt{platformio.ini} definisce un unico ambiente unificato:
 
 \begin{center}
 \begin{tabular}{llll}
 \toprule
 \textbf{Ambiente} & \textbf{MCU} & \textbf{Modalità} & \textbf{Piattaforma} \\
 \midrule
-\texttt{esp32s3fn8-pbi} & ESP32-S3FN8   & PBI  & espressif32@6.6.0 \\
-\texttt{esp32s3fn8-cctl}& ESP32-S3FN8   & CCTL & espressif32@6.6.0 \\
+\texttt{esp32s3fn8} & ESP32-S3FN8 & PBI + CCTL (unificato, runtime) & espressif32@6.6.0 \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-La selezione avviene tramite la macro \texttt{MCU\_ESP32\_S3} passata come \texttt{-D} nei \texttt{build\_flags}.
+La modalità PBI/CCTL non è più selezionata da ambienti separati ma dalla macro
+\texttt{VERA\_BOARD\_IS\_PBI} in \texttt{main.cpp}: valore \texttt{1} per PBI (default),
+\texttt{0} per CCTL.
 
 \subsection{Interfacciamento Bus}
 L'ESP32 è collegato direttamente alle seguenti linee del bus del 6502 tramite tre level-shifter bidirezionali TXS0108E (3.3\,V lato MCU, 5\,V lato Atari):
@@ -149,7 +151,9 @@ L'ESP32 è collegato direttamente alle seguenti linee del bus del 6502 tramite t
 % --- SEZIONE 3: MAPPING DEI PIN ---
 \section{Mapping dei Pin (ESP32-S3FN8, QFN56)}
 
-I pin fisici del package QFN56 sono numerati 1--56 (più il pad GND centrale, pin 57). La tabella seguente riporta i segnali del progetto con il numero GPIO logico \textbf{e} il numero di pad fisico del QFN56 (da Table~2-1 del datasheet ESP32-S3 v2.2). Il MCU opera con oscillatore RC interno a 240\,MHz; nessun cristallo esterno è previsto.
+I pin fisici del package QFN56 sono numerati 1--56 (più il pad GND centrale). La tabella seguente riporta i segnali del progetto con il numero GPIO logico \textbf{e} il numero di pad fisico del QFN56 (da Table~2-1 del datasheet ESP32-S3 v2.2).
+
+\textbf{Nota importante:} il MCU \emph{richiede} un \textbf{quarzo esterno a 40\,MHz} collegato ai pin dedicati analogici \textbf{XTAL\_P} (pin\,56) e \textbf{XTAL\_N} (pin\,55). L'oscillatore RC interno è limitato al dominio RTC e non è in grado di pilotare il PLL della CPU a 240\,MHz; senza quarzo il chip non si avvia. Vedere la sezione~\ref{sec:xtal} per il circuito consigliato.
 
 \begin{center}
 \begin{tabular}{lcclll}
@@ -230,7 +234,48 @@ I seguenti GPIO non sono assegnati al progetto e sono liberi per usi futuri:
 \end{tabular}
 \end{center}
 
-\noindent\textbf{Attenzione:} I pin QFN56 28 e 30--35 (GPIO26--32) sono collegati internamente alla flash Quad SPI in-package (variante FN8). Non devono mai essere connessi a segnali esterni. GPIO3 (pin 8) è pin di strapping JTAG senza pull interno: va collegato a GND tramite 10\,k$\Omega$. GPIO45 e GPIO46 sono pin di strapping: lasciare liberi.
+\noindent\textbf{Attenzione:} I pin QFN56 28 e 30--35 (GPIO26--32) sono collegati internamente alla flash Quad SPI in-package (variante FN8) e non devono mai essere connessi esternamente. GPIO3 (pin\,8) è pin di strapping JTAG senza pull interno: nel progetto è usato come \texttt{PIN\_RAMBO\_EN} (abilitazione hardware RAMbo 256\,KB) con resistenza di pull-up\,10\,k$\Omega$~→~VCC (RAMbo presente) oppure pull-down\,10\,k$\Omega$~→~GND (assente). GPIO45 e GPIO46 sono pin di strapping: lasciare liberi. I pin\,55 (\texttt{XTAL\_N}) e\,56 (\texttt{XTAL\_P}) sono pad analogici dedicati al quarzo 40\,MHz: riservati, non usabili come GPIO.
+
+\subsection{Quarzo oscillatore 40\,MHz (pin\,55--56)}
+\label{sec:xtal}
+
+L'ESP32-S3FN8 richiede un quarzo esterno da \textbf{40\,MHz} per generare il riferimento PLL interno che alimenta la CPU a 240\,MHz, l'interfaccia flash e i divisori UART. I pin sono \emph{analogici dedicati}: non configurabili via software, non condivisi con GPIO.
+
+\begin{center}
+\begin{tabular}{ccl}
+\toprule
+\textbf{Pin QFN56} & \textbf{Segnale} & \textbf{Note} \\
+\midrule
+55 & \texttt{XTAL\_N} & Terminale negativo del cristallo (uscita amplificatore oscillatore) \\
+56 & \texttt{XTAL\_P} & Terminale positivo del cristallo (ingresso amplificatore oscillatore) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent Schema consigliato:
+\begin{center}
+\begin{BVerbatim}
+XTAL_P (56) --[C1 10pF]-- GND
+     |
+  [X1 40MHz]    <- Rs 0-33 Ohm in serie (opzionale)
+     |
+XTAL_N (55) --[C2 10pF]-- GND
+\end{BVerbatim}
+\end{center}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Componente} & \textbf{Valore} & \textbf{Note} \\
+\midrule
+X1 -- quarzo & 40\,MHz, SMD 3225 o 2016 & $\pm$10\,ppm; verificare $C_L$ dal datasheet \\
+C1, C2 -- condensatori di carico & 10\,pF, 0402, $\pm$5\,\% & $C_{ext}=2C_L - C_{stray}$;\; $C_{stray}\approx 3$--5\,pF \\
+Rs -- resistenza serie & 0--33\,$\Omega$ (opzionale) & Limita il drive dell'oscillatore \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent\textbf{Regole di layout PCB:} tracce XTAL\_P/N più corte possibile ($<$5\,mm); condensatori di carico posizionati ai pad del chip, non al corpo del quarzo; piano di massa solido sotto l'area del quarzo; isolamento dalle tracce PHI2, clock CPU 240\,MHz e bus dati D0--D7.
 
 % --- SEZIONE 4: ANALISI DELLE TEMPISTICHE ---
 \section{Analisi delle Tempistiche}
@@ -481,7 +526,7 @@ La revisione del firmware e della mappatura hardware ha chiarito e corretto i se
 
   \item \textbf{Canali U3 liberati}: poiché \texttt{D1XX\_N} e \texttt{ROM\_SEL\_N} non passano più per U3~(TXS0108E), i canali A6/B6 e A7/B7 risultano disponibili. Il canale A6/B6 è ora assegnato a MPD (GPIO\,42, output ESP32 \texttt{→} bus Atari 5\,V); A7/B7 rimane di riserva.
 
-  \item \textbf{GPIO\,15 e GPIO\,16} (pad RTC \texttt{XTAL\_32K\_P}/\texttt{N}): il progetto non impiega quarzo da 32\,kHz; il MCU opera con oscillatore interno RC a 240\,MHz. I pad sono utilizzati come normali GPIO per A9 e A10.
+  \item \textbf{GPIO\,15 e GPIO\,16} (pad RTC \texttt{XTAL\_32K\_P}/\texttt{N}): il progetto non impiega quarzo da 32\,kHz; i pad sono utilizzati come normali GPIO per segnali indirizzo. Il MCU richiede invece un quarzo esterno a \textbf{40\,MHz} sulle pad dedicate \textbf{XTAL\_P} (pin\,56) e \textbf{XTAL\_N} (pin\,55) — senza di esso il chip non si avvia (vedere sezione~\ref{sec:xtal}).
 \end{itemize}
 
 Il firmware supporta le due modalità (\texttt{BUS\_MODE=0} PBI, \texttt{BUS\_MODE=1} CCTL) e garantisce portabilità su hardware diverso senza duplicazione di codice. La tabella dei pin fisici del package QFN56 consente di realizzare il PCB direttamente dalla documentazione senza ambiguità tra numero GPIO logico e pad fisico.
