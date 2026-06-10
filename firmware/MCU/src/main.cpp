@@ -7,7 +7,7 @@
  * Atari XL/XE computer. Both address spaces are handled at runtime from
  * the full 16-bit address bus (A0–A15):
  *   - PBI ($D100–$D1FF, $D600–$D7FF, $D800–$DFFF): VERA card registers and ROM
- *   - CCTL ($D500–$D51F): cartridge control line (DEV_SEL_N only)
+ *   - CCTL ($D500–$D5FF): cartridge control line (DEV_SEL_N only)
  *
  * This version uses a definitive 34-GPIO mapping (plus Serial on 43/44)
  * with software-based 16-bit address decoding.
@@ -119,10 +119,9 @@ static inline uint8_t IRAM_ATTR decode_data(uint32_t lo)
  * Compile-time Configuration
  * =========================================================================== */
 
-#define PBI_DEV_ID 0x80u /* PBI Device ID bit 7 */
-
-#define VERA_BOARD_IS_PBI 0x01 /* Default as PBI */
-//#define VERA_BOARD_IS_PBI 0x00 /* if CCTL */
+#define PBI_DEV_ID        0x80u  /* PBI Device ID bit 7 */
+#define VERA_BOARD_IS_PBI 0x01u  /* Default as PBI */
+//#define VERA_BOARD_IS_PBI 0x00u  /* if CCTL */
 
 /* ===========================================================================
  * Shared Data
@@ -133,16 +132,16 @@ static IRAM_ATTR uint8_t  ram_pbi[512];     /* 512B RAM at $D600-$D7FF */
 
 static bool rambo_hw_enabled = false; /* set in setup() reading PIN_RAMBO_EN */
 
-/* 256 KB extended RAM (RAMbo) — IRAM BSS: risiede in IRAM senza occupare Flash. */
+/* 256 KB extended RAM (RAMbo) — IRAM BSS: resides in IRAM, zero Flash cost. */
 static uint8_t extended_rambo_256k[256 * 1024] __attribute__((section(".iram0.bss")));
 
 /*
- * PORTB ($D301) snapshot — usato per il bank switching RAMbo.
- * Bit 4 = 0: RAMbo attivo ($4000-$7FFF → banco selezionato).
- * Bit 4 = 1: RAMbo disabilitato (RAM interna Atari risponde).
- * Bank (0-15) estratto dai bit 6,5,3,2 di PORTB:
+ * PORTB ($D301) snapshot — used for RAMbo bank switching.
+ * Bit 4 = 0: RAMbo active ($4000-$7FFF → selected bank responds).
+ * Bit 4 = 1: RAMbo disabled (Atari internal RAM responds normally).
+ * Bank (0-15) from PORTB bits 6,5,3,2:
  *   bank = ((portb >> 2) & 0x03) | ((portb >> 3) & 0x0C)
- * Inizializzato a 0xFF = RAMbo disabilitato fino al primo write del 6502.
+ * Initialised to 0xFF (bit 4 = 1) — RAMbo disabled until first 6502 write to $D301.
  */
 static IRAM_ATTR uint8_t portb_rambo = 0xFFu;
 
@@ -285,7 +284,7 @@ static void IRAM_ATTR MonitorTask(void *arg)
         bool is_cctl_range = is_d5xx && (off8 != 0xFFu);
         bool is_cctl_latch = is_d5xx && (off8 == 0xFFu);
 
-        /* RAMbo: 256 KB bank-switched at $4000-$7FFF, indipendente da PBI/CCTL.
+        /* RAMbo: 256 KB bank-switched at $4000-$7FFF, independent of PBI/CCTL mode.
          * Active when PIN_RAMBO_EN=1 (hardware present) and bit 4 of PORTB ($D301) = 0.
          * Bank (0-15) from PORTB bits 6,5,3,2: bank = ((portb>>2)&0x03)|((portb>>3)&0x0C) */
         bool is_rambo_window = (addr >= 0x4000u && addr <= 0x7FFFu);
