@@ -9,3 +9,7 @@
 /firmware/MCU/6502/pbi-driver.h
 /firmware/MCU/6502/pbi-driver.l
 /firmware/MCU/6502/pbi-driver.o
+/firmware/MCU/6502/vera_pbi_handler.bin
+/firmware/MCU/6502/vera_pbi_handler.h
+/firmware/MCU/6502/vera_pbi_handler.l
+/firmware/MCU/6502/vera_pbi_handler.o
