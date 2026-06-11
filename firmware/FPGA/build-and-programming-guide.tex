@@ -287,18 +287,25 @@ resulting netlist to iCE40 primitives (LUTs, FFs, BRAM, SB\_IO, etc.)
 and writes a JSON netlist.
 
 On success, Yosys prints a resource utilisation summary.  Measured values
-from the synthesised design:
+after place-and-route with nextpnr-ice40:
 
 \begin{center}
-\begin{tabular}{lrr}
+\begin{tabular}{lrrr}
 \toprule
-\textbf{Resource} & \textbf{Measured} & \textbf{Available (UP5K)} \\
+\textbf{Resource} & \textbf{Used} & \textbf{Available} & \textbf{\%} \\
 \midrule
-SB\_LUT4 (LUT4 + carry) & 83  & 5280 \\
-SB\_FF (flip-flops)     & 10  & 5280 \\
-SB\_RAM40\_4K (EBR)     &  5  &   30 \\
-SB\_IO (I/O buffers)    & 39  &   39 \\
-\textbf{Fmax (CLK)}     & \multicolumn{2}{l}{\textbf{62.72\,MHz} (PASS at 25\,MHz)} \\
+ICESTORM\_LC (total)     &  87 & 5280 &  1\% \\
+\quad of which LUT4 only &  52 &      &     \\
+\quad of which LUT4+DFF  &   5 &      &     \\
+\quad of which DFF only  &   5 &      &     \\
+\quad of which CARRY only&  21 &      &     \\
+\quad carry-chain legal. &   3 &      &     \\
+\midrule
+ICESTORM\_RAM (EBR)      &   5 &   30 & 16\% \\
+SB\_IO (I/O buffers)     &  39 &   39 & 100\% \\
+ICESTORM\_SPRAM          &   0 &    4 &  0\% \\
+\midrule
+\textbf{Fmax (CLK)}      & \multicolumn{3}{l}{\textbf{62.72\,MHz} (PASS at 25\,MHz)} \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -306,7 +313,7 @@ SB\_IO (I/O buffers)    & 39  &   39 \\
 \textbf{I/O budget note:} the iCE40UP5K-SG48 exposes exactly 39 user I/O
 pins.  This design uses all 39.  For this reason \sig{DIP\_SEL} is
 2\,bits (not 3), allowing VERA\_CS bit selection from D[0]--D[3].
-Adding a third DIP switch bit would require one fewer signal elsewhere.
+Adding a third DIP switch bit would require removing one other signal.
 
 \subsection{Step 3 -- Place \& Route}
 
@@ -324,10 +331,25 @@ nextpnr-ice40 --up5k --package sg48 \
 placeholders.  Edit the file to match your actual schematic before this
 step (see Section~\ref{sec:pins}).
 
-nextpnr reports timing after routing.  The design must meet timing at
-25\,MHz (the system clock).  The critical path is the PHI2 synchroniser
-chain, which is combinational; the path from \cmd{phi2\_rise} to any
-registered output is unconstrained by PHI2 frequency.
+nextpnr reports timing after routing.  Measured results:
+
+\begin{center}
+\begin{tabular}{llr}
+\toprule
+\textbf{Path type} & \textbf{Description} & \textbf{Worst delay} \\
+\midrule
+CLK $\to$ CLK   & Registered path (Fmax) & 15.94\,ns (62.72\,MHz) \\
+async $\to$ async & Combinational (PHI2 gate) & 28.12\,ns \\
+async $\to$ CLK  & Input setup time        & 26.89\,ns \\
+CLK $\to$ async  & Clock-to-output         & 17.17\,ns \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The 25\,MHz system clock (period 40\,ns) has \textbf{24.06\,ns of slack}
+on the registered path.  The combinational PHI2-gated outputs settle in
+at most 28.12\,ns after address/control inputs change --- well within the
+6502 PHI2-high window of $\approx$279\,ns at 1.79\,MHz.
 
 \subsection{Step 4 -- Pack the bitstream}
 
@@ -339,8 +361,7 @@ icepack C6502_Interface.asc C6502_Interface.bin
 \end{lstlisting}
 
 \cmd{C6502\_Interface.bin} is the file that gets programmed into the
-SPI flash.  Its size is typically around 100--200\,KB depending on
-the device configuration.
+SPI flash.  Measured size: \textbf{104\,090 bytes} ($\approx$101.6\,KB).
 
 \subsection{Step 5 -- Program the SPI flash}
 
