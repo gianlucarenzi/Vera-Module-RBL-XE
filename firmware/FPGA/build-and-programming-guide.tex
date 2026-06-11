@@ -194,14 +194,32 @@ select, \texttt{\$00} to deselect), and PBI RAM/ROM are absent (0~EBR\@).
 
 \subsection{FPGA toolchain}
 
-All tools below are open-source.  Install on Debian/Ubuntu:
+While some tools are available via \cmd{apt} on Debian/Ubuntu, they are often outdated (especially on Debian 11). The recommended way to set up the toolchain is using the \textbf{OSS CAD Suite}, which provides pre-compiled, up-to-date versions of Yosys, nextpnr, GHDL, and all required plugins.
+
+\subsubsection{Installing OSS CAD Suite (Recommended for Debian 11)}
+
+\begin{enumerate}
+    \item Download the latest Linux x64 archive from: \\
+          \url{https://github.com/YosysHQ/oss-cad-suite-build/releases/latest}
+    \item Extract the archive (e.g., to \file{\$HOME/oss-cad-suite}).
+    \item Add the \file{bin} directory to your \cmd{PATH}:
+\end{enumerate}
+
+\begin{lstlisting}[style=shell]
+export PATH="$HOME/oss-cad-suite/bin:$PATH"
+\end{lstlisting}
+
+This suite includes \cmd{yosys}, \cmd{nextpnr-ice40}, \cmd{icepack}, \cmd{iceprog}, and \cmd{ghdl} with the \cmd{ghdl-yosys-plugin} already integrated.
+
+\subsubsection{Alternative: Manual installation via apt (Debian 12+)}
+
+On newer distributions, you can try:
 
 \begin{lstlisting}[style=shell]
 sudo apt install fpga-icestorm nextpnr-ice40 yosys ghdl
 \end{lstlisting}
 
-\textbf{Note:} the \cmd{ghdl-yosys-plugin} is required for VHDL synthesis
-and is generally not available as a package.  Build it from source:
+\textbf{Note:} if installing via \cmd{apt}, you will likely need to build the \cmd{ghdl-yosys-plugin} from source as described below, because it is rarely packaged.
 
 \begin{lstlisting}[style=shell]
 git clone https://github.com/ghdl/ghdl-yosys-plugin
@@ -212,12 +230,41 @@ sudo make install
 
 \subsection{Flash programming tools}
 
-\begin{lstlisting}[style=shell]
-# openFPGALoader -- recommended, supports many programmers
-sudo apt install openFPGALoader
+On modern distributions (e.g. Debian 12+), \cmd{openFPGALoader} can be installed via package manager:
 
-# iceprog is already included in fpga-icestorm
+\begin{lstlisting}[style=shell]
+sudo apt install openFPGALoader
 \end{lstlisting}
+
+On older distributions like \textbf{Debian 11 (Bullseye)}, the package is not available and must be built from source.
+
+\subsubsection{Building openFPGALoader from source}
+
+First, install the required dependencies and build tools:
+
+\begin{lstlisting}[style=shell]
+sudo apt install git cmake make g++ pkg-config libusb-1.0-0-dev \
+                 libhidapi-dev libgpiod-dev libusbmuxd-dev
+\end{lstlisting}
+
+Then, clone the repository and build the project:
+
+\begin{lstlisting}[style=shell]
+git clone https://github.com/trabucayre/openfpgaloader
+cd openfpgaloader
+mkdir build
+cd build
+# Use -DCMAKE_INSTALL_PREFIX=$HOME to install in your home directory
+# or omit it to install system-wide (requires sudo make install)
+cmake .. -DCMAKE_INSTALL_PREFIX=$HOME
+make -j$(nproc)
+make install
+\end{lstlisting}
+
+Ensure \file{\$HOME/bin} is in your \cmd{PATH} if you used the home directory prefix.
+
+\subsubsection{Iceprog}
+The \cmd{iceprog} tool is already included in the \cmd{fpga-icestorm} package and supports FTDI-based programmers (e.g. FT2232H).
 
 \subsection{6502 assembler (cc65)}
 

@@ -123,7 +123,23 @@ BOM: 1× 74LVC1G08 SOT-23-5, 2× 4.7kΩ 0402 (CDONE pullups),
 
 ## Toolchain
 
-### Required packages
+### FPGA toolchain
+
+The recommended way to set up the toolchain is using the **OSS CAD Suite**, as the packages available in Debian 11 repositories are outdated and do not include the necessary GHDL plugin for Yosys.
+
+#### Installing OSS CAD Suite (Recommended for Debian 11)
+
+1. Download the latest Linux x64 archive from [OSS CAD Suite Releases](https://github.com/YosysHQ/oss-cad-suite-build/releases/latest).
+2. Extract the archive (e.g., to `$HOME/oss-cad-suite`).
+3. Add the bin directory to your PATH:
+
+```bash
+export PATH="$HOME/oss-cad-suite/bin:$PATH"
+```
+
+This suite includes `yosys`, `nextpnr-ice40`, `icepack`, `iceprog`, and `ghdl` with the `ghdl-yosys-plugin` already integrated.
+
+#### Alternative: Manual installation via apt (Debian 12+)
 
 ```bash
 # Debian / Ubuntu
@@ -138,14 +154,30 @@ git clone https://github.com/ghdl/ghdl-yosys-plugin
 cd ghdl-yosys-plugin && make && sudo make install
 ```
 
-For flashing:
+### Flash programming tools
+
+On modern distributions (e.g. Debian 12+), `openFPGALoader` can be installed via package manager:
 
 ```bash
-# openFPGALoader (recommended)
 sudo apt install openFPGALoader
-
-# iceprog is included in fpga-icestorm (installed above)
 ```
+
+On older distributions like **Debian 11 (Bullseye)**, it must be built from source:
+
+```bash
+# Install dependencies
+sudo apt install git cmake make g++ pkg-config libusb-1.0-0-dev \
+                 libhidapi-dev libgpiod-dev libusbmuxd-dev
+
+# Build and install
+git clone https://github.com/trabucayre/openfpgaloader
+cd openfpgaloader && mkdir build && cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=$HOME
+make -j$(nproc)
+make install
+```
+
+`iceprog` is already included in `fpga-icestorm`.
 
 ### Tool roles
 
