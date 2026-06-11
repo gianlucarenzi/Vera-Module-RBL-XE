@@ -83,7 +83,7 @@
 \pagestyle{fancy}
 \fancyhf{}
 \fancyhead[L]{\small VERA RBL-XE -- FPGA Build \& Programming Guide}
-\fancyhead[R]{\small Rev~3}
+\fancyhead[R]{\small Rev~4}
 \fancyfoot[C]{\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
 
@@ -111,7 +111,7 @@
     {\Huge\bfseries VERA RBL-XE\\[4mm]
      FPGA Build \& Programming Guide\par}
     \vspace{10mm}
-    {\large iCE40UP5K -- Rev~3\par}
+    {\large iCE40UP5K -- Rev~4\par}
     \vspace{8mm}
     {\normalsize
         6502 bus controller with RAMbo 256\,KB, PBI RAM/ROM,\\
@@ -794,7 +794,7 @@ $\approx$199\,ns of margin before the 6502 samples the bus.
 \textbf{File} & \textbf{Description} \\
 \midrule
 \file{C6502\_Interface.vhd} &
-    Top-level VHDL entity (Rev~3).  Generic \cmd{VERA\_IS\_PBI}
+    Top-level VHDL entity (Rev~4).  Generic \cmd{VERA\_IS\_PBI}
     selects PBI or CCTL mode at synthesis time.  Contains all bus
     logic, BRAM instances, and SRAM control. \\
 \file{custom\_types.vhd} &

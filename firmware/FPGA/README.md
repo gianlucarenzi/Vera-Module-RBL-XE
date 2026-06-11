@@ -1,6 +1,6 @@
 # FPGA Firmware — iCE40UP5K
 
-6502 bus controller for the VERA RBL-XE module (Rev 3).  Implements PBI RAM,
+6502 bus controller for the VERA RBL-XE module (Rev 4).  Implements PBI RAM,
 PBI ROM (BRAM), RAMbo 256 KB bank-switched memory via external SRAM, and all
 associated control signals.  A VHDL boolean generic (`VERA_IS_PBI`) produces
 two separate bitstreams: **PBI mode** (latch `$D1FF`, PBI RAM/ROM in BRAM) and
@@ -318,7 +318,7 @@ dedicated hardware functions: `PBI_ID_SEL` and `RAMBO_EN`.
 
 | File | Description |
 |------|-------------|
-| `C6502_Interface.vhd` | Top-level entity (Rev 3); `VERA_IS_PBI` generic selects PBI or CCTL mode |
+| `C6502_Interface.vhd` | Top-level entity (Rev 4); `VERA_IS_PBI` generic selects PBI or CCTL mode |
 | `custom_types.vhd` | BRAM array type definitions |
 | `pbi_rom_pkg.vhd` | PBI ROM contents as VHDL constant (**auto-generated**) |
 | `gen_pbi_rom_pkg.py` | Script: converts `.bin` → `pbi_rom_pkg.vhd` |
