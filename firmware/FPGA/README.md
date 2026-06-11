@@ -39,6 +39,7 @@ Recommended: **AS6C4008-55SIN** (Alliance Memory, SOP-32).
 | WE# | FPGA `SRAM_WE_N` |
 
 This wiring uses only **7 new FPGA pins** for the full 256 KB RAMbo.
+The total design occupies all 39 user I/O pins of the SG48 package.
 
 ### SPI flash (FPGA configuration)
 Any **SPI NOR flash** compatible with the iCE40 boot protocol, e.g.
@@ -180,6 +181,17 @@ iceprog C6502_Interface.bin
 make clean      # removes .json, .asc, .bin
 ```
 
+### Measured synthesis results
+
+| Resource | Used | Available |
+|----------|------|-----------|
+| LUT4 + carry | 83 | 5280 |
+| Flip-flops | 10 | 5280 |
+| EBR (BRAM) | 5 | 30 |
+| User I/O | 39 | 39 |
+| Fmax (CLK) | **62.72 MHz** | target 25 MHz |
+| Bitstream size | 102 KB | — |
+
 ---
 
 ## Pin assignment
@@ -189,6 +201,64 @@ Edit `board-pin-mapping.pcf` to match your schematic before running
 
 The CLK signal must be assigned to a **Global Buffer (GB) input** pin.
 Valid GB pins on the iCE40UP5K SG48 package: 20, 28, 31, 38, 41, 43, 48.
+
+**Valid user I/O pin numbers for SG48** (39 total):
+```
+2 3 4 6 9 10 11 12 13 14 15 16 17 18 19 20 21
+23 25 26 27 28 31 32 34 35 36 37 38 39
+40 41 42 43 44 45 46 47 48
+```
+Pins 1, 5, 7, 8, 22, 24, 29, 30, 33 are power/ground or reserved —
+nextpnr rejects them with an error.
+
+**I/O budget:** the design uses all 39 available pins.  `DIP_SEL` is
+therefore 2 bits (not 3), selecting VERA\_CS source from D[0]–D[3].
+
+### Pin table
+
+| Signal | Dir | PCF pin\* | Description |
+|--------|-----|-----------|-------------|
+| `CLK` | In | 35 | 25 MHz system clock — must be on a GB pin |
+| `A[0]` | In | 40 | 6502 address bit 0 |
+| `A[1]` | In | 41 | 6502 address bit 1 |
+| `A[2]` | In | 42 | 6502 address bit 2 |
+| `A[3]` | In | 43 | 6502 address bit 3 |
+| `A[4]` | In | 44 | 6502 address bit 4 |
+| `A[5]` | In | 45 | 6502 address bit 5 |
+| `A[6]` | In | 46 | 6502 address bit 6 |
+| `A[7]` | In | 47 | 6502 address bit 7 |
+| `A[8]` | In | 48 | 6502 address bit 8 |
+| `A[9]` | In | 6 | 6502 address bit 9 |
+| `A[10]` | In | 2 | 6502 address bit 10 |
+| `A[11]` | In | 3 | 6502 address bit 11 |
+| `A[12]` | In | 4 | 6502 address bit 12 |
+| `A[13]` | In | 26 | 6502 address bit 13 — also wired to SRAM A[13] on PCB |
+| `A[14]` | In | 9 | 6502 address bit 14 |
+| `A[15]` | In | 10 | 6502 address bit 15 |
+| `D[0]` | InOut | 11 | 6502 data bit 0 — shared net with SRAM DQ[0] |
+| `D[1]` | InOut | 12 | 6502 data bit 1 — shared net with SRAM DQ[1] |
+| `D[2]` | InOut | 13 | 6502 data bit 2 — shared net with SRAM DQ[2] |
+| `D[3]` | InOut | 14 | 6502 data bit 3 — shared net with SRAM DQ[3] |
+| `D[4]` | InOut | 15 | 6502 data bit 4 — shared net with SRAM DQ[4] |
+| `D[5]` | InOut | 16 | 6502 data bit 5 — shared net with SRAM DQ[5] |
+| `D[6]` | InOut | 17 | 6502 data bit 6 — shared net with SRAM DQ[6] |
+| `D[7]` | InOut | 18 | 6502 data bit 7 — shared net with SRAM DQ[7] |
+| `PHI2` | In | 34 | 6502 phase-2 clock — synchronised internally, not used as FPGA clock |
+| `RNW` | In | 36 | Read/Not-Write: high = read, low = write |
+| `VERA_CS` | Out | 32 | VERA chip-select latch (active low) |
+| `MPD` | Out | 31 | Machine Program Data — blocks Atari from driving D bus for `$D800–$DFFF` reads |
+| `EXTSEL` | Out | 37 | External Select — blocks Atari internal RAM for PBI RAM and RAMbo accesses |
+| `DIP_SEL[0]` | In | 27 | DIP switch bit 0 — together with bit 1 selects which of D[0]–D[3] latches VERA\_CS |
+| `DIP_SEL[1]` | In | 28 | DIP switch bit 1 |
+| `SRAM_A_BANK[0]` | Out | 19 | SRAM A[14] — bank bit 0 = PORTB[2] |
+| `SRAM_A_BANK[1]` | Out | 20 | SRAM A[15] — bank bit 1 = PORTB[3] |
+| `SRAM_A_BANK[2]` | Out | 21 | SRAM A[16] — bank bit 2 = PORTB[5] |
+| `SRAM_A_BANK[3]` | Out | 38 | SRAM A[17] — bank bit 3 = PORTB[6] |
+| `SRAM_CE_N` | Out | 23 | SRAM chip enable (active low) |
+| `SRAM_OE_N` | Out | 39 | SRAM output enable (active low) — read cycles only |
+| `SRAM_WE_N` | Out | 25 | SRAM write enable (active low) — write cycles only |
+
+\* Placeholder numbers — replace with actual schematic pad numbers.
 
 ---
 
