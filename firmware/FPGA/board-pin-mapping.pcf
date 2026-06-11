@@ -79,11 +79,17 @@ set_io MPD          31
 set_io EXTSEL       37
 
 # -----------------------------------------------------------------------------
-# DIP switches (VERA_CS bit selector, 2 bits -> selects D[0]-D[3])
-# 3 bits would require 40 pins total, exceeding the 39-pin UP5K SG48 limit.
+# Hardware configuration inputs
+#
+# PBI_ID_SEL: wired via hardware jumper to one of D[0..7] on the PCB.
+#             Sampled at phi2_rise when the PBI latch address ($D1FF) is written.
+#             Selects VERA when high, deselects when low. Ignored in CCTL build.
+#
+# RAMBO_EN:   tie to VCC (pullup)  -> RAMbo enabled  (follows PBCTL[2])
+#             tie to GND (pulldown) -> RAMbo disabled (hardware override)
 # -----------------------------------------------------------------------------
-set_io DIP_SEL[0]   27
-set_io DIP_SEL[1]   28
+set_io PBI_ID_SEL   27
+set_io RAMBO_EN     28
 
 # -----------------------------------------------------------------------------
 # External SRAM control -- 7 pins (Rev 2)
