@@ -19,10 +19,15 @@ C_ARRAY_FILE = $(OBJ_NAME).h
 # File di configurazione del linker
 LINK_CFG = pbi-driver.ld
 
-.PHONY: all clean
+# FPGA ROM package (VHDL)
+FPGA_DIR       = ../../FPGA
+ROM_PKG_VHD    = $(FPGA_DIR)/pbi_rom_pkg.vhd
+GEN_ROM_SCRIPT = $(FPGA_DIR)/gen_pbi_rom_pkg.py
+
+.PHONY: all clean fpga-rom
 
 # Regola predefinita: compila tutto
-all: $(BIN_FILE) $(C_ARRAY_FILE)
+all: $(BIN_FILE) $(C_ARRAY_FILE) $(ROM_PKG_VHD)
 
 # ---
 ## Assemblaggio del Codice 6502
@@ -60,9 +65,19 @@ $(C_ARRAY_FILE): $(BIN_FILE)
 	cp $@ ../include/
 
 # ---
+## FPGA ROM package
+
+# Genera pbi_rom_pkg.vhd dal binario 6502 per l'inizializzazione della BRAM
+fpga-rom: $(ROM_PKG_VHD)
+
+$(ROM_PKG_VHD): $(BIN_FILE) $(GEN_ROM_SCRIPT)
+	python3 $(GEN_ROM_SCRIPT) $< $@
+
+# ---
 ## Pulizia
 
 # Regola per pulire i file generati
 clean:
 	$(RM) $(OBJ_FILE) $(LIST_FILE) $(BIN_FILE) $(C_ARRAY_FILE)
+	$(RM) $(ROM_PKG_VHD)
 	$(RM) *~

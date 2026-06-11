@@ -1,0 +1,94 @@
+# =============================================================================
+# scheda.pcf  --  Pin Constraint File for iCE40UP5K-SG48
+#
+# IMPORTANT: pin numbers below are PLACEHOLDERS.
+# Map each signal to the actual pad number on your board schematic
+# before running nextpnr-ice40.
+#
+# Package: QFN-48 (SG48), 39 user I/O available.
+# Toolchain: nextpnr-ice40  (--package sg48 --up5k)
+#
+# Pin budget summary:
+#   Existing signals : 32 pins
+#   New SRAM signals :  7 pins  (SRAM_A_BANK[3:0] + CE/OE/WE)
+#   CLK (25 MHz)     :  1 pin   (use a Global Buffer input, e.g. pin 35)
+#   Total            : 40 pins  -- verify against your schematic
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# System clock -- 25 MHz crystal oscillator output
+# Must land on a Global Buffer input (GB) pin on the iCE40UP5K.
+# Valid GB pins on SG48: 20, 28, 31, 38, 41, 43, 48
+# -----------------------------------------------------------------------------
+set_io CLK          35      # <-- replace with actual GB pin
+
+# -----------------------------------------------------------------------------
+# 6502 bus -- address (16 bits)
+# -----------------------------------------------------------------------------
+set_io A[0]         40
+set_io A[1]         41
+set_io A[2]         42
+set_io A[3]         43
+set_io A[4]         44
+set_io A[5]         45
+set_io A[6]         46
+set_io A[7]         47
+set_io A[8]         48
+set_io A[9]          1
+set_io A[10]         2
+set_io A[11]         3
+set_io A[12]         4
+set_io A[13]         7      # also wired to SRAM A[13] on PCB
+set_io A[14]         9
+set_io A[15]        10
+
+# -----------------------------------------------------------------------------
+# 6502 bus -- data (8 bits, bidirectional)
+# Same nets are wired to SRAM DQ[7:0] on the PCB.
+# -----------------------------------------------------------------------------
+set_io D[0]         11
+set_io D[1]         12
+set_io D[2]         13
+set_io D[3]         14
+set_io D[4]         15
+set_io D[5]         16
+set_io D[6]         17
+set_io D[7]         18
+
+# -----------------------------------------------------------------------------
+# 6502 control
+# -----------------------------------------------------------------------------
+set_io PHI2         34
+set_io RNW_         36
+
+# -----------------------------------------------------------------------------
+# PBI control outputs
+# -----------------------------------------------------------------------------
+set_io VERA_CS      32
+set_io MPD          31
+set_io EXTSEL       30
+
+# -----------------------------------------------------------------------------
+# DIP switches (VERA_CS bit selector, 3 bits)
+# -----------------------------------------------------------------------------
+set_io DIP_SEL[0]   27
+set_io DIP_SEL[1]   28
+set_io DIP_SEL[2]   29
+
+# -----------------------------------------------------------------------------
+# External SRAM control -- 7 new pins (Rev 2)
+#
+# SRAM_A_BANK[3:0] drive A[17:14] of the AS6C4008.
+#   A[13:0]  come directly from the 6502 bus (PCB net, no FPGA pin used).
+#   A18 of the SRAM must be tied to GND on the PCB.
+#
+# SRAM DQ[7:0] share the same net as 6502 D[7:0] (see above).
+# -----------------------------------------------------------------------------
+set_io SRAM_A_BANK[0]   19   # SRAM A[14]
+set_io SRAM_A_BANK[1]   20   # SRAM A[15]
+set_io SRAM_A_BANK[2]   21   # SRAM A[16]
+set_io SRAM_A_BANK[3]   22   # SRAM A[17]
+
+set_io SRAM_CE_N         23
+set_io SRAM_OE_N         24
+set_io SRAM_WE_N         25
