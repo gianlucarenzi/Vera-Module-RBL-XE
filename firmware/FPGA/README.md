@@ -1,9 +1,11 @@
 # FPGA Firmware — iCE40UP5K
 
-6502 bus controller for the VERA RBL-XE module.  Implements PBI RAM, PBI ROM
-(BRAM), RAMbo 256 KB bank-switched memory via external SRAM, and all associated
-PBI control signals — replacing the ESP32-S3 MCU that handled the bus in the
-previous design.
+6502 bus controller for the VERA RBL-XE module (Rev 3).  Implements PBI RAM,
+PBI ROM (BRAM), RAMbo 256 KB bank-switched memory via external SRAM, and all
+associated control signals.  A VHDL boolean generic (`VERA_IS_PBI`) produces
+two separate bitstreams: **PBI mode** (latch `$D1FF`, PBI RAM/ROM in BRAM) and
+**CCTL mode** (latch `$D5FF`, D[7]=1 selects, 0 EBR — Yosys eliminates dead
+code).
 
 ## Memory map
 
@@ -16,7 +18,11 @@ previous design.
 | `$D600–$D7FF` | 512 B | PBI RAM | BRAM (1 EBR block) |
 | `$D800–$DFFF` | 2 KB | PBI ROM (6502 driver) | BRAM (4 EBR blocks) |
 
-**BRAM usage**: 5 of 30 EBR blocks on the iCE40UP5K.
+**BRAM usage (PBI mode)**: 5 of 30 EBR blocks on the iCE40UP5K.
+**BRAM usage (CCTL mode)**: 0 EBR — no PBI RAM/ROM (`$D5FF` latch uses a register only).
+
+> In CCTL mode the VERA_CS latch address changes to `$D5FF`: write `$80`
+> (D[7]=1) to select VERA, write `$00` to deselect.
 
 ## Hardware
 
@@ -135,62 +141,66 @@ make fpga-rom
 
 ### 2. Synthesise, place & route, pack bitstream
 
+Two bitstreams are built from the same VHDL via the `VERA_IS_PBI` generic:
+
 ```bash
 cd firmware/FPGA
-make
+make pbi    # builds C6502_Interface_PBI.bin  (PBI connector, $D1xx)
+make cctl   # builds C6502_Interface_CCTL.bin (cartridge port, $D5xx)
+make        # builds both (default)
 ```
 
-This runs the full flow and produces `C6502_Interface.bin`.
-
-Step by step:
+PBI build step-by-step:
 
 ```bash
-# Synthesis: VHDL -> JSON netlist
+# Synthesis: VHDL -> JSON netlist  (VERA_IS_PBI=true)
 yosys -m ghdl -p \
-    "ghdl --std=08 custom_types.vhd pbi_rom_pkg.vhd C6502_Interface.vhd \
+    "ghdl --std=08 -gVERA_IS_PBI=true \
+          custom_types.vhd pbi_rom_pkg.vhd C6502_Interface.vhd \
           -e C6502_Interface; \
-     synth_ice40 -top C6502_Interface -json C6502_Interface.json"
+     synth_ice40 -top C6502_Interface -json C6502_Interface_PBI.json"
 
 # Place & route: JSON + PCF -> ASCII bitstream
 nextpnr-ice40 --up5k --package sg48 \
-    --json C6502_Interface.json \
+    --json C6502_Interface_PBI.json \
     --pcf board-pin-mapping.pcf \
-    --asc C6502_Interface.asc
+    --asc C6502_Interface_PBI.asc
 
 # Pack binary bitstream  <-- this is what gets flashed
-icepack C6502_Interface.asc C6502_Interface.bin
+icepack C6502_Interface_PBI.asc C6502_Interface_PBI.bin
 ```
+
+CCTL follows the same three steps with `-gVERA_IS_PBI=false` and `_CCTL` filename suffix.
 
 ### 3. Flash the bitstream
 
 ```bash
-# openFPGALoader (recommended, supports many programmers)
-make flash
-# equivalent to:
-openFPGALoader -b ice40_generic C6502_Interface.bin
+# openFPGALoader (recommended)
+make flash-pbi      # equivalent to: openFPGALoader -b ice40_generic C6502_Interface_PBI.bin
+make flash-cctl     # equivalent to: openFPGALoader -b ice40_generic C6502_Interface_CCTL.bin
 
 # iceprog (FTDI FT2232H)
-make flash-iceprog
-# equivalent to:
-iceprog C6502_Interface.bin
+make flash-pbi-iceprog    # equivalent to: iceprog C6502_Interface_PBI.bin
+make flash-cctl-iceprog   # equivalent to: iceprog C6502_Interface_CCTL.bin
 ```
 
 ### 4. Clean
 
 ```bash
-make clean      # removes .json, .asc, .bin
+make clean      # removes .json, .asc, .bin and LaTeX intermediates
 ```
 
 ### Measured synthesis results
 
-| Resource | Used | Available |
-|----------|------|-----------|
-| LUT4 + carry | 83 | 5280 |
-| Flip-flops | 10 | 5280 |
-| EBR (BRAM) | 5 | 30 |
-| User I/O | 39 | 39 |
-| Fmax (CLK) | **62.72 MHz** | target 25 MHz |
-| Bitstream size | 102 KB | — |
+| Resource | PBI | CCTL | Available |
+|----------|-----|------|-----------|
+| ICESTORM\_LC | 87 | 1 | 5280 |
+| EBR (BRAM) | 5 | 0 | 30 |
+| User I/O | 39 | 39 | 39 |
+| Fmax (CLK) | **62.72 MHz** | — | target 25 MHz |
+| Bitstream size | ~104 KB | ~104 KB | — |
+
+In CCTL mode Yosys eliminates all PBI RAM/ROM dead code (0 EBR, 1 LC).
 
 ---
 
@@ -211,8 +221,9 @@ Valid GB pins on the iCE40UP5K SG48 package: 20, 28, 31, 38, 41, 43, 48.
 Pins 1, 5, 7, 8, 22, 24, 29, 30, 33 are power/ground or reserved —
 nextpnr rejects them with an error.
 
-**I/O budget:** the design uses all 39 available pins.  `DIP_SEL` is
-therefore 2 bits (not 3), selecting VERA\_CS source from D[0]–D[3].
+**I/O budget:** the design uses all 39 available pins.  The mode (PBI vs CCTL)
+is compiled into the bitstream via `VERA_IS_PBI`, freeing pins 27–28 for
+dedicated hardware functions: `PBI_ID_SEL` and `RAMBO_EN`.
 
 ### Pin table
 
@@ -248,8 +259,8 @@ therefore 2 bits (not 3), selecting VERA\_CS source from D[0]–D[3].
 | `VERA_CS` | Out | 32 | VERA chip-select latch (active low) |
 | `MPD` | Out | 31 | Machine Program Data — blocks Atari from driving D bus for `$D800–$DFFF` reads |
 | `EXTSEL` | Out | 37 | External Select — blocks Atari internal RAM for PBI RAM and RAMbo accesses |
-| `DIP_SEL[0]` | In | 27 | DIP switch bit 0 — together with bit 1 selects which of D[0]–D[3] latches VERA\_CS |
-| `DIP_SEL[1]` | In | 28 | DIP switch bit 1 |
+| `PBI_ID_SEL` | In | 27 | Hardware jumper to one of D[0..7]; sampled at `$D1FF` write (PBI mode only); `1` selects VERA, `0` deselects. Ignored in CCTL build. |
+| `RAMBO_EN` | In | 28 | Pullup (VCC) = RAMbo enabled (follows PBCTL[2]); pulldown (GND) = RAMbo disabled hardware override |
 | `SRAM_A_BANK[0]` | Out | 19 | SRAM A[14] — bank bit 0 = PORTB[2] |
 | `SRAM_A_BANK[1]` | Out | 20 | SRAM A[15] — bank bit 1 = PORTB[3] |
 | `SRAM_A_BANK[2]` | Out | 21 | SRAM A[16] — bank bit 2 = PORTB[5] |
@@ -266,7 +277,7 @@ therefore 2 bits (not 3), selecting VERA\_CS source from D[0]–D[3].
 
 | File | Description |
 |------|-------------|
-| `C6502_Interface.vhd` | Top-level entity (Rev 2) |
+| `C6502_Interface.vhd` | Top-level entity (Rev 3); `VERA_IS_PBI` generic selects PBI or CCTL mode |
 | `custom_types.vhd` | BRAM array type definitions |
 | `pbi_rom_pkg.vhd` | PBI ROM contents as VHDL constant (**auto-generated**) |
 | `gen_pbi_rom_pkg.py` | Script: converts `.bin` → `pbi_rom_pkg.vhd` |
@@ -288,4 +299,5 @@ bank[3:2] = PORTB[6:5]
 → SRAM A[17:14] = { PORTB[6], PORTB[5], PORTB[3], PORTB[2] }
 ```
 
-RAMbo is active only when `PBCTL[2] = 1`.
+RAMbo is active only when `RAMBO_EN` (pin 28, hardware pullup to VCC)
+**and** `PBCTL[2] = 1` (software enable via Atari OS).

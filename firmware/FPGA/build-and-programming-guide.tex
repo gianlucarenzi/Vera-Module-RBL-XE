@@ -83,7 +83,7 @@
 \pagestyle{fancy}
 \fancyhf{}
 \fancyhead[L]{\small VERA RBL-XE -- FPGA Build \& Programming Guide}
-\fancyhead[R]{\small Rev~2}
+\fancyhead[R]{\small Rev~3}
 \fancyfoot[C]{\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
 
@@ -111,7 +111,7 @@
     {\Huge\bfseries VERA RBL-XE\\[4mm]
      FPGA Build \& Programming Guide\par}
     \vspace{10mm}
-    {\large iCE40UP5K -- Rev~2\par}
+    {\large iCE40UP5K -- Rev~3\par}
     \vspace{8mm}
     {\normalsize
         6502 bus controller with RAMbo 256\,KB, PBI RAM/ROM,\\
@@ -149,6 +149,22 @@ used in the previous design.
           and synchronised to the 25\,MHz FPGA clock via a two-stage
           flip-flop chain, producing a single-cycle \cmd{phi2\_rise}
           pulse used to trigger all registered logic.
+    \item \textbf{Two bitstreams -- \cmd{VERA\_IS\_PBI} generic}: the
+          top-level entity exposes a VHDL-2008 boolean generic that
+          selects the bus interface at synthesis time.
+          \emph{PBI mode} (\cmd{VERA\_IS\_PBI=true}): latch at
+          \hex{D1FF}, PBI RAM and ROM in BRAM (5 EBR blocks), EXTSEL
+          for PBI RAM and RAMbo, MPD for PBI ROM reads.
+          \emph{CCTL mode} (\cmd{VERA\_IS\_PBI=false}): latch at
+          \hex{D5FF} (write \texttt{\$80} to select, \texttt{\$00}
+          to deselect), no BRAM (Yosys eliminates dead code: 0 EBR),
+          EXTSEL for RAMbo only, MPD always inactive.
+    \item \textbf{Hardware configuration pins}: \sig{PBI\_ID\_SEL}
+          (pin~27) is wired via PCB jumper to one of D[0..7]; the
+          sampled bit value latches VERA\_CS in PBI mode
+          (\cmd{vera\_cs\_latch <= not PBI\_ID\_SEL}).
+          \sig{RAMBO\_EN} (pin~28) with pullup (VCC) enables RAMbo;
+          with pulldown (GND) disables it regardless of PBCTL[2].
 \end{itemize}
 
 \subsection{Memory map}
@@ -167,6 +183,10 @@ used in the previous design.
 \bottomrule
 \end{tabular}
 \end{center}
+
+\noindent\textbf{Note (CCTL mode):} when built with \cmd{VERA\_IS\_PBI=false}
+the VERA\_CS latch address changes to \hex{D5FF} (write \texttt{\$80} to
+select, \texttt{\$00} to deselect), and PBI RAM/ROM are absent (0~EBR\@).
 
 % ===========================================================================
 \section{Prerequisites}
@@ -270,62 +290,73 @@ make fpga-rom
 
 \subsection{Step 2 -- Synthesis}
 
-Synthesis converts the VHDL sources into a technology-mapped netlist
-for the iCE40 family.
+The top-level entity exposes a VHDL-2008 boolean generic,
+\cmd{VERA\_IS\_PBI} (default \cmd{true}), that selects the bus interface
+at synthesis time.  The Makefile invokes Yosys twice, producing two
+independent bitstreams from the same source:
 
-\begin{lstlisting}[style=shell,caption={Synthesis with Yosys + GHDL plugin}]
+\begin{lstlisting}[style=shell,caption={PBI synthesis (VERA\_IS\_PBI=true)}]
 cd firmware/FPGA
 yosys -m ghdl -p \
-    "ghdl --std=08 custom_types.vhd pbi_rom_pkg.vhd C6502_Interface.vhd \
+    "ghdl --std=08 -gVERA_IS_PBI=true \
+          custom_types.vhd pbi_rom_pkg.vhd C6502_Interface.vhd \
           -e C6502_Interface; \
-     synth_ice40 -top C6502_Interface -json C6502_Interface.json"
+     synth_ice40 -top C6502_Interface -json C6502_Interface_PBI.json"
+\end{lstlisting}
+
+\begin{lstlisting}[style=shell,caption={CCTL synthesis (VERA\_IS\_PBI=false)}]
+yosys -m ghdl -p \
+    "ghdl --std=08 -gVERA_IS_PBI=false \
+          custom_types.vhd pbi_rom_pkg.vhd C6502_Interface.vhd \
+          -e C6502_Interface; \
+     synth_ice40 -top C6502_Interface -json C6502_Interface_CCTL.json"
 \end{lstlisting}
 
 The \cmd{-m ghdl} flag loads the GHDL plugin into Yosys, which handles
-VHDL analysis and elaboration.  The \cmd{synth\_ice40} pass maps the
-resulting netlist to iCE40 primitives (LUTs, FFs, BRAM, SB\_IO, etc.)
-and writes a JSON netlist.
-
-On success, Yosys prints a resource utilisation summary.  Measured values
-after place-and-route with nextpnr-ice40:
+VHDL analysis and elaboration.  When \cmd{VERA\_IS\_PBI=false}, Yosys
+eliminates all PBI RAM/ROM dead code, reducing resource usage
+dramatically.  Measured values after place-and-route with nextpnr-ice40:
 
 \begin{center}
-\begin{tabular}{lrrr}
+\begin{tabular}{lrrrr}
 \toprule
-\textbf{Resource} & \textbf{Used} & \textbf{Available} & \textbf{\%} \\
+\textbf{Resource} & \textbf{PBI} & \textbf{CCTL} & \textbf{Available} & \textbf{\% (PBI)} \\
 \midrule
-ICESTORM\_LC (total)     &  87 & 5280 &  1\% \\
-\quad of which LUT4 only &  52 &      &     \\
-\quad of which LUT4+DFF  &   5 &      &     \\
-\quad of which DFF only  &   5 &      &     \\
-\quad of which CARRY only&  21 &      &     \\
-\quad carry-chain legal. &   3 &      &     \\
+ICESTORM\_LC (total)     &  87 &  1 & 5280 &  1\% \\
+\quad of which LUT4 only &  52 &  1 &      &     \\
+\quad of which LUT4+DFF  &   5 &  0 &      &     \\
+\quad of which DFF only  &   5 &  0 &      &     \\
+\quad of which CARRY only&  21 &  0 &      &     \\
 \midrule
-ICESTORM\_RAM (EBR)      &   5 &   30 & 16\% \\
-SB\_IO (I/O buffers)     &  39 &   39 & 100\% \\
-ICESTORM\_SPRAM          &   0 &    4 &  0\% \\
+ICESTORM\_RAM (EBR)      &   5 &  0 &   30 & 16\% \\
+SB\_IO (I/O buffers)     &  39 & 39 &   39 & 100\% \\
+ICESTORM\_SPRAM          &   0 &  0 &    4 &  0\% \\
 \midrule
-\textbf{Fmax (CLK)}      & \multicolumn{3}{l}{\textbf{62.72\,MHz} (PASS at 25\,MHz)} \\
+\textbf{Fmax (CLK)}      & \multicolumn{4}{l}{\textbf{62.72\,MHz} (PBI, PASS at 25\,MHz)} \\
 \bottomrule
 \end{tabular}
 \end{center}
 
 \textbf{I/O budget note:} the iCE40UP5K-SG48 exposes exactly 39 user I/O
-pins.  This design uses all 39.  For this reason \sig{DIP\_SEL} is
-2\,bits (not 3), allowing VERA\_CS bit selection from D[0]--D[3].
-Adding a third DIP switch bit would require removing one other signal.
+pins, and this design uses all 39.  The mode selection (PBI vs.\ CCTL)
+is compiled into the bitstream via \cmd{VERA\_IS\_PBI} rather than being
+a runtime input, freeing the two former \sig{DIP\_SEL} pins for
+dedicated hardware functions: \sig{PBI\_ID\_SEL} (pin~27) and
+\sig{RAMBO\_EN} (pin~28).
 
 \subsection{Step 3 -- Place \& Route}
 
 Place \& route assigns logic cells and routes signals to physical
 iCE40 resources, guided by the pin constraints file.
 
-\begin{lstlisting}[style=shell,caption={Place \& route with nextpnr-ice40}]
+\begin{lstlisting}[style=shell,caption={Place \& route with nextpnr-ice40 (PBI example)}]
 nextpnr-ice40 --up5k --package sg48 \
-    --json C6502_Interface.json \
+    --json C6502_Interface_PBI.json \
     --pcf board-pin-mapping.pcf \
-    --asc C6502_Interface.asc
+    --asc C6502_Interface_PBI.asc
 \end{lstlisting}
+
+The CCTL build uses the same command with \file{\_CCTL} filename suffixes.
 
 \textbf{Important:} all pin numbers in \file{board-pin-mapping.pcf} are
 placeholders.  Edit the file to match your actual schematic before this
@@ -356,12 +387,14 @@ at most 28.12\,ns after address/control inputs change --- well within the
 \cmd{icepack} converts the ASCII intermediate format produced by
 nextpnr into the binary bitstream that is written to the SPI flash.
 
-\begin{lstlisting}[style=shell,caption={Pack binary bitstream}]
-icepack C6502_Interface.asc C6502_Interface.bin
+\begin{lstlisting}[style=shell,caption={Pack binary bitstreams}]
+icepack C6502_Interface_PBI.asc  C6502_Interface_PBI.bin
+icepack C6502_Interface_CCTL.asc C6502_Interface_CCTL.bin
 \end{lstlisting}
 
-\cmd{C6502\_Interface.bin} is the file that gets programmed into the
-SPI flash.  Measured size: \textbf{104\,090 bytes} ($\approx$101.6\,KB).
+The \file{.bin} file is what gets programmed into the SPI flash.
+Bitstream size is device-dependent (not design-dependent) on the iCE40:
+both bitstreams measure \textbf{$\approx$104\,KB} (iCE40UP5K SG48).
 
 \subsection{Step 5 -- Program the SPI flash}
 
@@ -371,25 +404,29 @@ at power-up.  The programmer writes the bitstream into that flash.
 \subsubsection{Using openFPGALoader (recommended)}
 
 \begin{lstlisting}[style=shell,caption={Program with openFPGALoader}]
-openFPGALoader -b ice40_generic C6502_Interface.bin
+# PBI bitstream (PBI connector, $D1xx)
+openFPGALoader -b ice40_generic C6502_Interface_PBI.bin
+# CCTL bitstream (cartridge port, $D5xx)
+openFPGALoader -b ice40_generic C6502_Interface_CCTL.bin
 \end{lstlisting}
 
 Select the programmer cable explicitly if needed:
 
 \begin{lstlisting}[style=shell]
-openFPGALoader --cable ft2232    C6502_Interface.bin   # FTDI FT2232H
-openFPGALoader --cable ft232     C6502_Interface.bin   # FTDI FT232H
-openFPGALoader --cable tigard    C6502_Interface.bin   # Tigard
-openFPGALoader --cable raspberrypi C6502_Interface.bin # Raspberry Pi GPIO
+openFPGALoader --cable ft2232      C6502_Interface_PBI.bin   # FTDI FT2232H
+openFPGALoader --cable ft232       C6502_Interface_PBI.bin   # FTDI FT232H
+openFPGALoader --cable tigard      C6502_Interface_PBI.bin   # Tigard
+openFPGALoader --cable raspberrypi C6502_Interface_PBI.bin   # Raspberry Pi GPIO
 \end{lstlisting}
 
 \subsubsection{Using iceprog (FTDI FT2232H)}
 
 \begin{lstlisting}[style=shell,caption={Program with iceprog}]
-iceprog C6502_Interface.bin
+iceprog C6502_Interface_PBI.bin    # PBI bitstream
+iceprog C6502_Interface_CCTL.bin   # CCTL bitstream
 
 # Erase + write (useful if previous write was partial)
-iceprog -e 1048576 C6502_Interface.bin
+iceprog -e 1048576 C6502_Interface_PBI.bin
 \end{lstlisting}
 
 \subsection{One-command build and flash}
@@ -398,10 +435,15 @@ The \file{firmware/FPGA/Makefile} wraps all steps:
 
 \begin{lstlisting}[style=shell]
 cd firmware/FPGA
-make             # synthesise + P&R + pack
-make flash       # write with openFPGALoader
-make flash-iceprog   # write with iceprog
-make clean       # remove generated files
+make pbi               # synthesise + P&R + pack -> C6502_Interface_PBI.bin
+make cctl              # synthesise + P&R + pack -> C6502_Interface_CCTL.bin
+make                   # build both (default)
+make flash-pbi         # write PBI  bitstream via openFPGALoader
+make flash-cctl        # write CCTL bitstream via openFPGALoader
+make flash-pbi-iceprog   # write PBI  via iceprog (FTDI FT2232H)
+make flash-cctl-iceprog  # write CCTL via iceprog
+make doc               # regenerate PDF documentation
+make clean             # remove all generated files
 \end{lstlisting}
 
 % ===========================================================================
@@ -523,19 +565,25 @@ error.
 \sig{VERA\_CS}      & Out   & 32* & LVCMOS33 &
     VERA chip-select latch output (active low). \\
 \sig{MPD}           & Out   & 31* & LVCMOS33 &
-    Machine Program Data. Asserted low for \hex{D800}--\hex{DFFF}
-    reads; blocks Atari from driving D[7:0]. \\
+    Machine Program Data (active low, \textbf{PBI mode only}).
+    Asserted during PBI ROM (\hex{D800}--\hex{DFFF}) reads; blocks
+    Atari from driving D[7:0].  Always inactive (high) in CCTL mode. \\
 \sig{EXTSEL}        & Out   & 37* & LVCMOS33 &
-    External Select. Asserted low for PBI RAM (\hex{D600}--\hex{D7FF})
-    and RAMbo (\hex{4000}--\hex{7FFF}) accesses; blocks Atari internal
-    RAM from responding. \\[2pt]
+    External Select (active low).  \textbf{PBI mode:} asserted for
+    PBI RAM (\hex{D600}--\hex{D7FF}) and RAMbo (\hex{4000}--\hex{7FFF}).
+    \textbf{CCTL mode:} asserted for RAMbo only.  Blocks Atari
+    internal RAM from responding. \\[2pt]
 
-% --- DIP switches ---
-\sig{DIP\_SEL[0]}   & In    & 27* & LVCMOS33 &
-    DIP switch bit 0. Together with bit~1 selects which of D[0]--D[3]
-    controls the VERA\_CS latch ($2^2 = 4$ choices). \\
-\sig{DIP\_SEL[1]}   & In    & 28* & LVCMOS33 &
-    DIP switch bit 1. See DIP\_SEL[0]. \\[2pt]
+% --- Hardware configuration inputs ---
+\sig{PBI\_ID\_SEL}  & In    & 27* & LVCMOS33 &
+    Hardware jumper to one of D[0..7] on PCB.  Sampled when \hex{D1FF}
+    is written (PBI mode only); \texttt{vera\_cs\_latch <= not PBI\_ID\_SEL}.
+    Logic~1 on the chosen bit selects VERA, logic~0 deselects.
+    Ignored in CCTL build. \\
+\sig{RAMBO\_EN}     & In    & 28* & LVCMOS33 &
+    Tie to VCC (pullup) to enable RAMbo hardware; tie to GND (pulldown)
+    to disable RAMbo completely, overriding PBCTL[2].  Both
+    \sig{RAMBO\_EN} and PBCTL[2] must be high for RAMbo to respond. \\[2pt]
 
 % --- External SRAM ---
 \sig{SRAM\_A\_BANK[0]} & Out & 19* & LVCMOS33 &
@@ -594,7 +642,8 @@ bank[3:2] = PORTB[6:5]
 => SRAM A[17:14] = { PORTB[6], PORTB[5], PORTB[3], PORTB[2] }
 \end{lstlisting}
 
-RAMbo is active only when \sig{PBCTL[2] = 1}.
+RAMbo is active only when both \sig{RAMBO\_EN} (pin~28 tied to VCC)
+and \sig{PBCTL[2] = 1} (software enable written by the Atari OS).
 
 % ===========================================================================
 \section{Timing}
@@ -644,8 +693,9 @@ $\approx$199\,ns of margin before the 6502 samples the bus.
 \textbf{File} & \textbf{Description} \\
 \midrule
 \file{C6502\_Interface.vhd} &
-    Top-level VHDL entity (Rev~2). Contains all bus logic, BRAM
-    instances, and SRAM control. \\
+    Top-level VHDL entity (Rev~3).  Generic \cmd{VERA\_IS\_PBI}
+    selects PBI or CCTL mode at synthesis time.  Contains all bus
+    logic, BRAM instances, and SRAM control. \\
 \file{custom\_types.vhd} &
     Package defining \cmd{rom\_array} (2048$\times$8) and
     \cmd{ram\_512\_array} (512$\times$8) array types. \\
@@ -659,7 +709,9 @@ $\approx$199\,ns of margin before the 6502 samples the bus.
     Pin constraints for iCE40UP5K SG48.
     All pin numbers are placeholders -- edit before use. \\
 \file{Makefile} &
-    Targets: \cmd{all}, \cmd{flash}, \cmd{flash-iceprog}, \cmd{clean}. \\
+    Targets: \cmd{pbi}, \cmd{cctl}, \cmd{all}, \cmd{flash-pbi},
+    \cmd{flash-cctl}, \cmd{flash-pbi-iceprog}, \cmd{flash-cctl-iceprog},
+    \cmd{doc}, \cmd{clean}. \\
 \bottomrule
 \end{tabular}
 \end{center}
