@@ -472,6 +472,107 @@ CDONE & CDONE     & -- \\
 Recommended SPI flash: Winbond W25Q16 (2\,MB) or W25Q32 (4\,MB).
 
 % ===========================================================================
+\section{Reset Sequencing}
+\label{sec:reset}
+% ===========================================================================
+
+The VERA RBL-XE module requires a defined power-on boot sequence: the
+Atari computer and the VERA graphics chip must remain in reset until all
+FPGA configurations have completed.  This is implemented with a single
+74LVC1G08 logic gate --- no MCU or firmware is needed.
+
+\subsection{Boot sequence}
+
+\begin{enumerate}[noitemsep]
+    \item \textbf{Power-on:} both \sig{VERA\_RESET\#} and
+          \sig{ATARI\_RESET\#} are held low.
+    \item \textbf{FPGA ready} (\sig{FPGA\_CDONE} goes high,
+          $\approx$50--100\,ms after power-on): \sig{VERA\_RESET\#} is
+          released, allowing VERA to start loading its own bitstream
+          from its SPI flash.
+    \item \textbf{VERA ready} (\sig{VERA\_CDONE} goes high,
+          $\approx$200--500\,ms later): \sig{ATARI\_RESET\#} is released
+          and the Atari boots normally.
+\end{enumerate}
+
+The natural SPI flash loading times provide all necessary delays; no RC
+timer or additional delay circuit is required.
+
+\subsection{Logic}
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Signal} & \textbf{Boolean expression} \\
+\midrule
+\sig{VERA\_RESET\#}  & \sig{FPGA\_CDONE} \\
+\sig{ATARI\_RESET\#} & \sig{FPGA\_CDONE}~AND~\sig{VERA\_CDONE} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{center}
+\begin{tabular}{ccccp{3.5cm}}
+\toprule
+\textbf{FPGA\_CDONE} & \textbf{VERA\_CDONE} &
+\textbf{VERA\_RST\#} & \textbf{ATARI\_RST\#} & \textbf{Phase} \\
+\midrule
+0 & 0 & 0 & 0 & Power-on / FPGA loading \\
+1 & 0 & 1 & 0 & FPGA ready, VERA loading \\
+1 & 1 & 1 & 1 & System ready \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Circuit -- 74LVC1G08 (SOT-23-5)}
+
+A single \textbf{74LVC1G08} (2-input AND gate, SOT-23-5) implements
+\sig{ATARI\_RESET\#}.  \sig{VERA\_RESET\#} connects directly from
+\sig{FPGA\_CDONE} through a 33\,$\Omega$ series resistor.
+
+\begin{lstlisting}[style=shell]
+VCC --[4k7]--+-------- FPGA_CDONE (open-drain)
+             |
+             +--[33R]- VERA_RESET#
+             |
+             +-- A -\
+                     +--- 74LVC1G08 ---[33R]--- ATARI_RESET#
+             +-- B -/
+             |
+VCC --[4k7]--+-------- VERA_CDONE (open-drain)
+\end{lstlisting}
+
+Both CDONE outputs are open-drain; they require an external pullup to
+VCC\@.  The 33\,$\Omega$ series resistors limit current if an external
+driver (e.g.\ the Atari RESET button, which pulls the line to GND via
+an open-collector circuit) conflicts with the 74LVC output.
+
+\textbf{Why 74LVC and not 74HC?}  The 74LVC family has \emph{5\,V
+tolerant inputs} while operating at 3.3\,V VCC\@.  The CDONE signals
+are at 3.3\,V; the Atari RESET line belongs to a 5\,V TTL system.  The
+74LVC output at 3.3\,V is correctly recognised as HIGH by 5\,V TTL
+logic (V$_{\text{IH}} = 2.0$\,V).  The 74HC family is not suitable for
+this mixed-voltage interface.
+
+\subsection{Bill of materials}
+
+\begin{center}
+\begin{tabular}{lllp{4.5cm}}
+\toprule
+\textbf{Ref} & \textbf{Value} & \textbf{Package} & \textbf{Function} \\
+\midrule
+U1  & 74LVC1G08      & SOT-23-5 & 2-input AND gate \\
+R1  & 4.7\,k$\Omega$ & 0402     & Pullup for FPGA\_CDONE \\
+R2  & 4.7\,k$\Omega$ & 0402     & Pullup for VERA\_CDONE \\
+R3  & 33\,$\Omega$   & 0402     & Series resistor on VERA\_RESET\# \\
+R4  & 33\,$\Omega$   & 0402     & Series resistor on ATARI\_RESET\# \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Total cost under 0.30\,EUR; no firmware required.
+
+% ===========================================================================
 \section{Pin Assignment}
 \label{sec:pins}
 % ===========================================================================

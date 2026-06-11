@@ -78,6 +78,47 @@ CRST# ──────── CRESET_B
 CDONE ──────── CDONE
 ```
 
+### Reset sequencer — 74LVC1G08
+
+A single **74LVC1G08** (SOT-23-5, 2-input AND gate) sequences the
+power-on boot without any MCU or firmware.
+
+**Boot sequence:**
+
+| Phase | FPGA\_CDONE | VERA\_CDONE | VERA\_RESET# | ATARI\_RESET# |
+|-------|------------|------------|-------------|--------------|
+| Power-on / FPGA loading | 0 | 0 | 0 (reset) | 0 (reset) |
+| FPGA ready, VERA loading | 1 | 0 | 1 (free) | 0 (reset) |
+| System ready | 1 | 1 | 1 (free) | 1 (free) |
+
+Logic equations:
+- `VERA_RESET#  = FPGA_CDONE`
+- `ATARI_RESET# = FPGA_CDONE AND VERA_CDONE`
+
+Circuit:
+
+```
+VCC --[4k7]--+-------- FPGA_CDONE (open-drain)
+             |
+             +--[33R]- VERA_RESET#
+             |
+             +-- A -\
+                     +--- 74LVC1G08 ---[33R]--- ATARI_RESET#
+             +-- B -/
+             |
+VCC --[4k7]--+-------- VERA_CDONE (open-drain)
+```
+
+The natural SPI flash loading times provide all delays
+(~50–100 ms for the FPGA, ~200–500 ms for VERA). No RC timer needed.
+
+**Why 74LVC and not 74HC?** The 74LVC family has 5V-tolerant inputs at
+3.3V VCC. The CDONE signals are at 3.3V; the Atari RESET line is 5V TTL.
+The 74LVC 3.3V output is a valid HIGH for 5V TTL (V_IH = 2.0V).
+
+BOM: 1× 74LVC1G08 SOT-23-5, 2× 4.7kΩ 0402 (CDONE pullups),
+2× 33Ω 0402 (RESET series) — under 0.30 EUR total.
+
 ---
 
 ## Toolchain
