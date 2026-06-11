@@ -286,20 +286,27 @@ VHDL analysis and elaboration.  The \cmd{synth\_ice40} pass maps the
 resulting netlist to iCE40 primitives (LUTs, FFs, BRAM, SB\_IO, etc.)
 and writes a JSON netlist.
 
-On success, Yosys prints a resource utilisation summary.  Expected ranges:
+On success, Yosys prints a resource utilisation summary.  Measured values
+from the synthesised design:
 
 \begin{center}
-\begin{tabular}{lr}
+\begin{tabular}{lrr}
 \toprule
-\textbf{Resource} & \textbf{Expected usage} \\
+\textbf{Resource} & \textbf{Measured} & \textbf{Available (UP5K)} \\
 \midrule
-SB\_LUT4 (logic cells) & 80--180 \\
-SB\_FF (flip-flops)    & 30--60  \\
-SB\_RAM40\_4K (EBR)    & 5       \\
-SB\_IO (I/O buffers)   & 40      \\
+SB\_LUT4 (LUT4 + carry) & 83  & 5280 \\
+SB\_FF (flip-flops)     & 10  & 5280 \\
+SB\_RAM40\_4K (EBR)     &  5  &   30 \\
+SB\_IO (I/O buffers)    & 39  &   39 \\
+\textbf{Fmax (CLK)}     & \multicolumn{2}{l}{\textbf{62.72\,MHz} (PASS at 25\,MHz)} \\
 \bottomrule
 \end{tabular}
 \end{center}
+
+\textbf{I/O budget note:} the iCE40UP5K-SG48 exposes exactly 39 user I/O
+pins.  This design uses all 39.  For this reason \sig{DIP\_SEL} is
+2\,bits (not 3), allowing VERA\_CS bit selection from D[0]--D[3].
+Adding a third DIP switch bit would require one fewer signal elsewhere.
 
 \subsection{Step 3 -- Place \& Route}
 
@@ -413,6 +420,16 @@ The \sig{CLK} signal must be assigned to a \textbf{Global Buffer (GB)
 input} pin.  Valid GB pins on the iCE40UP5K SG48 package are:
 \textbf{20, 28, 31, 38, 41, 43, 48}.
 
+\textbf{Valid user I/O pin numbers for SG48} (39 total):
+\begin{quote}\ttfamily
+2, 3, 4, 6, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,\\
+23, 25, 26, 27, 28, 31, 32, 34, 35, 36, 37, 38, 39,\\
+40, 41, 42, 43, 44, 45, 46, 47, 48
+\end{quote}
+Pins 1, 5, 7, 8, 22, 24, 29, 30, 33 are power/ground or reserved and
+\textbf{must not} appear in the PCF file --- nextpnr rejects them with an
+error.
+
 \subsection{Complete pin table}
 
 \begin{center}
@@ -448,11 +465,11 @@ input} pin.  Valid GB pins on the iCE40UP5K SG48 package are:
 \sig{A[6]}          & In    & 46* & LVCMOS33 & 6502 address bit 6 \\
 \sig{A[7]}          & In    & 47* & LVCMOS33 & 6502 address bit 7 \\
 \sig{A[8]}          & In    & 48* & LVCMOS33 & 6502 address bit 8 \\
-\sig{A[9]}          & In    &  1* & LVCMOS33 & 6502 address bit 9 \\
+\sig{A[9]}          & In    &  6* & LVCMOS33 & 6502 address bit 9 \\
 \sig{A[10]}         & In    &  2* & LVCMOS33 & 6502 address bit 10 \\
 \sig{A[11]}         & In    &  3* & LVCMOS33 & 6502 address bit 11 \\
 \sig{A[12]}         & In    &  4* & LVCMOS33 & 6502 address bit 12 \\
-\sig{A[13]}         & In    &  7* & LVCMOS33 &
+\sig{A[13]}         & In    & 26* & LVCMOS33 &
     6502 address bit 13. Also wired to SRAM A[13] on PCB. \\
 \sig{A[14]}         & In    &  9* & LVCMOS33 & 6502 address bit 14 \\
 \sig{A[15]}         & In    & 10* & LVCMOS33 & 6502 address bit 15 \\[2pt]
@@ -478,7 +495,7 @@ input} pin.  Valid GB pins on the iCE40UP5K SG48 package are:
 % --- 6502 control ---
 \sig{PHI2}          & In    & 34* & LVCMOS33 &
     6502 phase-2 clock. Synchronised internally; not used as FPGA clock. \\
-\sig{RNW\_}          & In    & 36* & LVCMOS33 &
+\sig{RNW}           & In    & 36* & LVCMOS33 &
     Read/Not-Write. High = read, Low = write. \\[2pt]
 
 % --- PBI control ---
@@ -487,16 +504,17 @@ input} pin.  Valid GB pins on the iCE40UP5K SG48 package are:
 \sig{MPD}           & Out   & 31* & LVCMOS33 &
     Machine Program Data. Asserted low for \hex{D800}--\hex{DFFF}
     reads; blocks Atari from driving D[7:0]. \\
-\sig{EXTSEL}        & Out   & 30* & LVCMOS33 &
+\sig{EXTSEL}        & Out   & 37* & LVCMOS33 &
     External Select. Asserted low for PBI RAM (\hex{D600}--\hex{D7FF})
     and RAMbo (\hex{4000}--\hex{7FFF}) accesses; blocks Atari internal
     RAM from responding. \\[2pt]
 
 % --- DIP switches ---
 \sig{DIP\_SEL[0]}   & In    & 27* & LVCMOS33 &
-    DIP switch bit 0. Selects which D[n] bit controls VERA\_CS latch. \\
-\sig{DIP\_SEL[1]}   & In    & 28* & LVCMOS33 & DIP switch bit 1. \\
-\sig{DIP\_SEL[2]}   & In    & 29* & LVCMOS33 & DIP switch bit 2. \\[2pt]
+    DIP switch bit 0. Together with bit~1 selects which of D[0]--D[3]
+    controls the VERA\_CS latch ($2^2 = 4$ choices). \\
+\sig{DIP\_SEL[1]}   & In    & 28* & LVCMOS33 &
+    DIP switch bit 1. See DIP\_SEL[0]. \\[2pt]
 
 % --- External SRAM ---
 \sig{SRAM\_A\_BANK[0]} & Out & 19* & LVCMOS33 &
@@ -505,12 +523,12 @@ input} pin.  Valid GB pins on the iCE40UP5K SG48 package are:
     SRAM address bit 15. \\
 \sig{SRAM\_A\_BANK[2]} & Out & 21* & LVCMOS33 &
     SRAM address bit 16. \\
-\sig{SRAM\_A\_BANK[3]} & Out & 22* & LVCMOS33 &
+\sig{SRAM\_A\_BANK[3]} & Out & 38* & LVCMOS33 &
     SRAM address bit 17 (bank MSB). \\
 \sig{SRAM\_CE\_N}   & Out   & 23* & LVCMOS33 &
     SRAM chip enable (active low). Asserted during PHI2-high when
     address is in \hex{4000}--\hex{7FFF} and RAMbo is enabled. \\
-\sig{SRAM\_OE\_N}   & Out   & 24* & LVCMOS33 &
+\sig{SRAM\_OE\_N}   & Out   & 39* & LVCMOS33 &
     SRAM output enable (active low). Asserted on read cycles only. \\
 \sig{SRAM\_WE\_N}   & Out   & 25* & LVCMOS33 &
     SRAM write enable (active low). Asserted on write cycles only.
