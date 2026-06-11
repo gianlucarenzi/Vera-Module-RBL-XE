@@ -41,13 +41,15 @@ GHDL_STD = --std=08
 
 .PHONY: all pbi cctl \
         flash-pbi flash-cctl flash-pbi-iceprog flash-cctl-iceprog \
-        doc clean
+        doc clean fpga-rom
 
-all: pbi cctl
+all: fpga-rom pbi cctl
 
 # =============================================================================
 # PBI build  (VERA_IS_PBI=true)
 # =============================================================================
+pbi: fpga-rom $(TOP_PBI).bin
+
 $(TOP_PBI).json: $(VHDL_SRCS)
 	yosys -m ghdl -p \
 	    "ghdl $(GHDL_STD) -gVERA_IS_PBI=true $(VHDL_SRCS) -e $(TOP); \
@@ -64,11 +66,11 @@ $(TOP_PBI).asc: $(TOP_PBI).json $(PCF)
 $(TOP_PBI).bin: $(TOP_PBI).asc
 	icepack $< $@
 
-pbi: $(TOP_PBI).bin
-
 # =============================================================================
 # CCTL build  (VERA_IS_PBI=false)
 # =============================================================================
+cctl: fpga-rom $(TOP_CCTL).bin
+
 $(TOP_CCTL).json: $(VHDL_SRCS)
 	yosys -m ghdl -p \
 	    "ghdl $(GHDL_STD) -gVERA_IS_PBI=false $(VHDL_SRCS) -e $(TOP); \
@@ -85,7 +87,11 @@ $(TOP_CCTL).asc: $(TOP_CCTL).json $(PCF)
 $(TOP_CCTL).bin: $(TOP_CCTL).asc
 	icepack $< $@
 
-cctl: $(TOP_CCTL).bin
+# =============================================================================
+# FPGA ROM (6502 driver)
+# =============================================================================
+fpga-rom:
+	$(MAKE) -C ../MCU/6502 fpga-rom
 
 # =============================================================================
 # Flash programming
@@ -118,3 +124,4 @@ clean:
 	$(RM) $(TOP_PBI).json  $(TOP_PBI).asc  $(TOP_PBI).bin
 	$(RM) $(TOP_CCTL).json $(TOP_CCTL).asc $(TOP_CCTL).bin
 	$(RM) $(DOC).aux $(DOC).log $(DOC).out $(DOC).toc $(DOC).pdf
+	$(MAKE) -C ../MCU/6502 clean
