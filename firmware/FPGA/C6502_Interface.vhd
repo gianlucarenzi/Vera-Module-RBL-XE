@@ -41,11 +41,11 @@ entity C6502_Interface is
         -- 6502 bus
         A           : in    std_logic_vector(15 downto 0);
         D           : inout std_logic_vector(7 downto 0);
-        RNW_        : in    std_logic;
+        RNW        : in    std_logic;
         PHI2        : in    std_logic;
 
-        -- DIP switches (VERA_CS bit selector)
-        DIP_SEL     : in    std_logic_vector(2 downto 0);
+        -- DIP switches (VERA_CS bit selector, selects D[0]-D[3])
+        DIP_SEL     : in    std_logic_vector(1 downto 0);
 
         -- PBI control outputs
         VERA_CS     : out   std_logic;
@@ -131,8 +131,8 @@ begin
     -- Address decode
     -- =========================================================================
     sel_latch   <= '1' when addr = C_LATCH_ADDR                              else '0';
-    sel_portb   <= '1' when addr = C_PORTB_ADDR and RNW_ = '0'              else '0';
-    sel_pbctl   <= '1' when addr = C_PBCTL_ADDR and RNW_ = '0'              else '0';
+    sel_portb   <= '1' when addr = C_PORTB_ADDR and RNW = '0'              else '0';
+    sel_pbctl   <= '1' when addr = C_PBCTL_ADDR and RNW = '0'              else '0';
     sel_pbi_ram <= '1' when addr >= C_PBI_RAM_LO and addr <= C_PBI_RAM_HI
                             and vera_cs_latch = '0'                          else '0';
     sel_pbi_rom <= '1' when addr >= C_PBI_ROM_LO and addr <= C_PBI_ROM_HI   else '0';
@@ -166,7 +166,7 @@ begin
     -- logic so they remain active for the full PHI2-high window.
     -- =========================================================================
     p_main : process (CLK)
-        variable bit_idx  : integer range 0 to 7;
+        variable bit_idx  : integer range 0 to 3;
         variable ram_offs : integer range 0 to 511;
         variable rom_offs : integer range 0 to 2047;
     begin
@@ -174,7 +174,7 @@ begin
             if phi2_rise = '1' then
 
                 -- 1. VERA_CS latch
-                if sel_latch = '1' and RNW_ = '0' then
+                if sel_latch = '1' and RNW = '0' then
                     bit_idx := to_integer(unsigned(DIP_SEL));
                     vera_cs_latch <= not D(bit_idx);
                 end if;
@@ -191,13 +191,13 @@ begin
 
                 -- 4. PBI RAM read: latch BRAM output.
                 --    d_pbi valid one CLK later (~40 ns after phi2_rise).
-                if sel_pbi_ram = '1' and RNW_ = '1' then
+                if sel_pbi_ram = '1' and RNW = '1' then
                     ram_offs := to_integer(addr - C_PBI_RAM_LO);
                     d_pbi    <= pbi_ram(ram_offs);
                 end if;
 
                 -- 5. PBI RAM write
-                if sel_pbi_ram = '1' and RNW_ = '0' then
+                if sel_pbi_ram = '1' and RNW = '0' then
                     ram_offs          := to_integer(addr - C_PBI_RAM_LO);
                     pbi_ram(ram_offs) <= D;
                 end if;
@@ -205,7 +205,7 @@ begin
                 -- 6. PBI ROM read: latch BRAM output.
                 --    d_rom valid one CLK later (~40 ns after phi2_rise).
                 --    ROM is read-only; writes are silently ignored.
-                if sel_pbi_rom = '1' and RNW_ = '1' then
+                if sel_pbi_rom = '1' and RNW = '1' then
                     rom_offs := to_integer(addr - C_PBI_ROM_LO);
                     d_rom    <= pbi_rom(rom_offs);
                 end if;
@@ -234,8 +234,8 @@ begin
     -- Data bus: FPGA drives D for PBI RAM reads and PBI ROM reads.
     -- For RAMbo reads: SRAM_OE_N='0' -> SRAM drives DQ[7:0] via PCB;
     --                  FPGA stays high-Z.
-    D <= d_pbi when sel_pbi_ram = '1' and RNW_ = '1' and PHI2 = '1' else
-         d_rom when sel_pbi_rom = '1' and RNW_ = '1' and PHI2 = '1' else
+    D <= d_pbi when sel_pbi_ram = '1' and RNW = '1' and PHI2 = '1' else
+         d_rom when sel_pbi_rom = '1' and RNW = '1' and PHI2 = '1' else
          (others => 'Z');
 
     -- =========================================================================
@@ -252,7 +252,7 @@ begin
     SRAM_A_BANK <= rambo_bank;
 
     SRAM_CE_N <= '0' when sel_rambo = '1' and PHI2 = '1'                 else '1';
-    SRAM_OE_N <= '0' when sel_rambo = '1' and PHI2 = '1' and RNW_ = '1' else '1';
-    SRAM_WE_N <= '0' when sel_rambo = '1' and PHI2 = '1' and RNW_ = '0' else '1';
+    SRAM_OE_N <= '0' when sel_rambo = '1' and PHI2 = '1' and RNW = '1' else '1';
+    SRAM_WE_N <= '0' when sel_rambo = '1' and PHI2 = '1' and RNW = '0' else '1';
 
 end architecture Behavioral;
