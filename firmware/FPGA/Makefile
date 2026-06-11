@@ -28,7 +28,9 @@ VHDL_SRCS = \
 
 GHDL_STD = --std=08
 
-.PHONY: all flash flash-iceprog clean
+DOC = build-and-programming-guide
+
+.PHONY: all flash flash-iceprog doc clean
 
 all: $(TOP).bin
 
@@ -59,6 +61,15 @@ $(TOP).bin: $(TOP).asc
 	icepack $< $@
 
 # -----------------------------------------------------------------------------
+# Documentation
+# -----------------------------------------------------------------------------
+doc: $(DOC).pdf
+
+$(DOC).pdf: $(DOC).tex
+	pdflatex -interaction=nonstopmode $<
+	pdflatex -interaction=nonstopmode $<
+
+# -----------------------------------------------------------------------------
 # Flash programming
 # -----------------------------------------------------------------------------
 flash: $(TOP).bin
@@ -72,3 +83,4 @@ flash-iceprog: $(TOP).bin
 # -----------------------------------------------------------------------------
 clean:
 	$(RM) $(TOP).json $(TOP).asc $(TOP).bin
+	$(RM) $(DOC).aux $(DOC).log $(DOC).out $(DOC).toc $(DOC).pdf
