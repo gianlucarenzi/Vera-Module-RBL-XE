@@ -121,8 +121,10 @@ static inline uint8_t IRAM_ATTR decode_data(uint32_t lo)
  * =========================================================================== */
 
 #define PBI_DEV_ID        0x80u  /* PBI Device ID bit 7 */
-#define VERA_BOARD_IS_PBI 0x01u  /* Default as PBI */
-//#define VERA_BOARD_IS_PBI 0x00u  /* if CCTL */
+/* VERA_BOARD_IS_PBI is injected by the build system (-D flag in platformio.ini) */
+#ifndef VERA_BOARD_IS_PBI
+#define VERA_BOARD_IS_PBI 0x01u  /* fallback: PBI */
+#endif
 
 /* ===========================================================================
  * Log Queue (Core 1 → Core 0)
