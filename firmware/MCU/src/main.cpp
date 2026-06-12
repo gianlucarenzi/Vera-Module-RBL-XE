@@ -25,6 +25,7 @@
 #include "freertos/queue.h"
 #include <driver/dedic_gpio.h>
 #include <hal/cpu_ll.h>
+#include <esp_timer.h>
 #include "pbi-driver.h"
 
 /* ===========================================================================
@@ -124,6 +125,24 @@ static inline uint8_t IRAM_ATTR decode_data(uint32_t lo)
 //#define VERA_BOARD_IS_PBI 0x00u  /* if CCTL */
 
 /* ===========================================================================
+ * Log Queue (Core 1 → Core 0)
+ * =========================================================================== */
+#define LOG_QUEUE_SIZE 64
+
+#define EVT_LATCH 0   /* VCS/CCTL latch state change */
+#define EVT_REG   1   /* VERA register ($D1xx) access */
+
+/* flags: bit0=write(1)/read(0)  bit1=latch state (EVT_LATCH)  bit2=MPD asserted  bit3=EXTSEL asserted */
+typedef struct
+{
+    uint64_t ts_us;   /* microseconds since boot (esp_timer_get_time()) */
+    uint8_t  type;
+    uint8_t  offset;  /* register offset: 0x00-0xFF within address range */
+    uint8_t  data;
+    uint8_t  flags;
+} LogEvt;
+
+/* ===========================================================================
  * Shared Data
  * =========================================================================== */
 
@@ -176,7 +195,7 @@ static IRAM_ATTR uint8_t PORTB = 0xFFu;
  */
 static IRAM_ATTR uint8_t PBCTL = 0x00u;
 
-static QueueHandle_t eventQueue;
+static QueueHandle_t log_queue;
 
 /* ===========================================================================
  * Bus Drive/Release Logic
@@ -219,6 +238,14 @@ static inline void IRAM_ATTR bus_drive(uint8_t val)
 static inline void IRAM_ATTR bus_release(void)
 {
     GPIO.enable_w1tc = DBUS_MASK;
+}
+
+/* Enqueue a log event without blocking (drops if queue full). */
+static inline void IRAM_ATTR log_send(uint8_t type, uint8_t offset,
+                                      uint8_t data, uint8_t flags)
+{
+    LogEvt evt = {(uint64_t)esp_timer_get_time(), type, offset, data, flags};
+    xQueueSend(log_queue, &evt, 0);
 }
 
 /* ===========================================================================
@@ -324,9 +351,8 @@ static void IRAM_ATTR MonitorTask(void *arg)
         /* 3. Assert control signals atomically in one ee.wr_mask_gpio_out instruction.
          *    Previously: up to 3 separate APB writes (~18 cycles total).
          *    Now: 1 TIE instruction (~1 cycle). */
+        uint8_t ctrl = DEDIC_OUT_CTRL_IDLE;
         {
-            uint8_t ctrl = DEDIC_OUT_CTRL_IDLE;
-
             if (vera_board_is_pbi)
             {
                 if (selected)
@@ -370,6 +396,15 @@ static void IRAM_ATTR MonitorTask(void *arg)
                 {
                     bus_drive(ram_pbi[addr & 0x1FFu]);
                 }
+                else if (is_vera_range)
+                {
+                    /* VERA drives the bus; re-read to capture what it put on the line. */
+                    uint8_t reg_data = decode_data(GPIO.in);
+                    uint8_t fl = 0x00;  /* read */
+                    if (!(ctrl & DEDIC_OUT_MPD))    fl |= 0x04;
+                    if (!(ctrl & DEDIC_OUT_EXTSEL)) fl |= 0x08;
+                    log_send(EVT_REG, off8, reg_data, fl);
+                }
             }
             if (rambo_active && is_rambo_window)
             {
@@ -392,8 +427,18 @@ static void IRAM_ATTR MonitorTask(void *arg)
                     if (new_sel != selected)
                     {
                         selected = new_sel;
-                        xQueueSend(eventQueue, &selected, 0);
+                        uint8_t fl = 0x01u | (selected ? 0x02u : 0x00u);
+                        if (!(ctrl & DEDIC_OUT_MPD))    fl |= 0x04u;
+                        if (!(ctrl & DEDIC_OUT_EXTSEL)) fl |= 0x08u;
+                        log_send(EVT_LATCH, off8, data, fl);
                     }
+                }
+                else if (is_vera_range)
+                {
+                    uint8_t fl = 0x01u;  /* write */
+                    if (!(ctrl & DEDIC_OUT_MPD))    fl |= 0x04u;
+                    if (!(ctrl & DEDIC_OUT_EXTSEL)) fl |= 0x08u;
+                    log_send(EVT_REG, off8, data, fl);
                 }
             }
             else
@@ -404,7 +449,10 @@ static void IRAM_ATTR MonitorTask(void *arg)
                     if (new_sel != selected)
                     {
                         selected = new_sel;
-                        xQueueSend(eventQueue, &selected, 0);
+                        uint8_t fl = 0x01u | (selected ? 0x02u : 0x00u);
+                        if (!(ctrl & DEDIC_OUT_MPD))    fl |= 0x04u;
+                        if (!(ctrl & DEDIC_OUT_EXTSEL)) fl |= 0x08u;
+                        log_send(EVT_LATCH, off8, data, fl);
                     }
                 }
             }
@@ -486,7 +534,7 @@ void setup(void)
 
     Serial.printf("[VeraX16] RAMbo 256K: %s\n", rambo_hw_enabled ? "ENABLED" : "DISABLED");
 
-    eventQueue = xQueueCreate(8, sizeof(bool));
+    log_queue = xQueueCreate(LOG_QUEUE_SIZE, sizeof(LogEvt));
 
     /* Configure GPIO Modes */
     gpio_config_t cfg = {};
@@ -527,14 +575,100 @@ void setup(void)
     Serial.println("[VeraX16] Bus Monitor active on Core 1");
 }
 
+/* ---------------------------------------------------------------------------
+ * VERA register name lookup — Core 0 only, not IRAM-resident.
+ * Registers $09-$0C are muxed by DCSEL (bits [2:1] of VERA_CTRL, offset $05).
+ * --------------------------------------------------------------------------- */
+static const char *vera_reg_name(uint8_t offset, uint8_t dcsel)
+{
+    static const char *base[8] = {
+        "VERA_ADDR_L",  /* $00 */
+        "VERA_ADDR_M",  /* $01 */
+        "VERA_ADDR_H",  /* $02 */
+        "VERA_DATA0",   /* $03 */
+        "VERA_DATA1",   /* $04 */
+        "VERA_CTRL",    /* $05 */
+        "VERA_IEN",     /* $06 */
+        "VERA_ISR",     /* $07 */
+    };
+    if (offset < 8)
+        return base[offset];
+
+    if (offset >= 0x09 && offset <= 0x0C)
+    {
+        static const char *mux[7][4] = {
+            /* DCSEL=0 */
+            { "VERA_DC_VIDEO",    "VERA_DC_HSCALE",       "VERA_DC_VSCALE",       "VERA_DC_BORDER"      },
+            /* DCSEL=1 */
+            { "VERA_DC_HSTART",   "VERA_DC_HSTOP",        "VERA_DC_VSTART",       "VERA_DC_VSTOP"       },
+            /* DCSEL=2 */
+            { "VERA_FX_CTRL",     "VERA_FX_TILEBASE",     "VERA_FX_MAPBASE",      "VERA_FX_MULT"        },
+            /* DCSEL=3 */
+            { "VERA_FX_X_INCR_L", "VERA_FX_X_INCR_H",    "VERA_FX_Y_INCR_L",    "VERA_FX_Y_INCR_H"   },
+            /* DCSEL=4 */
+            { "VERA_FX_X_POS_L",  "VERA_FX_X_POS_H",     "VERA_FX_Y_POS_L",     "VERA_FX_Y_POS_H"    },
+            /* DCSEL=5 */
+            { "VERA_FX_X_POS_S",  "VERA_FX_Y_POS_S",     "VERA_FX_POLY_FILL_L", "VERA_FX_POLY_FILL_H" },
+            /* DCSEL=6 */
+            { "VERA_FX_CACHE_L",  "VERA_FX_CACHE_M",     "VERA_FX_CACHE_H",     "VERA_FX_CACHE_U"     },
+        };
+        return mux[(dcsel < 7) ? dcsel : 0][offset - 0x09];
+    }
+
+    if (offset >= 0x14 && offset <= 0x1A)
+    {
+        static const char *l1[7] = {
+            "VERA_L1_CONFIG",    /* $14 */
+            "VERA_L1_MAPBASE",   /* $15 */
+            "VERA_L1_TILEBASE",  /* $16 */
+            "VERA_L1_HSCR_L",   /* $17 */
+            "VERA_L1_HSCR_H",   /* $18 */
+            "VERA_L1_VSCR_L",   /* $19 */
+            "VERA_L1_VSCR_H",   /* $1A */
+        };
+        return l1[offset - 0x14];
+    }
+
+    return "?";
+}
+
 /* ===========================================================================
- * Main Loop -- Core 0, Debug & Event Monitoring
+ * Main Loop -- Core 0: drain log queue and print
  * =========================================================================== */
 void loop(void)
 {
-    bool state;
-    if (xQueueReceive(eventQueue, &state, portMAX_DELAY))
+    /* Shadow of VERA_CTRL DCSEL bits [2:1]; updated on every write to $D105. */
+    static uint8_t dcsel = 0;
+
+    LogEvt evt;
+    while (xQueueReceive(log_queue, &evt, pdMS_TO_TICKS(10)) == pdTRUE)
     {
-        Serial.printf("[Event] VCS Selection: %s\n", state ? "ENABLED" : "DISABLED");
+        uint32_t sec = (uint32_t)(evt.ts_us / 1000000ULL);
+        uint32_t us  = (uint32_t)(evt.ts_us % 1000000ULL);
+        if (evt.type == EVT_LATCH)
+        {
+            bool enabled = (evt.flags & 0x02) != 0;
+            Serial.printf("[%5lu.%06lu] [VCS ] Latch %s ($%02X written to %s) MPD=%s EXTSEL=%s\n",
+                          sec, us,
+                          enabled ? "ENABLED " : "DISABLED", evt.data,
+                          VERA_BOARD_IS_PBI ? "$D1FF" : "$D5FF",
+                          (evt.flags & 0x04) ? "LO" : "HI",
+                          (evt.flags & 0x08) ? "LO" : "HI");
+        }
+        else  /* EVT_REG */
+        {
+            /* Track DCSEL so muxed registers ($09-$0C) resolve correctly. */
+            if (evt.offset == 0x05 && (evt.flags & 0x01))
+                dcsel = (evt.data >> 1) & 0x07;
+
+            Serial.printf("[%5lu.%06lu] [D1%02X - %-20s] %c $%02X  MPD=%s EXTSEL=%s\n",
+                          sec, us,
+                          evt.offset,
+                          vera_reg_name(evt.offset, dcsel),
+                          (evt.flags & 0x01) ? 'W' : 'R',
+                          evt.data,
+                          (evt.flags & 0x04) ? "LO" : "HI",
+                          (evt.flags & 0x08) ? "LO" : "HI");
+        }
     }
 }
