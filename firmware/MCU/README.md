@@ -78,7 +78,7 @@ I canali configurati nel firmware:
 |---------|--------|----------------|-------------|-----------------------|
 | Input   | bit 0  | GPIO 1 (pin 6) | PHI2        | Clock 6502            |
 | Output  | bit 0  | GPIO 40 (pin 45)| DEV\_SEL\_N | Chip-select VERA      |
-| Output  | bit 1  | GPIO 41 (pin 46)| EXTSEL\_N   | Disabilita MMU ATARI  |
+| Output  | bit 1  | GPIO 41 (pin 47)| EXTSEL\_N   | Disabilita MMU ATARI  |
 | Output  | bit 2  | GPIO 42 (pin 48)| MPD         | Disabilita Math Pack  |
 
 I pin GPIO 39–42 erano originariamente riservati a JTAG; vengono liberati in
@@ -103,7 +103,7 @@ I pin GPIO 39–42 erano originariamente riservati a JTAG; vengono liberati in
 | CDONE        | 39          | 44         | VERA programmata (input)          |
 | RAMBO\_EN    | 3           | 8          | RAMbo hardware enable (input, pull esterno 10 kΩ) |
 | DEV\_SEL\_N  | 40          | 45         | Chip-select VERA (output, dedicated) |
-| EXTSEL\_N    | 41          | 46         | Disabilita MMU (output, dedicated)|
+| EXTSEL\_N    | 41          | 47         | Disabilita MMU (output, dedicated)|
 | MPD          | 42          | 48         | Disabilita Math Pack (dedicated)  |
 | Debug TX     | 43          | 49         | UART0 TX (Serial)                 |
 | Debug RX     | 44          | 50         | UART0 RX (Serial)                 |

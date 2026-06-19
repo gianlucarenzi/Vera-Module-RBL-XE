@@ -198,7 +198,7 @@ A10 & 35 & 40 & GPIO35    & IN  & Bank-1 bit\,3 \\
 A11 & 36 & 41 & GPIO36    & IN  & Bank-1 bit\,4 \\
 PHI2     &  1 &  6 & GPIO1  & IN  & Dedicated GPIO input ch\,0; 1.79\,MHz \\
 R/W\_    &  2 &  7 & GPIO2  & IN  & HIGH = lettura \\
-EXTSEL\_N & 41 & 46 & MTDI  & OUT & Dedicated GPIO output ch\,1; ex-JTAG, reclaimed \\
+EXTSEL\_N & 41 & 47 & MTDI  & OUT & Dedicated GPIO output ch\,1; ex-JTAG, reclaimed \\
 MPD       & 42 & 48 & MTMS  & OUT & Dedicated GPIO output ch\,2; ex-JTAG, reclaimed \\
 ARESET   & 37 & 42 & GPIO37 & OUT & Reset sistema Atari (LOW asserito) \\
 \midrule
@@ -435,7 +435,7 @@ Di seguito è riportato un estratto aggiornato del file \texttt{main.cpp} che mo
 #define PIN_CRESET      38   /* GPIO38, pin 43  -- VERA reset    */
 #define PIN_CDONE       39   /* GPIO39, pin 44  -- VERA done     */
 #define PIN_DEV_SEL_N   40   /* GPIO40, pin 45  -- Dedicated out ch 0 */
-#define PIN_EXTSEL_N    41   /* GPIO41, pin 46  -- Dedicated out ch 1 */
+#define PIN_EXTSEL_N    41   /* GPIO41, pin 47  -- Dedicated out ch 1 */
 #define PIN_MPD         42   /* GPIO42, pin 48  -- Dedicated out ch 2 */
 #define PIN_RAMBO_EN     3   /* GPIO3,  pin  8  -- RAMbo enable  */
 

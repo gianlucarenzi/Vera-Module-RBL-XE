@@ -141,7 +141,7 @@ tramite `RAMBO_EN` (GPIO 3, vedere sezione 2).
 | PHI2 | 1 | 6 | GPIO1 | Input | HIGH | via U3 | Clock fase 2 CPU 6502 — 1.79 MHz |
 | R/W\_ | 2 | 7 | GPIO2 | Input | HIGH=read | via U3 | Read / Not-Write |
 | RAMBO\_EN | 3 | 8 | GPIO3 | Input | HIGH | **direct** | RAMbo 256 KB enable — pull-up 10 kΩ→VCC = presente; pull-down 10 kΩ→GND = assente. Letto in `setup()`. |
-| EXTSEL\_N | 41 | 46 | MTDI | **Output** | LOW | via U3 | Disabilita MMU/Freddie per $D1xx, $D6xx e finestra RAMbo $4000–$7FFF. **Solo PBI mode** per VERA; RAMbo in entrambe le modalità. Ex-JTAG, reclaimed. |
+| EXTSEL\_N | 41 | 47 | MTDI | **Output** | LOW | via U3 | Disabilita MMU/Freddie per $D1xx, $D6xx e finestra RAMbo $4000–$7FFF. **Solo PBI mode** per VERA; RAMbo in entrambe le modalità. Ex-JTAG, reclaimed. |
 | DEV\_SEL\_N | 40 | 45 | MTDO | **Output** | LOW | **direct** | VERA chip select (3.3 V); PBI: VERA regs $D1xx; CCTL: range $D5xx. Ex-JTAG, reclaimed. |
 | MPD | 42 | 48 | MTMS | **Output** | LOW | via U3 | Math Pack Disable — disabilita ROM Atari $D800–$DFFF — **solo PBI mode**. Ex-JTAG, reclaimed. |
 | ARESET | 37 | 42 | GPIO37 | **Output** | LOW | via U3 | Atari System Reset — pilota /RESET bus Atari (open-drain + pull-up consigliati). |
@@ -154,7 +154,7 @@ tramite `RAMBO_EN` (GPIO 3, vedere sezione 2).
 |------|----|------|-----------|---------|
 | Input  | 0 | 1  | 6  | PHI2      |
 | Output | 0 | 40 | 45 | DEV\_SEL\_N |
-| Output | 1 | 41 | 46 | EXTSEL\_N   |
+| Output | 1 | 41 | 47 | EXTSEL\_N   |
 | Output | 2 | 42 | 48 | MPD         |
 
 I pool input e output Dedicated GPIO sono **indipendenti** su ESP32-S3: il canale 0 in lettura
@@ -263,7 +263,7 @@ Tutti ingressi B→A (Atari → ESP32).
 | A4/B4 | GPIO 36 (pin 41) — A11 | Atari A11 | B→A | Input |
 | A5/B5 | GPIO 1  (pin  6) — PHI2 | Atari PHI2 | B→A | Input |
 | A6/B6 | GPIO 2  (pin  7) — R/W\_ | Atari R/W\_ | B→A | Input |
-| A7/B7 | GPIO 41 (pin 46) — EXTSEL\_N | Atari EXTSEL | **A→B** | Output, active LOW |
+| A7/B7 | GPIO 41 (pin 47) — EXTSEL\_N | Atari EXTSEL | **A→B** | Output, active LOW |
 | A8/B8 | GPIO 42 (pin 48) — MPD | Atari ECI MPD | **A→B** | Output, active LOW |
 
 ### U4 — A12–A15 (nuovo, 4 canali su 8 usati)
@@ -360,8 +360,8 @@ Riferimento rapido ESP32-S3FN8 QFN56 (56 pin segnale + pad GND centrale).
 | 43  | GPIO 38 | CRESET output (diretto VERA) |
 | 44  | GPIO 39 / MTCK | CDONE input (diretto VERA) — ex-JTAG |
 | 45  | GPIO 40 / MTDO | DEV\_SEL\_N output (diretto VERA) — ex-JTAG |
-| 46  | GPIO 41 / MTDI | EXTSEL\_N output (via U3) — ex-JTAG |
-| 47  | VDD3P3\_CPU | Alimentazione CPU — **non GPIO** |
+| 46  | VDD3P3\_CPU | Alimentazione CPU — **non GPIO** |
+| 47  | GPIO 41 / MTDI | EXTSEL\_N output (via U3) — ex-JTAG |
 | 48  | GPIO 42 / MTMS | MPD output (via U3) — ex-JTAG |
 | 49  | GPIO 43 / U0TXD | UART0 TX — debug seriale |
 | 50  | GPIO 44 / U0RXD | UART0 RX — debug seriale |

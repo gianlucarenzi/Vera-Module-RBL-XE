@@ -52,7 +52,7 @@ static const uint8_t DBUS_PINS[8] = { 4, 5, 6, 7, 8, 9, 10, 11 };
 #define PIN_CRESET      38   /* Vera Chip Reset Output (Pin 43) */
 #define PIN_CDONE       39   /* Vera Programmed Status Input (Pin 44) */
 #define PIN_DEV_SEL_N   40   /* Vera Chip Select Output (Pin 45, active LOW) */
-#define PIN_EXTSEL_N    41   /* Atari MMU Disable Output (Pin 46, active LOW) */
+#define PIN_EXTSEL_N    41   /* Atari MMU Disable Output (Pin 47, active LOW) */
 #define PIN_MPD         42   /* Math Pack Disable — disables internal Atari Math Pack ROM $D800-$DFFF (Pin 48, active LOW) */
 #define PIN_A14         45   /* Address Bit 14 (Pin 51) */
 #define PIN_A15         46   /* Address Bit 15 (Pin 52) */
