@@ -54,8 +54,8 @@ static const uint8_t DBUS_PINS[8] = { 4, 5, 6, 7, 8, 9, 10, 11 };
 #define PIN_DEV_SEL_N   40   /* Vera Chip Select Output (Pin 45, active LOW) */
 #define PIN_EXTSEL_N    41   /* Atari MMU Disable Output (Pin 46, active LOW) */
 #define PIN_MPD         42   /* Math Pack Disable — disables internal Atari Math Pack ROM $D800-$DFFF (Pin 48, active LOW) */
-#define PIN_A14         47   /* Address Bit 14 (Pin 53) */
-#define PIN_A15         48   /* Address Bit 15 (Pin 54) */
+#define PIN_A14         45   /* Address Bit 14 (Pin 51) */
+#define PIN_A15         46   /* Address Bit 15 (Pin 52) */
 
 /* Serial Debug (UART0 default pins on ESP32-S3 QFN56) */
 #define PIN_UART_TX     43   /* UART0 TX (Pin 49) */
@@ -63,6 +63,61 @@ static const uint8_t DBUS_PINS[8] = { 4, 5, 6, 7, 8, 9, 10, 11 };
 
 /* RAMbo hardware enable: external 10K pull-up = RAMbo present, pull-down = no RAMbo */
 #define PIN_RAMBO_EN     3   /* GPIO 3 (Pin 8) — read once at boot */
+
+/*
+ * Strapping Pins — Power-On Boot Configuration (ESP32-S3FN8 QFN56)
+ *
+ * The ESP32-S3 samples four strapping pins during the power-on reset window,
+ * before any firmware code executes.  The sampled levels select the boot mode
+ * and several chip-level options.
+ *
+ * Timing note: PIN_ARESET (GPIO37) is configured as OUTPUT only inside setup().
+ * At strapping-sample time it is still an input (high-Z), so the ESP32 has NOT
+ * yet asserted the Atari reset line.  The Atari's own power-on reset circuitry
+ * (MMU/POKEY RC network) holds the 6502 RESET# pin LOW, which tri-states the
+ * 6502 address bus.  The TXS0108E level-shifters (U1–U4) auto-sense direction:
+ * with floating inputs on the Atari side the outputs are high-Z, and the
+ * ESP32-side internal pull resistors determine the final strapping level.
+ *
+ * GPIO0  —  Pin  5  |  Boot mode selection  |  Internal weak PULL-UP ~45 kΩ
+ *   Not wired to any Atari signal in this design.
+ *   Pull-up holds GPIO0 HIGH throughout the strapping window.
+ *   Sampled value: HIGH → SPI boot from embedded flash (correct for normal
+ *   operation).  LOW would enter UART/JTAG download mode and halt the system.
+ *
+ * GPIO3  —  Pin  8  |  JTAG signal source   |  NO internal pull (truly floating)
+ *   Wired to RAMBO_EN with an external 10 kΩ resistor to VCC or GND.
+ *   The external resistor drives the pin to a known level before sampling:
+ *     Pull-up  (RAMbo hardware present) → HIGH → hardware JTAG selected
+ *       (signals on GPIO39-42).  Irrelevant: gpio_reset_pin() reclaims all
+ *       JTAG pins in setup() before the Dedicated GPIO bundle is created.
+ *     Pull-down (no RAMbo)              → LOW  → JTAG via USB OTG selected.
+ *       Irrelevant: ARDUINO_USB_CDC_ON_BOOT=0 disables USB CDC; GPIO19/20
+ *       are reassigned to A7/A8.
+ *   Without the external resistor the pin would float and the strapping value
+ *   would be undefined — the 10 kΩ resistor is mandatory for deterministic boot.
+ *
+ * GPIO45 —  Pin 51  |  VDD_SPI voltage      |  Internal weak PULL-DOWN ~5 kΩ
+ *   Wired to address bit A14 via TXS0108E U4 (Atari 5 V → ESP32 3.3 V).
+ *   At power-on the 6502 RESET# is LOW → A14 pin is high-Z on the Atari side
+ *   → U4 output floats → internal pull-down drives GPIO45 LOW.
+ *   Sampled value: LOW → VDD_SPI sourced from internal LDO (~1.8 V).
+ *   For the FN8 variant the embedded flash VDD rail is supplied on-package and
+ *   is independent of the VDD_SPI strapping; both LOW and HIGH are electrically
+ *   safe.  The pull-down direction is consistent with the idle bus state. ✓
+ *   Risk: if stray coupling or an abnormally fast Atari power rail drives A14
+ *   HIGH during the sampling window, VDD_SPI = 3.3 V (VDD3P3_RTC) — still safe
+ *   for FN8.
+ *
+ * GPIO46 —  Pin 52  |  ROM messages on UART |  Internal weak PULL-DOWN ~5 kΩ
+ *   Wired to address bit A15 via TXS0108E U4.  Identical power-on scenario:
+ *   6502 reset → A15 high-Z → U4 floats → pull-down → GPIO46 LOW.
+ *   Sampled value: LOW → first-stage ROM boot messages on UART0 suppressed.
+ *   Correct for production: the firmware initialises UART0 independently via
+ *   Serial.begin() and uses it exclusively for debug output.  Enabling ROM
+ *   messages (HIGH) would prepend Espressif boot log lines before the firmware
+ *   output, which is undesirable but not harmful.
+ */
 
 /* ===========================================================================
  * Helper Macros & Inline Functions
@@ -72,7 +127,7 @@ static const uint8_t DBUS_PINS[8] = { 4, 5, 6, 7, 8, 9, 10, 11 };
  * Decode full 16-bit address from GPIO input snapshots.
  * A0-A9  : Bank 0 bits 12-21.
  * A10-A13: Bank 1 bits 3, 4, 1, 2  (GPIO 35, 36, 33, 34 → offsets from 32).
- * A14-A15: Bank 1 bits 15, 16       (GPIO 47, 48).
+ * A14-A15: Bank 1 bits 13, 14       (GPIO 45, 46).
  * All bits captured in the same g_lo / g_hi APB reads — no extra reads needed.
  */
 static inline uint16_t IRAM_ATTR decode_addr(uint32_t lo, uint32_t hi)

@@ -8,6 +8,7 @@
 \usepackage{geometry}
 \usepackage{graphicx}
 \usepackage{amsmath}
+\usepackage{amssymb}
 \usepackage{xcolor}
 \usepackage{hyperref}
 \usepackage{listings}
@@ -151,7 +152,7 @@ I quattro TXS0108E (U1--U4) svolgono esclusivamente adattamento di livello 5\,V\
     \item {\bfseries U1 — Bus Dati D0--D7 (GPIO\,4--11, Bank-0 bit 4--11):} bidirezionale. Il firmware abilita le uscite con \texttt{GPIO.enable\_w1ts} solo durante i cicli di lettura che richiedono risposta dell'ESP32 (ROM \$D800--\$DFFF, RAM \$D600--\$D7FF, RAMbo \$4000--\$7FFF).
     \item {\bfseries U2 — Bus Indirizzi A0--A7 (GPIO\,12--19, Bank-0 bit 12--19):} tutti ingressi B→A (Atari 5\,V → ESP32 3.3\,V). GPIO\,19 condivide il pad USB D-; USB CDC è disabilitato nel firmware.
     \item {\bfseries U3 — A8--A11, PHI2, R/W\_, EXTSEL\_N, MPD (GPIO\,20--21, 35--36, 1, 2, 41, 42):} ingressi B→A per A8, A9, A10, A11, PHI2, R/W\_; uscite A→B per \texttt{EXTSEL\_N} (GPIO\,41) e \texttt{MPD} (GPIO\,42). \texttt{ARESET} (GPIO\,37) è anch'esso su U3 (uscita A→B). I GPIO\,39--42 erano riservati a JTAG: \texttt{setup()} li de-registra con \texttt{gpio\_reset\_pin()} prima di creare il Dedicated GPIO bundle.
-    \item {\bfseries U4 — Bus Indirizzi A12--A15 (GPIO\,33--34, 47--48, Bank-1):} tutti ingressi B→A (4 canali su 8 utilizzati). GPIO\,33 e GPIO\,34 si trovano sul lato opposto del QFN56 rispetto a GPIO\,47 e GPIO\,48: applicare \emph{length matching} (serpentine alla traccia più lunga) per eliminare lo skew su U4.
+    \item {\bfseries U4 — Bus Indirizzi A12--A15 (GPIO\,33--34, 45--46, Bank-1):} tutti ingressi B→A (4 canali su 8 utilizzati). GPIO\,33 e GPIO\,34 si trovano sul lato opposto del QFN56 rispetto a GPIO\,45 e GPIO\,46: applicare \emph{length matching} (serpentine alla traccia più lunga) per eliminare lo skew su U4.
     \item {\bfseries Connessioni dirette (senza level shifter, 3.3\,V):} \texttt{DEV\_SEL\_N} (GPIO\,40) → VERA /CS; \texttt{CRESET} (GPIO\,38) → VERA /RESET; \texttt{CDONE} (GPIO\,39) $\leftarrow$ VERA CDONE.
 \end{itemize}
 
@@ -162,7 +163,7 @@ I segnali \texttt{DEV\_SEL\_N}, \texttt{EXTSEL\_N} e \texttt{MPD} sono raggruppa
 
 I pin fisici del package QFN56 sono numerati 1--56 (più il pad GND centrale). La tabella seguente riporta i segnali del progetto con il numero GPIO logico \textbf{e} il numero di pad fisico del QFN56 (da Table~2-1 del datasheet ESP32-S3 v2.2).
 
-\textbf{Nota importante:} il MCU \emph{richiede} un \textbf{quarzo esterno a 40\,MHz} collegato ai pin dedicati analogici \textbf{XTAL\_P} (pin\,56) e \textbf{XTAL\_N} (pin\,55). L'oscillatore RC interno è limitato al dominio RTC e non è in grado di pilotare il PLL della CPU a 240\,MHz; senza quarzo il chip non si avvia. Vedere la sezione~\ref{sec:xtal} per il circuito consigliato.
+\textbf{Nota importante:} il MCU \emph{richiede} un \textbf{quarzo esterno a 40\,MHz} collegato ai pin dedicati analogici \textbf{XTAL\_P} (pin\,54) e \textbf{XTAL\_N} (pin\,53). L'oscillatore RC interno è limitato al dominio RTC e non è in grado di pilotare il PLL della CPU a 240\,MHz; senza quarzo il chip non si avvia. Vedere la sezione~\ref{sec:xtal} per il circuito consigliato.
 
 \begin{center}
 \resizebox{\linewidth}{!}{%
@@ -204,8 +205,8 @@ ARESET   & 37 & 42 & GPIO37 & OUT & Reset sistema Atari (LOW asserito) \\
 \multicolumn{6}{l}{\textit{Bus indirizzi A12--A15 — input via TXS0108E U4 (Bank-1)}} \\
 A12 & 33 & 38 & GPIO33  & IN & Bank-1 bit\,1; length matching con A13--A15 \\
 A13 & 34 & 39 & GPIO34  & IN & Bank-1 bit\,2 \\
-A14 & 47 & 53 & FSPICLK & IN & Bank-1 bit\,15; FSPI non usato (flash in-package) \\
-A15 & 48 & 54 & FSPID   & IN & Bank-1 bit\,16 \\
+A14 & 45 & 51 & GPIO45  & IN & Bank-1 bit\,13; pin di strapping, usato come A14 \\
+A15 & 46 & 52 & GPIO46  & IN & Bank-1 bit\,14; pin di strapping, usato come A15 \\
 \midrule
 \multicolumn{6}{l}{\textit{Segnali diretti (senza level shifter, 3.3\,V)}} \\
 DEV\_SEL\_N & 40 & 45 & MTDO  & OUT & VERA /CS; Dedicated GPIO output ch\,0; ex-JTAG \\
@@ -238,11 +239,85 @@ UART RX & 44 & 50 & U0RXD & IN  & non utilizzato in firmware \\
 
 \subsection*{GPIO disponibili}
 
-Con A12--A15 aggiunti e \texttt{RAMBO\_EN} (GPIO\,3), tutti i GPIO utilizzabili sono ora assegnati. Non rimangono GPIO liberi per usi futuri (ad eccezione dei pin di strapping, che devono essere lasciati liberi).
+Con A12--A15 aggiunti e \texttt{RAMBO\_EN} (GPIO\,3), tutti i GPIO utilizzabili sono ora assegnati. Non rimangono GPIO liberi per usi futuri.
 
-\noindent\textbf{Attenzione:} I pin QFN56 28 e 30--35 (GPIO\,26--32) sono collegati internamente alla flash Quad SPI in-package (variante FN8) e non devono mai essere connessi esternamente. GPIO\,45 (pin\,51) e GPIO\,46 (pin\,52) sono pin di strapping: lasciare liberi. I pin\,55 (\texttt{XTAL\_N}) e\,56 (\texttt{XTAL\_P}) sono pad analogici dedicati al quarzo 40\,MHz: riservati, non usabili come GPIO (vedere sezione~\ref{sec:xtal}).
+\noindent\textbf{Attenzione:} I pin QFN56 28 e 30--35 (GPIO\,26--32) sono collegati internamente alla flash Quad SPI in-package (variante FN8) e non devono mai essere connessi esternamente. GPIO\,45 (pin\,51) e GPIO\,46 (pin\,52) sono pin di strapping del chip: vengono usati come ingressi A14 e A15 (vedere sezione~\ref{sec:strapping}). I pin\,53 (\texttt{XTAL\_N}) e\,54 (\texttt{XTAL\_P}) sono pad analogici dedicati al quarzo 40\,MHz: riservati, non usabili come GPIO (vedere sezione~\ref{sec:xtal}).
 
-\subsection{Quarzo oscillatore 40\,MHz (pin\,55--56)}
+\subsection{Pin di strapping — comportamento al boot con bus ATARI connesso}
+\label{sec:strapping}
+
+L'ESP32-S3 campiona quattro pin di strapping durante la finestra di reset al power-on,
+\emph{prima che qualsiasi codice venga eseguito}. I livelli campionati configurano la
+modalità di boot e alcune opzioni di sistema.
+
+\paragraph{Considerazione temporale critica.}
+\texttt{PIN\_ARESET} (GPIO\,37) viene configurato come \texttt{OUTPUT} soltanto all'interno
+di \texttt{setup()}. Al momento del campionamento dei pin di strapping GPIO\,37 è ancora
+in alta impedenza: l'ESP32 \textbf{non ha ancora asserito} la linea di reset dell'Atari.
+È la circuiteria di power-on reset dell'Atari stessa (rete RC di MMU/POKEY) che mantiene
+il pin \texttt{RESET\#} del 6502 basso, mettendo il bus indirizzi in alta impedenza.
+I level-shifter TXS0108E (U1--U4), con gli ingressi lato Atari flottanti, mantengono le
+uscite lato ESP32 in alta impedenza: i pull resistori interni dell'ESP32 determinano
+il livello finale di campionamento.
+
+\begin{itemize}
+
+  \item \textbf{GPIO\,0 — Pin\,5 \quad|\quad Boot mode \quad|\quad Pull-UP interno
+        $\approx$45\,k$\Omega$}\\
+    Non connesso al bus ATARI. Il pull-up interno mantiene GPIO\,0 HIGH per tutta la
+    finestra di campionamento.
+    Valore campionato: \textbf{HIGH $\rightarrow$ SPI boot dalla flash integrata}
+    (comportamento corretto per il normale funzionamento).
+    Il valore LOW avvierebbe la modalità download UART/JTAG, bloccando il sistema.
+
+  \item \textbf{GPIO\,3 — Pin\,8 \quad|\quad JTAG source \quad|\quad Nessun pull interno
+        (floating)}\\
+    Connesso a \texttt{RAMBO\_EN} tramite resistore esterno 10\,k$\Omega$ verso VCC o GND.
+    Il resistore esterno determina il livello prima del campionamento:
+    \begin{itemize}
+      \item Pull-up (RAMbo presente) $\rightarrow$ \textbf{HIGH} $\rightarrow$ sorgente JTAG
+        hardware selezionata (GPIO\,39--42). \emph{Ininfluente:} \texttt{gpio\_reset\_pin()}
+        reclaima tutti i pin JTAG in \texttt{setup()} prima della creazione del bundle
+        Dedicated GPIO.
+      \item Pull-down (RAMbo assente) $\rightarrow$ \textbf{LOW} $\rightarrow$ JTAG via USB
+        OTG. \emph{Ininfluente:} \texttt{ARDUINO\_USB\_CDC\_ON\_BOOT=0} disabilita USB CDC;
+        GPIO\,19/20 sono riassegnati ad A7/A8.
+    \end{itemize}
+    Senza il resistore esterno il pin flotta e il valore campionato è indeterminato:
+    il resistore da 10\,k$\Omega$ è \textbf{obbligatorio} per un boot deterministico.
+
+  \item \textbf{GPIO\,45 — Pin\,51 \quad|\quad VDD\_SPI voltage \quad|\quad Pull-DOWN
+        interno $\approx$5\,k$\Omega$}\\
+    Connesso al bit A14 del bus indirizzi ATARI tramite TXS0108E U4
+    (5\,V\,$\leftrightarrow$\,3.3\,V). Al power-on il \texttt{RESET\#} del 6502 è basso
+    $\rightarrow$ il pin A14 lato Atari è in alta impedenza $\rightarrow$ U4 mantiene
+    l'uscita lato ESP32 in alta impedenza $\rightarrow$ il pull-down interno porta
+    GPIO\,45 a LOW.\\
+    Valore campionato: \textbf{LOW $\rightarrow$ VDD\_SPI alimentato dal LDO interno
+    ($\approx$1.8\,V)}.
+    Per la variante FN8 (flash integrata on-package) il rail VDD\_SPI è instradato
+    internamente e indipendente dallo strapping; entrambi i valori LOW e HIGH sono
+    elettricamente sicuri. Il pull-down è coerente con lo stato idle del bus.\,$\checkmark$
+
+    \noindent\textbf{Rischio residuo:} se un accoppiamento parassita o una salita
+    particolarmente rapida del rail 5\,V Atari porta A14 HIGH durante la finestra di
+    campionamento, il risultato è VDD\_SPI = 3.3\,V (VDD3P3\_RTC) — anch'esso sicuro
+    per FN8.
+
+  \item \textbf{GPIO\,46 — Pin\,52 \quad|\quad ROM messages (UART0) \quad|\quad Pull-DOWN
+        interno $\approx$5\,k$\Omega$}\\
+    Connesso al bit A15 del bus indirizzi ATARI tramite TXS0108E U4. Scenario di
+    power-on identico a GPIO\,45: 6502 in reset $\rightarrow$ A15 alta impedenza
+    $\rightarrow$ U4 in alta impedenza $\rightarrow$ pull-down $\rightarrow$ GPIO\,46 LOW.\\
+    Valore campionato: \textbf{LOW $\rightarrow$ messaggi ROM del primo stage su UART0
+    disabilitati}. Corretto per la produzione: il firmware inizializza UART0 autonomamente
+    tramite \texttt{Serial.begin()} e lo usa esclusivamente per l'output di debug.
+    L'abilitazione dei messaggi ROM (HIGH) aggiungerebbe righe di log Espressif prima
+    dell'output del firmware — indesiderato ma non dannoso.\,$\checkmark$
+
+\end{itemize}
+
+\subsection{Quarzo oscillatore 40\,MHz (pin\,53--54)}
 \label{sec:xtal}
 
 L'ESP32-S3FN8 richiede un quarzo esterno da \textbf{40\,MHz} per generare il riferimento PLL interno che alimenta la CPU a 240\,MHz, l'interfaccia flash e i divisori UART. I pin sono \emph{analogici dedicati}: non configurabili via software, non condivisi con GPIO.
@@ -252,8 +327,8 @@ L'ESP32-S3FN8 richiede un quarzo esterno da \textbf{40\,MHz} per generare il rif
 \toprule
 \textbf{Pin QFN56} & \textbf{Segnale} & \textbf{Note} \\
 \midrule
-55 & \texttt{XTAL\_N} & Terminale negativo del cristallo (uscita amplificatore oscillatore) \\
-56 & \texttt{XTAL\_P} & Terminale positivo del cristallo (ingresso amplificatore oscillatore) \\
+53 & \texttt{XTAL\_N} & Terminale negativo del cristallo (uscita amplificatore oscillatore) \\
+54 & \texttt{XTAL\_P} & Terminale positivo del cristallo (ingresso amplificatore oscillatore) \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -261,11 +336,11 @@ L'ESP32-S3FN8 richiede un quarzo esterno da \textbf{40\,MHz} per generare il rif
 \noindent Schema consigliato:
 \begin{center}
 \begin{BVerbatim}
-XTAL_P (56) --[C1 10pF]-- GND
+XTAL_P (54) --[C1 10pF]-- GND
      |
   [X1 40MHz]    <- Rs 0-33 Ohm in serie (opzionale)
      |
-XTAL_N (55) --[C2 10pF]-- GND
+XTAL_N (53) --[C2 10pF]-- GND
 \end{BVerbatim}
 \end{center}
 
@@ -354,8 +429,8 @@ Di seguito è riportato un estratto aggiornato del file \texttt{main.cpp} che mo
 #define PIN_A11         36   /* GPIO36, pin 41  -- bank-1 bit 4  */
 #define PIN_A12         33   /* GPIO33, pin 38  -- bank-1 bit 1  */
 #define PIN_A13         34   /* GPIO34, pin 39  -- bank-1 bit 2  */
-#define PIN_A14         47   /* GPIO47, pin 53  -- bank-1 bit 15 */
-#define PIN_A15         48   /* GPIO48, pin 54  -- bank-1 bit 16 */
+#define PIN_A14         45   /* GPIO45, pin 51  -- bank-1 bit 13 */
+#define PIN_A15         46   /* GPIO46, pin 52  -- bank-1 bit 14 */
 #define PIN_ARESET      37   /* GPIO37, pin 42  -- system reset  */
 #define PIN_CRESET      38   /* GPIO38, pin 43  -- VERA reset    */
 #define PIN_CDONE       39   /* GPIO39, pin 44  -- VERA done     */
@@ -589,7 +664,7 @@ La revisione del firmware e della mappatura hardware ha chiarito e corretto i se
   Rif.: datasheet Motorola\,6520 PIA; Altirra Hardware Reference Manual~\S8;
   forum AtariAge (utente \textit{warerat}).
 
-  \item \textbf{GPIO\,15 e GPIO\,16} (pad RTC \texttt{XTAL\_32K\_P}/\texttt{N}): il progetto non impiega quarzo da 32\,kHz; i pad sono utilizzati come normali GPIO per segnali indirizzo. Il MCU richiede invece un quarzo esterno a \textbf{40\,MHz} sulle pad dedicate \textbf{XTAL\_P} (pin\,56) e \textbf{XTAL\_N} (pin\,55) — senza di esso il chip non si avvia (vedere sezione~\ref{sec:xtal}).
+  \item \textbf{GPIO\,15 e GPIO\,16} (pad RTC \texttt{XTAL\_32K\_P}/\texttt{N}): il progetto non impiega quarzo da 32\,kHz; i pad sono utilizzati come normali GPIO per segnali indirizzo. Il MCU richiede invece un quarzo esterno a \textbf{40\,MHz} sulle pad dedicate \textbf{XTAL\_P} (pin\,54) e \textbf{XTAL\_N} (pin\,53) — senza di esso il chip non si avvia (vedere sezione~\ref{sec:xtal}).
 \end{itemize}
 
 \begin{sloppypar}

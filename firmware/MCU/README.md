@@ -6,7 +6,7 @@ Firmware per il microcontrollore **ESP32-S3FN8** (QFN-56, 8 MB flash integrata,
 dual-core Xtensa LX7 @ 240 MHz) montato sul modulo Vera-Module-RBL-XE.
 
 > **Requisito hardware:** il chip richiede un **quarzo esterno 40 MHz** collegato
-> ai pin dedicati **XTAL\_P** (QFN56 pin 56) e **XTAL\_N** (QFN56 pin 55).
+> ai pin dedicati **XTAL\_P** (QFN56 pin 54) e **XTAL\_N** (QFN56 pin 53).
 > Senza di esso il chip non si avvia. Vedere `PIN-MAPPING.md` § 5 per il
 > circuito consigliato (condensatori di carico, resistenza serie, layout PCB).
 
@@ -96,8 +96,8 @@ I pin GPIO 39–42 erano originariamente riservati a JTAG; vengono liberati in
 | A11          | 36          | 41         | Address bit 11 (via U3)           |
 | A12          | 33          | 38         | Address bit 12 (via U4)           |
 | A13          | 34          | 39         | Address bit 13 (via U4)           |
-| A14          | 47          | 53         | Address bit 14 (via U4)           |
-| A15          | 48          | 54         | Address bit 15 (via U4)           |
+| A14          | 45          | 51         | Address bit 14 (via U4)           |
+| A15          | 46          | 52         | Address bit 15 (via U4)           |
 | ARESET       | 37          | 42         | System reset ATARI (output)       |
 | CRESET       | 38          | 43         | Chip reset VERA (output)          |
 | CDONE        | 39          | 44         | VERA programmata (input)          |
