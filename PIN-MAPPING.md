@@ -11,8 +11,8 @@ Target MCU: **ESP32-S3FN8** — QFN56 package, 45 GPIOs, 8 MB in-package Quad SP
 |------|-----------|--------|------|
 | **GPIO 3** | 8 | RAMBO\_EN | Strapping pin (JTAG source, no internal pull) — usato come **RAMbo hardware enable**: pull-up 10 kΩ → VCC = RAMbo presente; pull-down 10 kΩ → GND = assente. Letto una volta in `setup()`. |
 | **GPIO 26–32** | 28, 30–35 | — | Hard-wired to in-package Quad SPI flash (FN8 variant). **Never connect externally**. |
-| **GPIO 45** | 51 | (unused) | Strapping pin (VDD_SPI select) — internal weak pull-down selects VDD_SPI = 3.3 V. Leave unconnected. |
-| **GPIO 46** | 52 | (unused) | Strapping pin (boot mode) — internal weak pull-down. Leave unconnected. |
+| **GPIO 45** | 51 | A14 | Strapping pin (VDD_SPI select) — internal weak pull-down (~5 kΩ). Connesso ad A14 via TXS0108E U4. Al power-on il 6502 è in reset → A14 alta impedenza → U4 flotta → pull-down → **LOW → VDD_SPI da LDO interno (~1.8 V)**. Sicuro per variante FN8 (flash on-package). |
+| **GPIO 46** | 52 | A15 | Strapping pin (ROM messages on UART0) — internal weak pull-down (~5 kΩ). Connesso ad A15 via TXS0108E U4. Stesso scenario di GPIO 45 → **LOW → messaggi ROM disabilitati** (corretto per produzione). |
 
 > **JTAG pins reclaimed (GPIO 39–42):** il firmware chiama `gpio_reset_pin()` su GPIO 39, 40,
 > 41, 42 per de-registrarli dal controller JTAG e utilizzarli come GPIO normali.
@@ -74,10 +74,10 @@ Firmware data decode: `data = (GPIO.in >> 4) & 0xFF`
 | A10 | 35 | 40 | GPIO35 | 3 | |
 | A11 | 36 | 41 | GPIO36 | 4 | |
 
-### A12–A15 (Bank 1, GPIO 33–34 e 47–48, via TXS0108E U4)
+### A12–A15 (Bank 1, GPIO 33–34 e 45–46, via TXS0108E U4)
 
 > **Hardware:** richiede un nuovo TXS0108E U4 (4 dei suoi 8 canali).
-> GPIO 33/34 (pin 38–39) e GPIO 47/48 (pin 53–54) sono su lati opposti del
+> GPIO 33/34 (pin 38–39) e GPIO 45/46 (pin 51–52) sono su lati opposti del
 > QFN56. **Routing PCB:** applicare *length matching* — tutte le tracce di
 > A12–A15 portate alla lunghezza della traccia più lunga (A14 o A15) tramite
 > serpentine, per eliminare lo skew di propagazione tra i quattro bit.
@@ -86,8 +86,8 @@ Firmware data decode: `data = (GPIO.in >> 4) & 0xFF`
 |---|---|---|---|---|---|
 | A12 | 33 | 38 | GPIO33 | 1  | Ex-spare CONN / libre |
 | A13 | 34 | 39 | GPIO34 | 2  | Ex-spare CONN / libre |
-| A14 | 47 | 53 | FSPICLK | 15 | Ex-spare CONN1; FSPI non usato (flash in-package) |
-| A15 | 48 | 54 | FSPID   | 16 | Ex-spare CONN2; FSPI non usato (flash in-package) |
+| A14 | 45 | 51 | GPIO45  | 13 | Strapping pin (VDD_SPI); pull-down → LOW al boot (sicuro FN8) |
+| A15 | 46 | 52 | GPIO46  | 14 | Strapping pin (ROM msgs); pull-down → LOW al boot (corretto) |
 
 ### Firmware: decode indirizzo completo (16 bit)
 
@@ -98,8 +98,8 @@ a |= ((g_hi >> (35 - 32)) & 1u) << 10;           /* A10    — Bank 1 bit  3    
 a |= ((g_hi >> (36 - 32)) & 1u) << 11;           /* A11    — Bank 1 bit  4     */
 a |= ((g_hi >> (33 - 32)) & 1u) << 12;           /* A12    — Bank 1 bit  1     */
 a |= ((g_hi >> (34 - 32)) & 1u) << 13;           /* A13    — Bank 1 bit  2     */
-a |= ((g_hi >> (47 - 32)) & 1u) << 14;           /* A14    — Bank 1 bit 15     */
-a |= ((g_hi >> (48 - 32)) & 1u) << 15;           /* A15    — Bank 1 bit 16     */
+a |= ((g_hi >> (45 - 32)) & 1u) << 14;           /* A14    — Bank 1 bit 13     */
+a |= ((g_hi >> (46 - 32)) & 1u) << 15;           /* A15    — Bank 1 bit 14     */
 ```
 
 La modalità operativa è selezionata a compile time tramite `VERA_BOARD_IS_PBI` in `main.cpp`:
@@ -180,18 +180,18 @@ The pins are **dedicated analog** — not GPIO, not software-configurable.
 
 | QFN56 pin | Signal  | Notes                                          |
 |-----------|---------|------------------------------------------------|
-| 55        | XTAL\_N | Crystal − terminal (oscillator amplifier output) |
-| 56        | XTAL\_P | Crystal + terminal (oscillator amplifier input)  |
+| 53        | XTAL\_N | Crystal − terminal (oscillator amplifier output) |
+| 54        | XTAL\_P | Crystal + terminal (oscillator amplifier input)  |
 
 ### Schematic
 
 ```
            C1 (10 pF)
-XTAL_P (56) ──┤├── GND
+XTAL_P (54) ──┤├── GND
       │
     [X1  40 MHz]   ← Rs 0–33 Ω optional, in series with crystal
       │
-XTAL_N (55) ──┤├── GND
+XTAL_N (53) ──┤├── GND
            C2 (10 pF)
 ```
 
@@ -275,8 +275,8 @@ Tutti ingressi B→A (Atari → ESP32).
 |---|---|---|---|---|
 | A1/B1 | GPIO 33 (pin 38) — A12 | Atari A12 | B→A | Input |
 | A2/B2 | GPIO 34 (pin 39) — A13 | Atari A13 | B→A | Input |
-| A3/B3 | GPIO 47 (pin 53) — A14 | Atari A14 | B→A | Input |
-| A4/B4 | GPIO 48 (pin 54) — A15 | Atari A15 | B→A | Input |
+| A3/B3 | GPIO 45 (pin 51) — A14 | Atari A14 | B→A | Input |
+| A4/B4 | GPIO 46 (pin 52) — A15 | Atari A15 | B→A | Input |
 | A5–A8 | — | — | — | Canali liberi su U4 |
 
 **Connessioni dirette (senza level shifter):**
@@ -297,16 +297,15 @@ Pin non assegnati al progetto, esclusi strapping e flash in-package.
 |---|---|---|---|
 | 22–25 | — | — | Non esistono su ESP32-S3 |
 
-> Tutti i GPIO non riservati sono ora assegnati: GPIO 3 = RAMBO\_EN; GPIO 33, 34, 47, 48 = A12–A15.
+> Tutti i GPIO non riservati sono ora assegnati: GPIO 3 = RAMBO\_EN; GPIO 33, 34, 45, 46 = A12–A15.
 
 **Pin esclusi (non utilizzabili):**
 
 | GPIO / Funzione | QFN56 pin | Motivo |
 |---|---|---|
 | GPIO 26–32 | 28, 30–35 | Flash in-package — mai connettere esternamente |
-| GPIO 45 | 51 | Strapping VDD\_SPI — lasciare libero |
-| GPIO 46 | 52 | Strapping boot mode — lasciare libero |
-| XTAL\_N / XTAL\_P | 55, 56 | Dedicated analog — quarzo 40 MHz. Vedere § 5. |
+| XTAL\_N / XTAL\_P | 53, 54 | Dedicated analog — quarzo 40 MHz. Vedere § 5. |
+| VDDA1 / VDDA2 | 55, 56 | Alimentazione analogica — non GPIO, non connettere a segnali digitali |
 
 ---
 
@@ -366,10 +365,10 @@ Riferimento rapido ESP32-S3FN8 QFN56 (56 pin segnale + pad GND centrale).
 | 48  | GPIO 42 / MTMS | MPD output (via U3) — ex-JTAG |
 | 49  | GPIO 43 / U0TXD | UART0 TX — debug seriale |
 | 50  | GPIO 44 / U0RXD | UART0 RX — debug seriale |
-| 51  | GPIO 45 | NC (strapping VDD\_SPI) |
-| 52  | GPIO 46 | NC (strapping boot) |
-| 53  | GPIO 47 / FSPICLK | A14 (via U4) |
-| 54  | GPIO 48 / FSPID   | A15 (via U4) |
-| 55  | XTAL\_N | Quarzo principale 40 MHz |
-| 56  | XTAL\_P | Quarzo principale 40 MHz |
+| 51  | GPIO 45 | A14 (via U4) — strapping VDD\_SPI; pull-down → LOW al boot (FN8 safe) |
+| 52  | GPIO 46 | A15 (via U4) — strapping ROM msgs; pull-down → LOW al boot |
+| 53  | XTAL\_N | Quarzo principale 40 MHz — dedicated analog |
+| 54  | XTAL\_P | Quarzo principale 40 MHz — dedicated analog |
+| 55  | VDDA1   | Alimentazione analogica — non GPIO |
+| 56  | VDDA2   | Alimentazione analogica — non GPIO |
 | EP  | GND (pad centrale) | GND |
