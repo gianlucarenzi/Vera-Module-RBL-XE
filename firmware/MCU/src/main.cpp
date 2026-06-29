@@ -651,6 +651,9 @@ static const char *vera_reg_name(uint8_t offset, uint8_t dcsel)
     if (offset < 8)
         return base[offset];
 
+    if (offset == 0x08)
+        return "VERA_IRQLINE_L";
+
     if (offset >= 0x09 && offset <= 0x0C)
     {
         static const char *mux[7][4] = {
@@ -670,6 +673,20 @@ static const char *vera_reg_name(uint8_t offset, uint8_t dcsel)
             { "VERA_FX_CACHE_L",  "VERA_FX_CACHE_M",     "VERA_FX_CACHE_H",     "VERA_FX_CACHE_U"     },
         };
         return mux[(dcsel < 7) ? dcsel : 0][offset - 0x09];
+    }
+
+    if (offset >= 0x0D && offset <= 0x13)
+    {
+        static const char *l0[7] = {
+            "VERA_L0_CONFIG",    /* $0D */
+            "VERA_L0_MAPBASE",   /* $0E */
+            "VERA_L0_TILEBASE",  /* $0F */
+            "VERA_L0_HSCR_L",   /* $10 */
+            "VERA_L0_HSCR_H",   /* $11 */
+            "VERA_L0_VSCR_L",   /* $12 */
+            "VERA_L0_VSCR_H",   /* $13 */
+        };
+        return l0[offset - 0x0D];
     }
 
     if (offset >= 0x14 && offset <= 0x1A)
