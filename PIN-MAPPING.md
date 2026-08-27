@@ -131,6 +131,14 @@ L'ESP32 legge A0–A15, PHI2, R/W\_ ogni ciclo e asserisce i segnali di uscita d
 tramite il **Dedicated GPIO** (istruzioni TIE Xtensa `ee.get_gpio_in` / `ee.wr_mask_gpio_out`).
 Con A0–A15 completi il decode è esatto: nessuna ambiguità di pagina.
 
+> **Perché non i chip-select hardware:** sull'ESP32-S3FN8 non ci sono GPIO liberi da
+> dedicare a ingressi per i chip-select hardware disponibili sui connettori Atari
+> (`/D1XX`, `/S4`, `/S5`, `/CCTL` — vedere § 7, tutti i GPIO non riservati sono già
+> assegnati). Inoltre l'emulazione RAMbo 256 KB richiede comunque di leggere l'intero
+> bus indirizzi A0–A15 (per decodificare la finestra $4000–$7FFF) e di intercettare le
+> scritture su PORTB ($D301), quindi anche con GPIO disponibili i chip-select hardware
+> non risparmierebbero pin sul bus indirizzi: la decodifica software è l'unica strada.
+
 La modalità operativa (PBI o CCTL) è selezionata a compile time con `VERA_BOARD_IS_PBI`
 (vedere sezione 2). In PBI mode tutti e tre i segnali (EXTSEL\_N, DEV\_SEL\_N, MPD) sono
 attivi; in CCTL mode solo DEV\_SEL\_N è usato. Il RAMbo 256 KB è abilitato a runtime

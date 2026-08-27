@@ -87,15 +87,25 @@ static const uint8_t DBUS_PINS[8] = { 4, 5, 6, 7, 8, 9, 10, 11 };
  *
  * GPIO3  —  Pin  8  |  JTAG signal source   |  NO internal pull (truly floating)
  *   Wired to RAMBO_EN with an external 10 kΩ resistor to VCC or GND.
- *   The external resistor drives the pin to a known level before sampling:
- *     Pull-up  (RAMbo hardware present) → HIGH → hardware JTAG selected
- *       (signals on GPIO39-42).  Irrelevant: gpio_reset_pin() reclaims all
- *       JTAG pins in setup() before the Dedicated GPIO bundle is created.
- *     Pull-down (no RAMbo)              → LOW  → JTAG via USB OTG selected.
+ *   Per the ESP32-S3 datasheet (§3.4 "JTAG Signal Source Control"): this pin has
+ *   no internal pull resistors and "the strapping value must be controlled by
+ *   the external circuit that cannot be in a high impedance state" — an external
+ *   resistor is therefore mandatory, not optional, regardless of RAMbo detection.
+ *   If GPIO3's level ever mattered for JTAG source (see below), the polarity per
+ *   Table 3-5 is: LOW → JTAG pins (MTDI/MTCK/MTMS/MTDO, GPIO39-42);
+ *   HIGH → USB Serial/JTAG Controller.
+ *     Pull-up  (RAMbo hardware present) → HIGH → USB Serial/JTAG Controller.
  *       Irrelevant: ARDUINO_USB_CDC_ON_BOOT=0 disables USB CDC; GPIO19/20
  *       are reassigned to A7/A8.
- *   Without the external resistor the pin would float and the strapping value
- *   would be undefined — the 10 kΩ resistor is mandatory for deterministic boot.
+ *     Pull-down (no RAMbo)              → LOW  → JTAG pins (GPIO39-42).
+ *       Irrelevant: gpio_reset_pin() reclaims all JTAG pins in setup() before
+ *       the Dedicated GPIO bundle is created.
+ *   In practice GPIO3's level is moot either way: Table 3-5 shows the default
+ *   (unburned) eFuse row — EFUSE_DIS_PAD_JTAG=0, EFUSE_DIS_USB_JTAG=0,
+ *   EFUSE_STRAP_JTAG_SEL=0 — makes GPIO3 "Ignored" and always selects the USB
+ *   Serial/JTAG Controller. The GPIO39-42 polarity above only applies if
+ *   EFUSE_STRAP_JTAG_SEL has been deliberately burned to 1 (one-time
+ *   programmable; not done by default in Arduino/ESP-IDF).
  *
  * GPIO45 —  Pin 51  |  VDD_SPI voltage      |  Internal weak PULL-DOWN ~5 kΩ
  *   Wired to address bit A14 via TXS0108E U4 (Atari 5 V → ESP32 3.3 V).
