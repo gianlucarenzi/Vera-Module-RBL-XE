@@ -1,7 +1,7 @@
 EESchema Schematic File Version 4
 EELAYER 30 0
 EELAYER END
-$Descr A4 11693 8268
+$Descr A3 16535 11693
 encoding utf-8
 Sheet 4 8
 Title "CARTRIDGE INTEFACE AND BUS LEVEL SHIFTERS"
@@ -14,154 +14,100 @@ Comment3 ""
 Comment4 ""
 $EndDescr
 $Comp
-L RetroBitLab:ECIBUS ECI1
-U 1 1 68934ECE
-P 4210 2195
-F 0 "ECI1" H 4210 2710 50  0000 C CNN
-F 1 "ECIBUS" H 4210 2619 50  0000 C CNN
-F 2 "RetroBitLab:ATARI-XE-ECI-SLOT" H 4210 1345 50  0001 C CNN
-F 3 "" H 4210 1345 50  0000 C CNN
-	1    4210 2195
-	1    0    0    -1  
-$EndComp
-$Comp
 L RetroBitLab:ATARI-CARTRIDGE CART1
 U 1 1 68935683
-P 7485 2245
-F 0 "CART1" H 7485 3160 50  0000 C CNN
-F 1 "ATARI-CARTRIDGE" H 7485 3069 50  0000 C CNN
-F 2 "RetroBitLab:ATARI-LEFT-CARTRIDGE" H 7485 1395 50  0001 C CNN
-F 3 "" H 7485 1395 50  0000 C CNN
-	1    7485 2245
+P 7475 2225
+F 0 "CART1" H 7475 3140 50  0000 C CNN
+F 1 "ATARI-CARTRIDGE" H 7475 3049 50  0000 C CNN
+F 2 "RetroBitLab:ATARI-LEFT-CARTRIDGE" H 7475 1375 50  0001 C CNN
+F 3 "" H 7475 1375 50  0000 C CNN
+	1    7475 2225
 	1    0    0    -1  
 $EndComp
-Text GLabel 3235 1945 0    50   Output ~ 0
+Text GLabel 3075 1950 0    39   Output ~ 0
 ~EXSEL
-Text GLabel 2960 2045 0    50   Output ~ 0
+Text GLabel 3225 2050 0    39   Output ~ 0
 ~RST
-Text GLabel 2985 2245 0    50   Output ~ 0
+Text GLabel 3250 2250 0    39   Output ~ 0
 ~MPD
-Text GLabel 3260 2345 0    50   Output ~ 0
+Text GLabel 3250 2350 0    39   Output ~ 0
 AUDIO
-Text GLabel 3260 2545 0    39   BiDi ~ 0
+Text GLabel 3275 2550 0    39   BiDi ~ 0
 5V
-Wire Wire Line
-	3260 2545 3310 2545
-Wire Wire Line
-	3260 2345 3310 2345
-Wire Wire Line
-	2985 2245 3310 2245
-Wire Wire Line
-	3260 2145 3310 2145
-Wire Wire Line
-	3310 2045 2960 2045
-Wire Wire Line
-	3235 1945 3310 1945
-Text GLabel 5460 2045 2    50   Output ~ 0
+Text GLabel 5400 2050 2    39   Output ~ 0
 ~IRQ
-Text GLabel 5460 2245 2    50   Output ~ 0
+Text GLabel 5225 2250 2    39   Output ~ 0
 A13
-Text GLabel 5460 2345 2    50   Output ~ 0
+Text GLabel 5225 2350 2    39   Output ~ 0
 A14
-Text GLabel 5460 2445 2    50   Output ~ 0
+Text GLabel 5225 2450 2    39   Output ~ 0
 A15
-Text GLabel 5160 2545 2    50   Output ~ 0
+Text GLabel 5225 2550 2    50   Output ~ 0
 GND
 $Comp
 L power:GND #PWR069
 U 1 1 6893A321
-P 5260 2670
-F 0 "#PWR069" H 5260 2420 50  0001 C CNN
-F 1 "GND" H 5265 2497 50  0000 C CNN
-F 2 "" H 5260 2670 50  0001 C CNN
-F 3 "" H 5260 2670 50  0001 C CNN
-	1    5260 2670
+P 5150 2675
+F 0 "#PWR069" H 5150 2425 50  0001 C CNN
+F 1 "GND" H 5155 2502 50  0000 C CNN
+F 2 "" H 5150 2675 50  0001 C CNN
+F 3 "" H 5150 2675 50  0001 C CNN
+	1    5150 2675
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	5110 2545 5110 2670
-Wire Wire Line
-	5110 2670 5260 2670
-Wire Wire Line
-	5110 2545 5160 2545
-Connection ~ 5110 2545
-Wire Wire Line
-	5110 2445 5460 2445
-Wire Wire Line
-	5110 2345 5460 2345
-Wire Wire Line
-	5110 2245 5460 2245
-Wire Wire Line
-	5110 2045 5460 2045
-Text GLabel 6585 1995 0    50   Output ~ 0
+Text GLabel 6525 1975 0    39   Output ~ 0
 A0
-Text GLabel 6585 1895 0    50   Output ~ 0
+Text GLabel 6525 1875 0    39   Output ~ 0
 A1
-Text GLabel 6585 1795 0    50   Output ~ 0
+Text GLabel 6525 1775 0    39   Output ~ 0
 A2
-Text GLabel 6585 1695 0    50   Output ~ 0
+Text GLabel 6525 1675 0    39   Output ~ 0
 A3
-Text GLabel 8385 1795 2    50   Output ~ 0
+Text GLabel 8425 1775 2    50   Output ~ 0
 A4
-Text GLabel 8385 1895 2    50   Output ~ 0
+Text GLabel 8425 1875 2    50   Output ~ 0
 A5
-Text GLabel 8385 1995 2    50   Output ~ 0
+Text GLabel 8425 1975 2    50   Output ~ 0
 A6
-Text GLabel 8385 2095 2    50   Output ~ 0
+Text GLabel 8425 2075 2    50   Output ~ 0
 A7
-Text GLabel 8385 2195 2    50   Output ~ 0
+Text GLabel 8425 2175 2    50   Output ~ 0
 A8
-Text GLabel 8385 2295 2    50   Output ~ 0
+Text GLabel 8425 2275 2    50   Output ~ 0
 A9
-Text GLabel 8385 2795 2    50   Output ~ 0
+Text GLabel 8425 2775 2    50   Output ~ 0
 A10
-Text GLabel 8385 2695 2    50   Output ~ 0
+Text GLabel 8425 2675 2    50   Output ~ 0
 A11
-Text GLabel 8385 2395 2    50   Output ~ 0
+Text GLabel 8425 2375 2    50   Output ~ 0
 A12
-Text GLabel 6585 2495 0    50   Output ~ 0
+Text GLabel 6525 2475 0    39   Output ~ 0
 D0
-Text GLabel 6585 2395 0    50   Output ~ 0
+Text GLabel 6525 2375 0    39   Output ~ 0
 D1
-Text GLabel 6585 2295 0    50   Output ~ 0
+Text GLabel 6525 2275 0    39   Output ~ 0
 D2
-Text GLabel 8385 2495 2    50   Output ~ 0
+Text GLabel 8425 2475 2    50   Output ~ 0
 D3
-Text GLabel 6585 2095 0    50   Output ~ 0
+Text GLabel 6525 2075 0    39   Output ~ 0
 D4
-Text GLabel 6585 2195 0    50   Output ~ 0
+Text GLabel 6525 2175 0    39   Output ~ 0
 D5
-Text GLabel 6585 2595 0    50   Output ~ 0
+Text GLabel 6525 2575 0    39   Output ~ 0
 D6
-Text GLabel 8385 2595 2    50   Output ~ 0
+Text GLabel 8425 2575 2    50   Output ~ 0
 D7
-Text GLabel 8385 1695 2    50   Output ~ 0
+Text GLabel 8425 1675 2    50   Output ~ 0
 GND
-Text GLabel 6585 2795 0    39   BiDi ~ 0
+Text GLabel 6525 2775 0    39   BiDi ~ 0
 5V
-Text GLabel 8610 2895 2    50   Output ~ 0
+Text GLabel 8425 2875 2    33   Output ~ 0
 R~W
-Text GLabel 8385 2995 2    50   Output ~ 0
+Text GLabel 8425 2975 2    50   Output ~ 0
 PHI2
-Wire Wire Line
-	8385 2895 8610 2895
 Text Notes 2845 815  0    197  ~ 39
 ATARI 130XE ECI & CARTRIDGE INTERFACE
-Wire Wire Line
-	3260 2445 3310 2445
-Wire Wire Line
-	5110 2145 5210 2145
-Wire Wire Line
-	8435 1595 8385 1595
-Wire Wire Line
-	6535 2895 6585 2895
-Wire Wire Line
-	6535 2695 6585 2695
-Wire Wire Line
-	6535 1595 6585 1595
-Wire Wire Line
-	5110 1945 5210 1945
-Text GLabel 6585 2995 0    39   BiDi ~ 0
+Text GLabel 6525 2975 0    39   BiDi ~ 0
 ~CCTL
 Text GLabel 3610 3645 0    39   Output ~ 0
 AUDIOL
@@ -194,30 +140,29 @@ Wire Wire Line
 	3955 3645 3610 3645
 Text Notes 2960 3470 0    118  Italic 24
 AUDIO MIXER INSIDE ATARI
-Text GLabel 3260 2145 0    50   Output ~ 0
+Text GLabel 3075 2150 0    39   Output ~ 0
 ~D1XX
-Text GLabel 8435 1595 2    39   BiDi ~ 0
+Text GLabel 8425 1575 2    39   BiDi ~ 0
 RD4
-Text GLabel 6535 2895 0    39   BiDi ~ 0
+Text GLabel 6525 2875 0    39   BiDi ~ 0
 RD5
-Text GLabel 6535 1595 0    39   BiDi ~ 0
+Text GLabel 6525 1575 0    39   BiDi ~ 0
 ~S4
-Text GLabel 6535 2695 0    39   BiDi ~ 0
+Text GLabel 6525 2675 0    39   BiDi ~ 0
 ~S5
-Text GLabel 5210 2145 2    39   BiDi ~ 0
+Text GLabel 5225 2150 2    39   Output ~ 0
 ~HALT
-Text GLabel 5210 1945 2    39   BiDi ~ 0
-RSRVD
-NoConn ~ 3260 2445
-Text GLabel 1250 6105 3    33   BiDi ~ 0
+Text GLabel 3275 2450 0    39   Input ~ 0
+~REFRESH
+Text GLabel 6970 8160 0    33   BiDi ~ 0
 ~WE
-Text GLabel 1350 6105 3    33   BiDi ~ 0
+Text GLabel 6970 8260 0    33   BiDi ~ 0
 ~RE
 Wire Wire Line
-	1250 6105 1250 5930
+	6970 8160 7145 8160
 Wire Wire Line
-	1350 5930 1350 6105
-Text GLabel 5370 6000 3    33   BiDi ~ 0
+	7145 8260 6970 8260
+Text GLabel 9850 9375 0    33   Input ~ 0
 ~IRQ
 $Comp
 L power:GND #PWR?
@@ -272,10 +217,10 @@ Wire Wire Line
 	10705 5540 10655 5540
 Text Notes 7970 1010 2    79   ~ 16
 All 8-Bit signals must be shifted from 5V to 3.3V and vice versa
-Text GLabel 8070 6020 3    39   BiDi ~ 0
+Text GLabel 3755 9475 0    39   Input ~ 0
 A4
 Wire Wire Line
-	8070 5845 8070 6020
+	3930 9475 3755 9475
 Wire Wire Line
 	8945 4620 8920 4620
 Wire Wire Line
@@ -377,50 +322,50 @@ Wire Wire Line
 	7570 4945 7570 5045
 Wire Wire Line
 	7470 4945 7470 5045
-Text GLabel 3455 6030 3    39   BiDi ~ 0
+Text GLabel 13030 2330 0    39   BiDi ~ 0
 D0
-Text GLabel 3355 6030 3    39   BiDi ~ 0
+Text GLabel 13030 2430 0    39   BiDi ~ 0
 D1
-Text GLabel 6070 5990 3    39   BiDi ~ 0
+Text GLabel 13040 2630 0    39   BiDi ~ 0
 D3
-Text GLabel 3555 6030 3    39   BiDi ~ 0
+Text GLabel 13055 2930 0    39   BiDi ~ 0
 D6
-Text GLabel 5970 5990 3    39   BiDi ~ 0
+Text GLabel 13060 3030 0    39   BiDi ~ 0
 D7
 Wire Wire Line
-	3455 5930 3455 6030
+	13130 2330 13030 2330
 Wire Wire Line
-	3355 6030 3355 5930
+	13030 2430 13130 2430
 Wire Wire Line
-	6070 5990 6070 5890
+	13040 2630 13130 2630
 Wire Wire Line
-	3555 5930 3555 6030
+	13130 2930 13055 2930
 Wire Wire Line
-	5970 5990 5970 5890
-Text GLabel 4055 6040 3    33   Input ~ 0
+	13060 3030 13130 3030
+Text GLabel 9850 9675 0    33   Input ~ 0
 ~RST
 Wire Wire Line
-	3955 5930 3955 6030
-Text GLabel 1450 6125 3    33   Input ~ 0
+	7095 7945 6995 7945
+Text GLabel 9850 9575 0    33   Input ~ 0
 ~MPD
 Wire Wire Line
 	5770 5090 5770 4965
-Text GLabel 7970 6015 3    48   Input ~ 0
+Text GLabel 3760 9575 0    39   Input ~ 0
 A5
-Text GLabel 7870 6015 3    48   Input ~ 0
+Text GLabel 3760 9675 0    39   Input ~ 0
 A6
-Text GLabel 7770 6015 3    48   Input ~ 0
+Text GLabel 3760 9775 0    39   Input ~ 0
 A7
-Text GLabel 7670 6015 3    48   Input ~ 0
+Text GLabel 1160 9040 0    39   Input ~ 0
 A8
 Wire Wire Line
-	7970 5845 7970 6015
+	3930 9575 3760 9575
 Wire Wire Line
-	7870 6015 7870 5845
+	3760 9675 3930 9675
 Wire Wire Line
-	7770 6015 7770 5845
+	3760 9775 3930 9775
 Wire Wire Line
-	7670 6015 7670 5845
+	1160 9040 1330 9040
 Wire Wire Line
 	5670 4965 5670 5090
 Wire Wire Line
@@ -455,17 +400,13 @@ Text GLabel 3555 5005 1    39   Input ~ 0
 mD6
 Text GLabel 5970 4965 1    39   Input ~ 0
 mD7
-Text GLabel 1350 5005 1    33   Input ~ 0
-~mRE
-Text GLabel 1250 5005 1    33   Input ~ 0
-~mWE
 Text GLabel 5370 4965 1    33   Input ~ 0
 ~mVIRQ
 Text GLabel 8070 4945 1    39   Input ~ 0
 mA4
 Text GLabel 3955 5005 1    33   Input ~ 0
 ~mEXSEL
-Text GLabel 3955 6030 3    33   Input ~ 0
+Text GLabel 9850 9475 0    33   Input ~ 0
 ~EXSEL
 $Comp
 L CCAP0805:1uF C?
@@ -623,48 +564,6 @@ Connection ~ 6170 4940
 Wire Wire Line
 	6170 4940 6170 5090
 $Comp
-L RetroBitLab:TXS0108EPW U?
-U 1 1 68D60C62
-P 9955 5440
-AR Path="/68821B60/68D60C62" Ref="U?"  Part="1" 
-AR Path="/68821C2E/68D60C62" Ref="U3"  Part="1" 
-F 0 "U3" V 10190 6110 50  0000 C CNN
-F 1 "TXS0108EPW" V 10065 4560 50  0000 C CNN
-F 2 "Package_SO:TSSOP-20_4.4x6.5mm_P0.65mm" H 9955 4690 50  0001 C CNN
-F 3 "www.ti.com/lit/ds/symlink/txs0108e.pdf" H 9955 5340 50  0001 C CNN
-F 4 "C17206" H 9955 5440 50  0001 C CNN "LCSC"
-	1    9955 5440
-	0    1    1    0   
-$EndComp
-$Comp
-L RetroBitLab:TXS0108EPW U?
-U 1 1 68D60C69
-P 7870 5445
-AR Path="/68821B60/68D60C69" Ref="U?"  Part="1" 
-AR Path="/68821C2E/68D60C69" Ref="U1"  Part="1" 
-F 0 "U1" V 8075 6110 50  0000 C CNN
-F 1 "TXS0108EPW" V 7985 4580 50  0000 C CNN
-F 2 "Package_SO:TSSOP-20_4.4x6.5mm_P0.65mm" H 7870 4695 50  0001 C CNN
-F 3 "www.ti.com/lit/ds/symlink/txs0108e.pdf" H 7870 5345 50  0001 C CNN
-F 4 "C17206" H 7870 5445 50  0001 C CNN "LCSC"
-	1    7870 5445
-	0    1    1    0   
-$EndComp
-$Comp
-L RetroBitLab:TXS0108EPW U?
-U 1 1 68D60C70
-P 5770 5490
-AR Path="/68821B60/68D60C70" Ref="U?"  Part="1" 
-AR Path="/68821C2E/68D60C70" Ref="U6"  Part="1" 
-F 0 "U6" V 5985 6155 50  0000 C CNN
-F 1 "TXS0108EPW" V 5905 4635 50  0000 C CNN
-F 2 "Package_SO:TSSOP-20_4.4x6.5mm_P0.65mm" H 5770 4740 50  0001 C CNN
-F 3 "www.ti.com/lit/ds/symlink/txs0108e.pdf" H 5770 5390 50  0001 C CNN
-F 4 "C17206" H 5770 5490 50  0001 C CNN "LCSC"
-	1    5770 5490
-	0    1    1    0   
-$EndComp
-$Comp
 L power:GND #PWR?
 U 1 1 68D60C76
 P 7145 5445
@@ -714,13 +613,11 @@ $EndComp
 Wire Wire Line
 	3355 5000 3355 5130
 Wire Wire Line
-	7570 5845 7570 6035
+	1330 9140 1160 9140
 Wire Wire Line
-	5770 5890 5770 5990
+	1330 9240 1160 9240
 Wire Wire Line
-	5870 5990 5870 5890
-Wire Wire Line
-	7470 5845 7470 6000
+	1160 9340 1330 9340
 Wire Wire Line
 	3655 5130 3655 5005
 Wire Wire Line
@@ -786,20 +683,6 @@ Wire Wire Line
 Connection ~ 4155 4980
 Wire Wire Line
 	4155 4980 4155 5130
-$Comp
-L RetroBitLab:TXS0108EPW U?
-U 1 1 68D60CD8
-P 3755 5530
-AR Path="/68821B60/68D60CD8" Ref="U?"  Part="1" 
-AR Path="/68821C2E/68D60CD8" Ref="U16"  Part="1" 
-F 0 "U16" V 3975 6225 50  0000 C CNN
-F 1 "TXS0108EPW" V 3870 4680 50  0000 C CNN
-F 2 "Package_SO:TSSOP-20_4.4x6.5mm_P0.65mm" H 3755 4780 50  0001 C CNN
-F 3 "www.ti.com/lit/ds/symlink/txs0108e.pdf" H 3755 5430 50  0001 C CNN
-F 4 "C17206" H 3755 5530 50  0001 C CNN "LCSC"
-	1    3755 5530
-	0    1    1    0   
-$EndComp
 Text GLabel 7570 4945 1    39   Input ~ 0
 mA9
 Text GLabel 5770 4965 1    39   Input ~ 0
@@ -814,19 +697,17 @@ Text GLabel 1750 5005 1    39   Input ~ 0
 mA14
 Text GLabel 1650 5005 1    39   Input ~ 0
 mA15
-Text GLabel 7570 6035 3    39   Input ~ 0
+Text GLabel 1160 9140 0    39   Input ~ 0
 A9
-Text GLabel 5770 5990 3    39   Input ~ 0
+Text GLabel 1160 9240 0    39   Input ~ 0
 A10
-Text GLabel 5870 5990 3    39   Input ~ 0
+Text GLabel 1160 9340 0    39   Input ~ 0
 A11
-Text GLabel 7470 6000 3    39   Input ~ 0
-A12
-Text GLabel 1850 6120 3    39   Input ~ 0
+Text GLabel 1170 9540 0    39   Input ~ 0
 A13
-Text GLabel 1750 6125 3    39   Input ~ 0
+Text GLabel 1175 9640 0    39   Input ~ 0
 A14
-Text GLabel 1650 6125 3    39   Input ~ 0
+Text GLabel 1175 9740 0    39   Input ~ 0
 A15
 Wire Wire Line
 	2550 4705 2525 4705
@@ -884,10 +765,6 @@ Wire Wire Line
 Wire Wire Line
 	1450 5130 1450 5005
 Wire Wire Line
-	1350 5005 1350 5130
-Wire Wire Line
-	1250 5130 1250 5005
-Wire Wire Line
 	1850 5005 1850 5130
 Wire Wire Line
 	1750 5130 1750 5005
@@ -944,68 +821,44 @@ Wire Wire Line
 Connection ~ 2050 4980
 Wire Wire Line
 	2050 4980 2050 5130
-$Comp
-L RetroBitLab:TXS0108EPW U?
-U 1 1 68D60D44
-P 1650 5530
-AR Path="/68821B60/68D60D44" Ref="U?"  Part="1" 
-AR Path="/68821C2E/68D60D44" Ref="U4"  Part="1" 
-F 0 "U4" V 1880 6200 50  0000 C CNN
-F 1 "TXS0108EPW" V 1800 4660 50  0000 C CNN
-F 2 "Package_SO:TSSOP-20_4.4x6.5mm_P0.65mm" H 1650 4780 50  0001 C CNN
-F 3 "www.ti.com/lit/ds/symlink/txs0108e.pdf" H 1650 5430 50  0001 C CNN
-F 4 "C17206" H 1650 5530 50  0001 C CNN "LCSC"
-	1    1650 5530
-	0    1    1    0   
-$EndComp
-Text GLabel 8170 6020 3    39   BiDi ~ 0
+Text GLabel 9850 9175 0    39   BiDi ~ 0
 RD4
-Text GLabel 3755 6030 3    39   BiDi ~ 0
+Text GLabel 9850 9075 0    39   BiDi ~ 0
 RD5
-Text GLabel 3655 6030 3    39   BiDi ~ 0
+Text GLabel 7075 9275 0    33   Input ~ 0
 ~S5
-Text GLabel 1950 6125 3    33   BiDi ~ 0
+Text GLabel 9850 9275 0    33   Input ~ 0
 ~HALT
-Text GLabel 5470 5990 3    39   BiDi ~ 0
-RSRVD
+Text GLabel 9850 9775 0    33   Input ~ 0
+REFRESH
 Wire Wire Line
-	8170 5845 8170 6020
+	7120 10265 6945 10265
 Wire Wire Line
-	3655 5930 3655 6030
+	7095 7645 6995 7645
 Wire Wire Line
-	3755 5930 3755 6030
-Text GLabel 3855 6025 3    33   BiDi ~ 0
+	7095 7745 6995 7745
+Text GLabel 7075 9575 0    33   Input ~ 0
 ~CCTL
 Wire Wire Line
-	3855 5930 3855 6025
+	7095 7845 7000 7845
 Wire Wire Line
-	5470 5890 5470 5990
+	6190 9140 6090 9140
 Wire Wire Line
-	4055 5930 4055 6040
-Text GLabel 1550 6125 3    33   Input ~ 0
-~D1XX
+	7095 8045 6985 8045
 Wire Wire Line
-	5370 5890 5370 6000
-Wire Wire Line
-	5670 5980 5670 5890
-Text GLabel 5670 5980 3    33   BiDi ~ 0
-R~W
-Text GLabel 5570 5985 3    39   Input ~ 0
+	6190 9040 6080 9040
+Text GLabel 7075 9475 0    33   Input ~ 0
 PHI2
 Wire Wire Line
-	5570 5890 5570 5985
+	1330 9740 1175 9740
 Wire Wire Line
-	1650 5930 1650 6125
+	1330 9640 1175 9640
 Wire Wire Line
-	1750 5930 1750 6125
+	7145 8360 6950 8360
 Wire Wire Line
-	1550 5930 1550 6125
+	6270 8935 6075 8935
 Wire Wire Line
-	1450 5930 1450 6125
-Wire Wire Line
-	1950 5930 1950 6125
-Wire Wire Line
-	1850 5930 1850 6120
+	1330 9540 1170 9540
 Text Notes 10260 6395 2    118  ~ 24
 BOTTOM
 Text Notes 3905 6585 2    118  ~ 24
@@ -1148,37 +1001,35 @@ F 3 "~" H 11105 2275 50  0001 C CNN
 $EndComp
 Text Notes 9255 1890 0    79   Italic 16
 UNCONNECTED IN THIS PROJECT
-Wire Wire Line
-	9555 5840 9555 6015
-Text GLabel 9555 6015 3    39   BiDi ~ 0
+Text GLabel 7075 9175 0    33   Input ~ 0
 ~S4
 Wire Wire Line
-	10155 6010 10155 5840
+	13055 2830 13130 2830
 Wire Wire Line
-	10055 5840 10055 6010
+	13130 2730 13050 2730
 Wire Wire Line
-	10255 5840 10255 6010
-Text GLabel 10155 6010 3    39   BiDi ~ 0
+	13130 2530 13035 2530
+Text GLabel 13055 2830 0    39   BiDi ~ 0
 D5
-Text GLabel 10055 6010 3    39   BiDi ~ 0
+Text GLabel 13050 2730 0    39   BiDi ~ 0
 D4
-Text GLabel 10255 6010 3    39   BiDi ~ 0
+Text GLabel 13035 2530 0    39   BiDi ~ 0
 D2
 Wire Wire Line
-	9955 6015 9955 5840
+	3755 9075 3930 9075
 Wire Wire Line
-	9855 6015 9855 5840
+	3755 9175 3930 9175
 Wire Wire Line
-	9755 6015 9755 5840
+	3755 9275 3930 9275
 Wire Wire Line
-	9655 6015 9655 5840
-Text GLabel 9955 6015 3    39   BiDi ~ 0
+	3755 9375 3930 9375
+Text GLabel 3755 9075 0    39   Input ~ 0
 A0
-Text GLabel 9655 6015 3    39   BiDi ~ 0
+Text GLabel 3755 9375 0    39   Input ~ 0
 A3
-Text GLabel 9755 6015 3    39   BiDi ~ 0
+Text GLabel 3755 9275 0    39   Input ~ 0
 A2
-Text GLabel 9855 6015 3    39   BiDi ~ 0
+Text GLabel 3755 9175 0    39   Input ~ 0
 A1
 Text GLabel 9555 4890 1    39   BiDi ~ 0
 ~mS4
@@ -1350,4 +1201,212 @@ Wire Wire Line
 	10965 2565 10610 3175
 Wire Wire Line
 	10610 3175 9805 3175
+$Comp
+L RetroBitLab:74LVC4245APW_118 U?
+U 1 1 6A920D40
+P 4630 9175
+F 0 "U?" H 4630 10345 50  0000 C CNN
+F 1 "74LVC4245APW_118" H 4630 10254 50  0000 C CNN
+F 2 "RetroBitLab:IC_74LVC4245_SOP65P640X110-24N" H 4630 9175 50  0001 L BNN
+F 3 "https://www.lcsc.com/datasheet/C6091.pdf?spm=wm.sxq.inf.ggs___wm.fly.bg.0.xh&lcsc_vid=EQINBVNfRwJZUQAETgVbVwBQQFZaU1ZQQQIKBlMDEQIxVlNeQFldV1VRQFFWVjsOAxUeFF5JWBYZEEoKFBINSQcJGk4%3D" H 4630 9175 50  0001 L BNN
+F 4 "NXP" H 4630 9175 50  0001 L BNN "Manufacturer"
+F 5 "1631648" H 4630 9175 50  0001 L BNN "OC_FARNELL"
+F 6 "03P2784" H 4630 9175 50  0001 L BNN "OC_NEWARK"
+F 7 "74LVC4245APW,118" H 4630 9175 50  0001 L BNN "Man_PN"
+F 8 "TSSOP-24" H 4630 9175 50  0001 L BNN "PACKAGE"
+F 9 "C6091" H 4630 9175 50  0001 C CNN "LCSC"
+	1    4630 9175
+	1    0    0    -1  
+$EndComp
+$Comp
+L RetroBitLab:74LVC4245APW_118 U?
+U 1 1 6A926EB8
+P 2030 9140
+F 0 "U?" H 2030 10310 50  0000 C CNN
+F 1 "74LVC4245APW_118" H 2030 10219 50  0000 C CNN
+F 2 "RetroBitLab:IC_74LVC4245_SOP65P640X110-24N" H 2030 9140 50  0001 L BNN
+F 3 "https://www.lcsc.com/datasheet/C6091.pdf?spm=wm.sxq.inf.ggs___wm.fly.bg.0.xh&lcsc_vid=EQINBVNfRwJZUQAETgVbVwBQQFZaU1ZQQQIKBlMDEQIxVlNeQFldV1VRQFFWVjsOAxUeFF5JWBYZEEoKFBINSQcJGk4%3D" H 2030 9140 50  0001 L BNN
+F 4 "NXP" H 2030 9140 50  0001 L BNN "Manufacturer"
+F 5 "1631648" H 2030 9140 50  0001 L BNN "OC_FARNELL"
+F 6 "03P2784" H 2030 9140 50  0001 L BNN "OC_NEWARK"
+F 7 "74LVC4245APW,118" H 2030 9140 50  0001 L BNN "Man_PN"
+F 8 "TSSOP-24" H 2030 9140 50  0001 L BNN "PACKAGE"
+F 9 "C6091" H 2030 9140 50  0001 C CNN "LCSC"
+	1    2030 9140
+	1    0    0    -1  
+$EndComp
+$Comp
+L RetroBitLab:74LVC4245APW_118 U?
+U 1 1 6A9283A5
+P 10700 9175
+F 0 "U?" H 10700 10345 50  0000 C CNN
+F 1 "74LVC4245APW_118" H 10700 10254 50  0000 C CNN
+F 2 "RetroBitLab:IC_74LVC4245_SOP65P640X110-24N" H 10700 9175 50  0001 L BNN
+F 3 "https://www.lcsc.com/datasheet/C6091.pdf?spm=wm.sxq.inf.ggs___wm.fly.bg.0.xh&lcsc_vid=EQINBVNfRwJZUQAETgVbVwBQQFZaU1ZQQQIKBlMDEQIxVlNeQFldV1VRQFFWVjsOAxUeFF5JWBYZEEoKFBINSQcJGk4%3D" H 10700 9175 50  0001 L BNN
+F 4 "NXP" H 10700 9175 50  0001 L BNN "Manufacturer"
+F 5 "1631648" H 10700 9175 50  0001 L BNN "OC_FARNELL"
+F 6 "03P2784" H 10700 9175 50  0001 L BNN "OC_NEWARK"
+F 7 "74LVC4245APW,118" H 10700 9175 50  0001 L BNN "Man_PN"
+F 8 "TSSOP-24" H 10700 9175 50  0001 L BNN "PACKAGE"
+F 9 "C6091" H 10700 9175 50  0001 C CNN "LCSC"
+	1    10700 9175
+	1    0    0    -1  
+$EndComp
+$Comp
+L RetroBitLab:74LVC4245APW_118 U?
+U 1 1 6A9299D4
+P 7950 9175
+F 0 "U?" H 7950 10345 50  0000 C CNN
+F 1 "74LVC4245APW_118" H 7950 10254 50  0000 C CNN
+F 2 "RetroBitLab:IC_74LVC4245_SOP65P640X110-24N" H 7950 9175 50  0001 L BNN
+F 3 "https://www.lcsc.com/datasheet/C6091.pdf?spm=wm.sxq.inf.ggs___wm.fly.bg.0.xh&lcsc_vid=EQINBVNfRwJZUQAETgVbVwBQQFZaU1ZQQQIKBlMDEQIxVlNeQFldV1VRQFFWVjsOAxUeFF5JWBYZEEoKFBINSQcJGk4%3D" H 7950 9175 50  0001 L BNN
+F 4 "NXP" H 7950 9175 50  0001 L BNN "Manufacturer"
+F 5 "1631648" H 7950 9175 50  0001 L BNN "OC_FARNELL"
+F 6 "03P2784" H 7950 9175 50  0001 L BNN "OC_NEWARK"
+F 7 "74LVC4245APW,118" H 7950 9175 50  0001 L BNN "Man_PN"
+F 8 "TSSOP-24" H 7950 9175 50  0001 L BNN "PACKAGE"
+F 9 "C6091" H 7950 9175 50  0001 C CNN "LCSC"
+	1    7950 9175
+	1    0    0    -1  
+$EndComp
+$Comp
+L RetroBitLab:74LVC4245APW_118 U?
+U 1 1 6A92AE1A
+P 13830 2430
+F 0 "U?" H 13830 3600 50  0000 C CNN
+F 1 "74LVC4245APW_118" H 13830 3509 50  0000 C CNN
+F 2 "RetroBitLab:IC_74LVC4245_SOP65P640X110-24N" H 13830 2430 50  0001 L BNN
+F 3 "https://www.lcsc.com/datasheet/C6091.pdf?spm=wm.sxq.inf.ggs___wm.fly.bg.0.xh&lcsc_vid=EQINBVNfRwJZUQAETgVbVwBQQFZaU1ZQQQIKBlMDEQIxVlNeQFldV1VRQFFWVjsOAxUeFF5JWBYZEEoKFBINSQcJGk4%3D" H 13830 2430 50  0001 L BNN
+F 4 "NXP" H 13830 2430 50  0001 L BNN "Manufacturer"
+F 5 "1631648" H 13830 2430 50  0001 L BNN "OC_FARNELL"
+F 6 "03P2784" H 13830 2430 50  0001 L BNN "OC_NEWARK"
+F 7 "74LVC4245APW,118" H 13830 2430 50  0001 L BNN "Man_PN"
+F 8 "TSSOP-24" H 13830 2430 50  0001 L BNN "PACKAGE"
+F 9 "C6091" H 13830 2430 50  0001 C CNN "LCSC"
+	1    13830 2430
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1160 9440 1330 9440
+Text GLabel 1160 9440 0    39   Input ~ 0
+A12
+Text GLabel 7075 9075 0    33   Input ~ 0
+~D1XX
+Text GLabel 7075 9375 0    33   Input ~ 0
+R~W
+Wire Wire Line
+	7075 9075 7250 9075
+Wire Wire Line
+	7075 9175 7250 9175
+Wire Wire Line
+	7075 9275 7250 9275
+Wire Wire Line
+	7075 9375 7250 9375
+Wire Wire Line
+	7075 9475 7250 9475
+Wire Wire Line
+	7075 9575 7250 9575
+NoConn ~ 5125 1950
+Wire Wire Line
+	3275 2450 3325 2450
+Wire Wire Line
+	3275 2550 3325 2550
+Wire Wire Line
+	3250 2350 3325 2350
+Wire Wire Line
+	3250 2250 3325 2250
+Wire Wire Line
+	3325 2150 3075 2150
+Wire Wire Line
+	3225 2050 3325 2050
+Wire Wire Line
+	3075 1950 3325 1950
+Wire Wire Line
+	5125 2150 5225 2150
+Wire Wire Line
+	5125 2050 5400 2050
+Wire Wire Line
+	5125 2250 5225 2250
+Wire Wire Line
+	5125 2350 5225 2350
+Wire Wire Line
+	5125 2450 5225 2450
+$Comp
+L RetroBitLab:ECIBUS ECI1
+U 1 1 68934ECE
+P 4225 2200
+F 0 "ECI1" H 4225 2715 50  0000 C CNN
+F 1 "ECIBUS" H 4225 2624 50  0000 C CNN
+F 2 "RetroBitLab:ATARI-XE-ECI-SLOT" H 4225 1350 50  0001 C CNN
+F 3 "" H 4225 1350 50  0000 C CNN
+	1    4225 2200
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	5125 2550 5150 2550
+Wire Wire Line
+	5150 2675 5150 2550
+Connection ~ 5150 2550
+Wire Wire Line
+	5150 2550 5225 2550
+Wire Wire Line
+	6525 1575 6575 1575
+Wire Wire Line
+	6525 1675 6575 1675
+Wire Wire Line
+	6525 1775 6575 1775
+Wire Wire Line
+	6525 1875 6575 1875
+Wire Wire Line
+	6525 1975 6575 1975
+Wire Wire Line
+	6525 2075 6575 2075
+Wire Wire Line
+	6525 2175 6575 2175
+Wire Wire Line
+	6525 2275 6575 2275
+Wire Wire Line
+	6525 2375 6575 2375
+Wire Wire Line
+	6525 2475 6575 2475
+Wire Wire Line
+	6525 2575 6575 2575
+Wire Wire Line
+	6525 2675 6575 2675
+Wire Wire Line
+	6525 2775 6575 2775
+Wire Wire Line
+	6525 2875 6575 2875
+Wire Wire Line
+	6525 2975 6575 2975
+Wire Wire Line
+	8375 2975 8425 2975
+Wire Wire Line
+	8375 2875 8425 2875
+Wire Wire Line
+	8375 2775 8425 2775
+Wire Wire Line
+	8375 2675 8425 2675
+Wire Wire Line
+	8375 2575 8425 2575
+Wire Wire Line
+	8375 2475 8425 2475
+Wire Wire Line
+	8375 2375 8425 2375
+Wire Wire Line
+	8375 2275 8425 2275
+Wire Wire Line
+	8375 2175 8425 2175
+Wire Wire Line
+	8375 2075 8425 2075
+Wire Wire Line
+	8375 1975 8425 1975
+Wire Wire Line
+	8375 1875 8425 1875
+Wire Wire Line
+	8375 1775 8425 1775
+Wire Wire Line
+	8375 1675 8425 1675
+Wire Wire Line
+	8375 1575 8425 1575
 $EndSCHEMATC
