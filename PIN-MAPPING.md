@@ -11,8 +11,8 @@ Target MCU: **ESP32-S3FN8** — QFN56 package, 45 GPIOs, 8 MB in-package Quad SP
 |------|-----------|--------|------|
 | **GPIO 3** | 8 | RAMBO\_EN | Strapping pin (JTAG source, no internal pull) — usato come **RAMbo hardware enable**: pull-up 10 kΩ → VCC = RAMbo presente; pull-down 10 kΩ → GND = assente. Letto una volta in `setup()`. |
 | **GPIO 26–32** | 28, 30–35 | — | Hard-wired to in-package Quad SPI flash (FN8 variant). **Never connect externally**. |
-| **GPIO 45** | 51 | A14 | Strapping pin (VDD_SPI select) — internal weak pull-down (~5 kΩ). Connesso ad A14 via TXS0108E U4. Al power-on il 6502 è in reset → A14 alta impedenza → U4 flotta → pull-down → **LOW → VDD_SPI da LDO interno (~1.8 V)**. Sicuro per variante FN8 (flash on-package). |
-| **GPIO 46** | 52 | A15 | Strapping pin (ROM messages on UART0) — internal weak pull-down (~5 kΩ). Connesso ad A15 via TXS0108E U4. Stesso scenario di GPIO 45 → **LOW → messaggi ROM disabilitati** (corretto per produzione). |
+| **GPIO 45** | 51 | A14 | Strapping pin (VDD_SPI select) — internal weak pull-down (~5 kΩ). Connesso ad A14 via 74LVC4245APW_118 U3. Al power-on il 6502 è in reset → A14 alta impedenza → U3 flotta → pull-down → **LOW → VDD_SPI da LDO interno (~1.8 V)**. Sicuro per variante FN8 (flash on-package). |
+| **GPIO 46** | 52 | A15 | Strapping pin (ROM messages on UART0) — internal weak pull-down (~5 kΩ). Connesso ad A15 via 74LVC4245APW_118 U3. Stesso scenario di GPIO 45 → **LOW → messaggi ROM disabilitati** (corretto per produzione). |
 
 > **JTAG pins reclaimed (GPIO 39–42):** il firmware chiama `gpio_reset_pin()` su GPIO 39, 40,
 > 41, 42 per de-registrarli dal controller JTAG e utilizzarli come GPIO normali.
@@ -27,7 +27,10 @@ Target MCU: **ESP32-S3FN8** — QFN56 package, 45 GPIOs, 8 MB in-package Quad SP
 
 ## 1. Data Bus D0–D7  (bidirectional, Bank 0 bits 4–11)
 
-Tutti via level shifter **TXS0108E U1** (B side = Atari 5 V, A side = ESP32 3.3 V).
+Tutti via level shifter **74LVC4245APW_118 U19** (B side = Atari 5 V, A side = ESP32 3.3 V) —
+unico canale realmente **bidirezionale** del progetto: la direzione (pin DIR) è commutata
+dinamicamente da due invertitori **SN74HCT04DR U23**, pilotati da R/W\_ e PHI2, invece
+dell'auto-sensing analogico del vecchio TXS0108E. Vedere § 6.
 
 | Atari signal | GPIO | QFN56 pin | IO MUX | Bank-0 bit | Notes |
 |---|---|---|---|---|---|
@@ -47,7 +50,7 @@ Firmware data decode: `data = (GPIO.in >> 4) & 0xFF`
 
 ## 2. Address Bus A0–A15
 
-### A0–A7 (Bank 0, GPIO 12–19, via TXS0108E U2)
+### A0–A7 (Bank 0, GPIO 12–19, via 74LVC4245APW_118 U4)
 
 | Atari signal | GPIO | QFN56 pin | IO MUX | Bank-0 bit | Notes |
 |---|---|---|---|---|---|
@@ -60,34 +63,25 @@ Firmware data decode: `data = (GPIO.in >> 4) & 0xFF`
 | A6 | 18 | 24 | GPIO18        | 18 | |
 | A7 | 19 | 25 | USB\_D−       | 19 | USB disabilitato; pin condiviso con USB D− |
 
-### A8–A9 (Bank 0, GPIO 20–21, via TXS0108E U3)
+### A8–A15 (Bank 0/1, GPIO 20–21, 35–36, 33–34, 45–46, via 74LVC4245APW_118 U3)
 
-| Atari signal | GPIO | QFN56 pin | IO MUX | Bank-0 bit | Notes |
+> **Hardware:** un solo chip **U3** (8 canali) copre l'intero bus indirizzi alto A8–A15,
+> unificando quello che nella revisione TXS0108E era diviso su due package separati.
+> GPIO 33/34 (pin 38–39) e GPIO 45/46 (pin 51–52) restano su lati opposti del QFN56.
+> **Routing PCB:** applicare *length matching* — tutte le tracce di A12–A15 portate alla
+> lunghezza della traccia più lunga (A14 o A15) tramite serpentine, per eliminare lo skew
+> di propagazione tra i quattro bit.
+
+| Atari signal | GPIO | QFN56 pin | IO MUX | Bank bit | Notes |
 |---|---|---|---|---|---|
-| A8 | 20 | 26 | USB\_D+       | 20 | USB disabilitato; pin condiviso con USB D+ |
-| A9 | 21 | 27 | GPIO21        | 21 | |
-
-### A10–A11 (Bank 1, GPIO 35–36, via TXS0108E U3)
-
-| Atari signal | GPIO | QFN56 pin | IO MUX | Bank-1 bit | Notes |
-|---|---|---|---|---|---|
-| A10 | 35 | 40 | GPIO35 | 3 | |
-| A11 | 36 | 41 | GPIO36 | 4 | |
-
-### A12–A15 (Bank 1, GPIO 33–34 e 45–46, via TXS0108E U4)
-
-> **Hardware:** richiede un nuovo TXS0108E U4 (4 dei suoi 8 canali).
-> GPIO 33/34 (pin 38–39) e GPIO 45/46 (pin 51–52) sono su lati opposti del
-> QFN56. **Routing PCB:** applicare *length matching* — tutte le tracce di
-> A12–A15 portate alla lunghezza della traccia più lunga (A14 o A15) tramite
-> serpentine, per eliminare lo skew di propagazione tra i quattro bit.
-
-| Atari signal | GPIO | QFN56 pin | IO MUX | Bank-1 bit | Notes |
-|---|---|---|---|---|---|
-| A12 | 33 | 38 | GPIO33 | 1  | Ex-spare CONN / libre |
-| A13 | 34 | 39 | GPIO34 | 2  | Ex-spare CONN / libre |
-| A14 | 45 | 51 | GPIO45  | 13 | Strapping pin (VDD_SPI); pull-down → LOW al boot (sicuro FN8) |
-| A15 | 46 | 52 | GPIO46  | 14 | Strapping pin (ROM msgs); pull-down → LOW al boot (corretto) |
+| A8  | 20 | 26 | USB\_D+ | Bank 0 bit 20 | USB disabilitato; pin condiviso con USB D+ |
+| A9  | 21 | 27 | GPIO21  | Bank 0 bit 21 | |
+| A10 | 35 | 40 | GPIO35  | Bank 1 bit 3  | |
+| A11 | 36 | 41 | GPIO36  | Bank 1 bit 4  | |
+| A12 | 33 | 38 | GPIO33  | Bank 1 bit 1  | Ex-spare CONN / libre |
+| A13 | 34 | 39 | GPIO34  | Bank 1 bit 2  | Ex-spare CONN / libre |
+| A14 | 45 | 51 | GPIO45  | Bank 1 bit 13 | Strapping pin (VDD_SPI); pull-down → LOW al boot (sicuro FN8) |
+| A15 | 46 | 52 | GPIO46  | Bank 1 bit 14 | Strapping pin (ROM msgs); pull-down → LOW al boot (corretto) |
 
 ### Firmware: decode indirizzo completo (16 bit)
 
@@ -146,13 +140,13 @@ tramite `RAMBO_EN` (GPIO 3, vedere sezione 2).
 
 | Signal | GPIO | QFN56 pin | IO MUX | Direction | Active | Level shift | Description |
 |---|---|---|---|---|---|---|---|
-| PHI2 | 1 | 6 | GPIO1 | Input | HIGH | via U3 | Clock fase 2 CPU 6502 — 1.79 MHz |
-| R/W\_ | 2 | 7 | GPIO2 | Input | HIGH=read | via U3 | Read / Not-Write |
+| PHI2 | 1 | 6 | GPIO1 | Input | HIGH | via U16 | Clock fase 2 CPU 6502 — 1.79 MHz |
+| R/W\_ | 2 | 7 | GPIO2 | Input | HIGH=read | via U16 | Read / Not-Write |
 | RAMBO\_EN | 3 | 8 | GPIO3 | Input | HIGH | **direct** | RAMbo 256 KB enable — pull-up 10 kΩ→VCC = presente; pull-down 10 kΩ→GND = assente. Letto in `setup()`. |
-| EXTSEL\_N | 41 | 47 | MTDI | **Output** | LOW | via U3 | Disabilita MMU/Freddie per $D1xx, $D6xx e finestra RAMbo $4000–$7FFF. **Solo PBI mode** per VERA; RAMbo in entrambe le modalità. Ex-JTAG, reclaimed. |
+| EXTSEL\_N | 41 | 47 | MTDI | **Output** | LOW | via U6 | Disabilita MMU/Freddie per $D1xx, $D6xx e finestra RAMbo $4000–$7FFF. **Solo PBI mode** per VERA; RAMbo in entrambe le modalità. Ex-JTAG, reclaimed. |
 | DEV\_SEL\_N | 40 | 45 | MTDO | **Output** | LOW | **direct** | VERA chip select (3.3 V); PBI: VERA regs $D1xx; CCTL: range $D5xx. Ex-JTAG, reclaimed. |
-| MPD | 42 | 48 | MTMS | **Output** | LOW | via U3 | Math Pack Disable — disabilita ROM Atari $D800–$DFFF — **solo PBI mode**. Ex-JTAG, reclaimed. |
-| ARESET | 37 | 42 | GPIO37 | **Output** | LOW | via U3 | Atari System Reset — pilota /RESET bus Atari (open-drain + pull-up consigliati). |
+| MPD | 42 | 48 | MTMS | **Output** | LOW | via U6 | Math Pack Disable — disabilita ROM Atari $D800–$DFFF — **solo PBI mode**. Ex-JTAG, reclaimed. |
+| ARESET | 37 | 42 | GPIO37 | **Output** | LOW | via U6 | Atari System Reset — pilota /RESET bus Atari (open-drain + pull-up consigliati). |
 | CRESET | 38 | 43 | GPIO38 | **Output** | LOW | **direct** | VERA FPGA Reset — 3.3 V, diretto al chip FPGA. |
 | CDONE | 39 | 44 | MTCK | Input | HIGH | **direct** | VERA FPGA configured status — HIGH = configurazione completata. Ex-JTAG, reclaimed. |
 
@@ -218,74 +212,95 @@ XTAL_N (53) ──┤├── GND
 
 ---
 
-## 6. Level Shifting (TXS0108E)
+## 6. Level Shifting (74LVC4245APW_118 + SN74HCT04DR)
 
-Tre TXS0108E traducono tra bus Atari 5 V (lato B) e ESP32-S3 3.3 V (lato A).
+I tre TXS0108E (auto-sensing, 8 canali ciascuno) sono stati sostituiti da **cinque
+74LVC4245APW,118** (NXP, dual-supply octal bus transceiver, TSSOP-24, LCSC C6091) più
+due unità di un **SN74HCT04DR** (hex inverter) usate solo per generare la direzione
+dinamica del bus dati. A differenza del TXS0108E, il 74LVC4245 **non ha auto-sensing**:
+richiede che DIR e ~OE\_ siano pilotati esplicitamente.
 
-**Cablaggio comune a tutti e tre i chip:**
+**Pinout 74LVC4245APW,118 (TSSOP-24):**
 
-| Pin | Connessione |
-|---|---|
-| VCCA (pin 1) | 3.3 V |
-| VCCB (pin 20) | 5 V |
-| OE (pin 10) | 3.3 V (always enabled) |
-| GND (pin 9) | GND |
+| Pin | Nome | Funzione |
+|---|---|---|
+| 1 | VCCA | Alimentazione lato A — 3.3 V (ESP32-S3) |
+| 2 | DIR | Direzione: A→B oppure B→A a seconda del verso cablato |
+| 3–10 | A0–A7 | Canali lato A (3.3 V) |
+| 11, 12, 13 | GND | Massa |
+| 14–21 | B7–B0 | Canali lato B (5 V, ordine invertito rispetto ad A0–A7) |
+| 22 | ~OE\_ | Output enable, attivo basso |
+| 23, 24 | VCCB | Alimentazione lato B — 5 V (Atari) |
 
-100 nF ceramico su VCCA→GND e VCCB→GND per ciascun chip.
+100 nF ceramico su VCCA→GND e VCCB→GND per ciascun chip. Sui bus a **direzione fissa**
+(indirizzi, metà dei segnali di controllo) DIR e ~OE\_ sono cablati staticamente al verso
+corretto; sul bus dati **bidirezionale** (U19) DIR è invece pilotato dinamicamente.
 
-### U1 — Data bus D0–D7
+### U4 — Address bus A0–A7 (fisso, 6502 → MCU)
 
 | Canale | Lato A (3.3 V, ESP32-S3) | Lato B (5 V, Atari) |
 |---|---|---|
-| A1/B1 | GPIO 4  (pin  9) — D0 | Atari D0 |
-| A2/B2 | GPIO 5  (pin 10) — D1 | Atari D1 |
-| A3/B3 | GPIO 6  (pin 11) — D2 | Atari D2 |
-| A4/B4 | GPIO 7  (pin 12) — D3 | Atari D3 |
-| A5/B5 | GPIO 8  (pin 13) — D4 | Atari D4 |
-| A6/B6 | GPIO 9  (pin 14) — D5 | Atari D5 |
-| A7/B7 | GPIO 10 (pin 15) — D6 | Atari D6 |
-| A8/B8 | GPIO 11 (pin 16) — D7 | Atari D7 |
+| A0/B0 | GPIO 12 (pin 17) — A0 | Atari A0 |
+| A1/B1 | GPIO 13 (pin 18) — A1 | Atari A1 |
+| A2/B2 | GPIO 14 (pin 19) — A2 | Atari A2 |
+| A3/B3 | GPIO 15 (pin 21) — A3 | Atari A3 |
+| A4/B4 | GPIO 16 (pin 22) — A4 | Atari A4 |
+| A5/B5 | GPIO 17 (pin 23) — A5 | Atari A5 |
+| A6/B6 | GPIO 18 (pin 24) — A6 | Atari A6 |
+| A7/B7 | GPIO 19 (pin 25) — A7 | Atari A7 (pin condiviso USB D−) |
 
-### U2 — Address bus A0–A7
-
-Tutti ingressi B→A (Atari → ESP32).
-
-| Canale | Lato A (3.3 V, ESP32-S3) | Lato B (5 V, Atari) |
-|---|---|---|
-| A1/B1 | GPIO 12 (pin 17) — A0 | Atari A0 |
-| A2/B2 | GPIO 13 (pin 18) — A1 | Atari A1 |
-| A3/B3 | GPIO 14 (pin 19) — A2 | Atari A2 |
-| A4/B4 | GPIO 15 (pin 21) — A3 | Atari A3 |
-| A5/B5 | GPIO 16 (pin 22) — A4 | Atari A4 |
-| A6/B6 | GPIO 17 (pin 23) — A5 | Atari A5 |
-| A7/B7 | GPIO 18 (pin 24) — A6 | Atari A6 |
-| A8/B8 | GPIO 19 (pin 25) — A7 | Atari A7 (pin condiviso USB D−) |
-
-### U3 — A8–A11, PHI2, R/W\_, EXTSEL\_N, MPD
-
-| Canale | Lato A (3.3 V, ESP32-S3) | Lato B (5 V) | Direzione | Note |
-|---|---|---|---|---|
-| A1/B1 | GPIO 20 (pin 26) — A8  | Atari A8  | B→A | Input (pin condiviso USB D+) |
-| A2/B2 | GPIO 21 (pin 27) — A9  | Atari A9  | B→A | Input |
-| A3/B3 | GPIO 35 (pin 40) — A10 | Atari A10 | B→A | Input |
-| A4/B4 | GPIO 36 (pin 41) — A11 | Atari A11 | B→A | Input |
-| A5/B5 | GPIO 1  (pin  6) — PHI2 | Atari PHI2 | B→A | Input |
-| A6/B6 | GPIO 2  (pin  7) — R/W\_ | Atari R/W\_ | B→A | Input |
-| A7/B7 | GPIO 41 (pin 47) — EXTSEL\_N | Atari EXTSEL | **A→B** | Output, active LOW |
-| A8/B8 | GPIO 42 (pin 48) — MPD | Atari ECI MPD | **A→B** | Output, active LOW |
-
-### U4 — A12–A15 (nuovo, 4 canali su 8 usati)
+### U3 — Address bus A8–A15 (fisso, 6502 → MCU)
 
 > **Nota PCB:** tutte le tracce A12–A15 sono portate alla lunghezza della
 > traccia più lunga (*length matching* con serpentine) per eliminare lo skew.
+> Un solo package copre l'intero bus alto, a differenza della vecchia coppia
+> di TXS0108E U3/U4.
 
-| Canale | Lato A (3.3 V, ESP32-S3) | Lato B (5 V) | Direzione | Note |
-|---|---|---|---|---|
-| A1/B1 | GPIO 33 (pin 38) — A12 | Atari A12 | B→A | Input |
-| A2/B2 | GPIO 34 (pin 39) — A13 | Atari A13 | B→A | Input |
-| A3/B3 | GPIO 45 (pin 51) — A14 | Atari A14 | B→A | Input |
-| A4/B4 | GPIO 46 (pin 52) — A15 | Atari A15 | B→A | Input |
-| A5–A8 | — | — | — | Canali liberi su U4 |
+| Canale | Lato A (3.3 V, ESP32-S3) | Lato B (5 V, Atari) |
+|---|---|---|
+| A0/B0 | GPIO 20 (pin 26) — A8  | Atari A8 (pin condiviso USB D+) |
+| A1/B1 | GPIO 21 (pin 27) — A9  | Atari A9  |
+| A2/B2 | GPIO 35 (pin 40) — A10 | Atari A10 |
+| A3/B3 | GPIO 36 (pin 41) — A11 | Atari A11 |
+| A4/B4 | GPIO 33 (pin 38) — A12 | Atari A12 |
+| A5/B5 | GPIO 34 (pin 39) — A13 | Atari A13 |
+| A6/B6 | GPIO 45 (pin 51) — A14 | Atari A14 |
+| A7/B7 | GPIO 46 (pin 52) — A15 | Atari A15 |
+
+### U16 — Control signals, 6502 → MCU (fisso, input)
+
+| Canale | Lato A (3.3 V, ESP32-S3) | Lato B (5 V, Atari) | Note |
+|---|---|---|---|
+| — | GPIO 1 (pin 6) — PHI2 | Atari PHI2 | Clock fase 2, 1.79 MHz |
+| — | GPIO 2 (pin 7) — R/W\_ | Atari R/W\_ | Read / Not-Write |
+| — | — | D1XX\_N, S4\_N, S5\_N, CCTL\_N, REFRESH | Canali liberi, portati a test point — **non collegati a un GPIO in questo progetto** |
+
+### U6 — Control signals, MCU → 6502 (fisso, output)
+
+| Canale | Lato A (3.3 V, ESP32-S3) | Lato B (5 V, Atari) | Note |
+|---|---|---|---|
+| — | GPIO 41 (pin 47) — EXTSEL\_N | Atari EXTSEL | Output, active LOW |
+| — | GPIO 42 (pin 48) — MPD | Atari ECI MPD | Output, active LOW |
+| — | GPIO 37 (pin 42) — ARESET | Atari /RESET | Output, active LOW |
+| — | — | RD4, RD5, HALT, IRQ | Canali liberi, portati a test point — **non collegati a un GPIO in questo progetto** |
+
+### U19 — Data bus D0–D7 (bidirezionale, direzione dinamica)
+
+DIR è pilotato da due invertitori **SN74HCT04DR U23** a partire da R/W\_ e PHI2 (stessa
+logica di un transceiver dati 6502 classico: direzione verso l'Atari durante i cicli di
+lettura del 6502, verso l'ESP32 durante i cicli di scrittura), non più dall'auto-sensing
+del TXS0108E.
+
+| Canale | Lato A (3.3 V, ESP32-S3) | Lato B (5 V, Atari) |
+|---|---|---|
+| A0/B0 | GPIO 4  (pin  9) — D0 | Atari D0 |
+| A1/B1 | GPIO 5  (pin 10) — D1 | Atari D1 |
+| A2/B2 | GPIO 6  (pin 11) — D2 | Atari D2 |
+| A3/B3 | GPIO 7  (pin 12) — D3 | Atari D3 |
+| A4/B4 | GPIO 8  (pin 13) — D4 | Atari D4 |
+| A5/B5 | GPIO 9  (pin 14) — D5 | Atari D5 |
+| A6/B6 | GPIO 10 (pin 15) — D6 | Atari D6 |
+| A7/B7 | GPIO 11 (pin 16) — D7 | Atari D7 |
 
 **Connessioni dirette (senza level shifter):**
 
@@ -328,26 +343,26 @@ Riferimento rapido ESP32-S3FN8 QFN56 (56 pin segnale + pad GND centrale).
 | 3   | EN (CHIP\_EN) | Pull-up 10 kΩ a 3.3 V |
 | 4   | — | (riservato / NC) |
 | 5   | GPIO 0 | NC (strapping, non usato) |
-| 6   | GPIO 1 | PHI2 input (via U3) |
-| 7   | GPIO 2 | R/W\_ input (via U3) |
+| 6   | GPIO 1 | PHI2 input (via U16) |
+| 7   | GPIO 2 | R/W\_ input (via U16) |
 | 8   | GPIO 3 | RAMBO\_EN — pull-up 10 kΩ → VCC = RAMbo presente; pull-down 10 kΩ → GND = assente |
-| 9   | GPIO 4 | D0 (via U1) |
-| 10  | GPIO 5 | D1 (via U1) |
-| 11  | GPIO 6 | D2 (via U1) |
-| 12  | GPIO 7 | D3 (via U1) |
-| 13  | GPIO 8 | D4 (via U1) |
-| 14  | GPIO 9 | D5 (via U1) |
-| 15  | GPIO 10 | D6 (via U1) |
-| 16  | GPIO 11 | D7 (via U1) |
-| 17  | GPIO 12 | A0 (via U2) |
-| 18  | GPIO 13 | A1 (via U2) |
-| 19  | GPIO 14 | A2 (via U2) |
+| 9   | GPIO 4 | D0 (via U19) |
+| 10  | GPIO 5 | D1 (via U19) |
+| 11  | GPIO 6 | D2 (via U19) |
+| 12  | GPIO 7 | D3 (via U19) |
+| 13  | GPIO 8 | D4 (via U19) |
+| 14  | GPIO 9 | D5 (via U19) |
+| 15  | GPIO 10 | D6 (via U19) |
+| 16  | GPIO 11 | D7 (via U19) |
+| 17  | GPIO 12 | A0 (via U4) |
+| 18  | GPIO 13 | A1 (via U4) |
+| 19  | GPIO 14 | A2 (via U4) |
 | 20  | VDD3P3\_RTC | Alimentazione RTC — **non GPIO** |
-| 21  | GPIO 15 / XTAL\_32K\_P | A3 (via U2) — nessun quarzo 32 kHz |
-| 22  | GPIO 16 / XTAL\_32K\_N | A4 (via U2) — nessun quarzo 32 kHz |
-| 23  | GPIO 17 | A5 (via U2) |
-| 24  | GPIO 18 | A6 (via U2) |
-| 25  | GPIO 19 / USB\_D− | A7 (via U2) — USB disabilitato |
+| 21  | GPIO 15 / XTAL\_32K\_P | A3 (via U4) — nessun quarzo 32 kHz |
+| 22  | GPIO 16 / XTAL\_32K\_N | A4 (via U4) — nessun quarzo 32 kHz |
+| 23  | GPIO 17 | A5 (via U4) |
+| 24  | GPIO 18 | A6 (via U4) |
+| 25  | GPIO 19 / USB\_D− | A7 (via U4) — USB disabilitato |
 | 26  | GPIO 20 / USB\_D+ | A8 (via U3) — USB disabilitato |
 | 27  | GPIO 21 | A9 (via U3) |
 | 28  | GPIO 26 (FLASH SPICS0) | **Flash in-package — NC esterno** |
@@ -360,21 +375,21 @@ Riferimento rapido ESP32-S3FN8 QFN56 (56 pin segnale + pad GND centrale).
 | 35  | GPIO 32 (FLASH SPICS1)| **Flash in-package — NC esterno** |
 | 36  | — | (riservato / NC) |
 | 37  | — | (riservato / NC) |
-| 38  | GPIO 33 | A12 (via U4) |
-| 39  | GPIO 34 | A13 (via U4) |
+| 38  | GPIO 33 | A12 (via U3) |
+| 39  | GPIO 34 | A13 (via U3) |
 | 40  | GPIO 35 | A10 (via U3) |
 | 41  | GPIO 36 | A11 (via U3) |
-| 42  | GPIO 37 | ARESET output (via U3) |
+| 42  | GPIO 37 | ARESET output (via U6) |
 | 43  | GPIO 38 | CRESET output (diretto VERA) |
 | 44  | GPIO 39 / MTCK | CDONE input (diretto VERA) — ex-JTAG |
 | 45  | GPIO 40 / MTDO | DEV\_SEL\_N output (diretto VERA) — ex-JTAG |
 | 46  | VDD3P3\_CPU | Alimentazione CPU — **non GPIO** |
-| 47  | GPIO 41 / MTDI | EXTSEL\_N output (via U3) — ex-JTAG |
-| 48  | GPIO 42 / MTMS | MPD output (via U3) — ex-JTAG |
+| 47  | GPIO 41 / MTDI | EXTSEL\_N output (via U6) — ex-JTAG |
+| 48  | GPIO 42 / MTMS | MPD output (via U6) — ex-JTAG |
 | 49  | GPIO 43 / U0TXD | UART0 TX — debug seriale |
 | 50  | GPIO 44 / U0RXD | UART0 RX — debug seriale |
-| 51  | GPIO 45 | A14 (via U4) — strapping VDD\_SPI; pull-down → LOW al boot (FN8 safe) |
-| 52  | GPIO 46 | A15 (via U4) — strapping ROM msgs; pull-down → LOW al boot |
+| 51  | GPIO 45 | A14 (via U3) — strapping VDD\_SPI; pull-down → LOW al boot (FN8 safe) |
+| 52  | GPIO 46 | A15 (via U3) — strapping ROM msgs; pull-down → LOW al boot |
 | 53  | XTAL\_N | Quarzo principale 40 MHz — dedicated analog |
 | 54  | XTAL\_P | Quarzo principale 40 MHz — dedicated analog |
 | 55  | VDDA1   | Alimentazione analogica — non GPIO |
