@@ -3,9 +3,9 @@ EELAYER 30 0
 EELAYER END
 $Descr A3 16535 11693
 encoding utf-8
-Sheet 4 8
+Sheet 4 7
 Title "CARTRIDGE INTEFACE AND BUS LEVEL SHIFTERS"
-Date "2026-08-31"
+Date "2026-09-01"
 Rev "1.0"
 Comp "RetroBit Lab"
 Comment1 "Gianluca Renzi"
@@ -231,7 +231,7 @@ Text GLabel 7205 7235 0    33   Input ~ 0
 Text GLabel 9980 7235 0    33   Output ~ 0
 ~HALT
 Text GLabel 7205 7635 0    33   Input ~ 0
-REFRESH
+~REFRESH
 Text GLabel 7205 7535 0    33   Input ~ 0
 ~CCTL
 Text GLabel 7205 7435 0    33   Input ~ 0
@@ -757,14 +757,12 @@ Wire Wire Line
 	8955 6735 8780 6735
 Wire Wire Line
 	8955 6835 8780 6835
-Wire Wire Line
-	7205 7635 7380 7635
 Text GLabel 8940 6935 2    33   Output ~ 0
 mREFRESH
 Wire Wire Line
 	8780 6935 8940 6935
 Text GLabel 11680 6635 2    33   Input ~ 0
-~mIRQ
+~mVIRQ
 Text GLabel 11680 6935 2    33   Input ~ 0
 ~ATARI_RESET
 Text GLabel 11680 6835 2    33   Input ~ 0
@@ -1684,4 +1682,6 @@ Wire Wire Line
 	13300 4400 13300 4425
 Wire Wire Line
 	13300 3250 13375 3250
+Wire Wire Line
+	7380 7635 7205 7635
 $EndSCHEMATC

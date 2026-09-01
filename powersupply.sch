@@ -3,9 +3,9 @@ EELAYER 30 0
 EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
-Sheet 6 8
+Sheet 6 7
 Title "POWERSUPPLY and USB"
-Date "2026-08-31"
+Date "2026-09-01"
 Rev "1.0"
 Comp "RetroBit Lab"
 Comment1 "Gianluca Renzi"
@@ -67,8 +67,6 @@ Wire Wire Line
 Connection ~ 7130 4910
 Wire Wire Line
 	7130 4910 7305 4910
-Wire Wire Line
-	7980 4910 8355 4910
 Wire Wire Line
 	7980 5285 8355 5285
 Wire Wire Line
@@ -237,28 +235,8 @@ Wire Wire Line
 Wire Wire Line
 	7020 2970 7020 2670
 Connection ~ 7020 2670
-Wire Wire Line
-	8220 2720 8545 2720
-Connection ~ 8545 2720
-Wire Wire Line
-	8545 2720 9095 2720
-Wire Wire Line
-	9320 2420 9320 2445
-$Comp
-L power:GND #PWR?
-U 1 1 68E87CCE
-P 9320 2445
-AR Path="/68821B60/68E87CCE" Ref="#PWR?"  Part="1" 
-AR Path="/688FC286/68E87CCE" Ref="#PWR0100"  Part="1" 
-F 0 "#PWR0100" H 9320 2195 50  0001 C CNN
-F 1 "GND" H 9325 2272 50  0000 C CNN
-F 2 "" H 9320 2445 50  0001 C CNN
-F 3 "" H 9320 2445 50  0001 C CNN
-	1    9320 2445
-	1    0    0    -1  
-$EndComp
-Text GLabel 9095 2720 2    39   BiDi ~ 0
-IO0
+Text GLabel 8345 2720 2    39   BiDi ~ 0
+BOOT0
 NoConn ~ 6745 2020
 NoConn ~ 6745 2120
 NoConn ~ 6745 2320
@@ -439,7 +417,7 @@ Connection ~ 2040 5340
 Wire Wire Line
 	2040 5340 2590 5340
 Wire Wire Line
-	1265 4940 2040 4940
+	1265 4940 1785 4940
 Connection ~ 2040 4940
 Text GLabel 5505 4715 2    39   BiDi ~ 0
 5V
@@ -570,51 +548,8 @@ F 4 "C8017" H 7785 5345 50  0001 C CNN "LCSC"
 	1    7980 5085
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	8545 2170 8545 2720
-Wire Wire Line
-	8645 2170 8545 2170
-Wire Wire Line
-	8570 1970 8570 2070
-Wire Wire Line
-	8570 2070 8645 2070
-Text GLabel 9370 2070 2    39   Input ~ 0
-TXB_EN
-$Comp
-L power:GND #PWR?
-U 1 1 68C5CB31
-P 8570 1970
-AR Path="/68821B60/68C5CB31" Ref="#PWR?"  Part="1" 
-AR Path="/688FC286/68C5CB31" Ref="#PWR0118"  Part="1" 
-F 0 "#PWR0118" H 8570 1720 50  0001 C CNN
-F 1 "GND" H 8575 1797 50  0000 C CNN
-F 2 "" H 8570 1970 50  0001 C CNN
-F 3 "" H 8570 1970 50  0001 C CNN
-	1    8570 1970
-	-1   0    0    1   
-$EndComp
 Wire Notes Line
 	555  550  9055 550 
-Wire Wire Line
-	9320 2220 9320 2170
-Wire Wire Line
-	9245 2170 9320 2170
-Wire Wire Line
-	9245 2070 9370 2070
-Text Notes 8570 1620 0    59   ~ 0
-When programmig ESP32,\nall level shifters must be\nDISABLED
-$Comp
-L RetroBitLab:SPST_SWITCH_SMD_4P,4.1x5.4mm SW2
-U 1 1 688D3398
-P 8945 2170
-F 0 "SW2" H 8945 2445 50  0000 C CNN
-F 1 "SPST_SWITCH_SMD_4P,4.1x5.4mm" H 9355 2530 50  0001 C CNN
-F 2 "RetroBitLab:SW_DIP_SPSTx02_DSHP02TS-S" H 8945 2170 50  0001 C CNN
-F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2110151630_XKB-Connection-DSHP02TS-S_C319052.pdf" H 8945 2170 50  0001 C CNN
-F 4 "C319052" H 8945 2170 50  0001 C CNN "LCSC"
-	1    8945 2170
-	1    0    0    -1  
-$EndComp
 $Comp
 L CCAP0805:22uF C37
 U 1 1 68B8F2C7
@@ -746,18 +681,6 @@ Wire Wire Line
 	7865 2220 7865 2145
 Wire Wire Line
 	7865 2145 8145 2145
-$Comp
-L CRES0805:10K R53
-U 1 1 68C46334
-P 9320 2315
-F 0 "R53" V 9395 2235 50  0000 L CNN
-F 1 "10K" V 9245 2240 50  0000 L CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" H 9320 2315 50  0001 C CNN
-F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2506161110_YAGEO-RC0805FR-0710KL_C84376.pdf" H 9320 2315 50  0001 C CNN
-F 4 "C84376" H 9320 2315 50  0001 C CNN "LCSC"
-	1    9320 2315
-	1    0    0    -1  
-$EndComp
 $Comp
 L RetroBitLab:AMS1117-3.3 U13
 U 1 1 68B71504
@@ -1366,4 +1289,50 @@ Wire Notes Line
 	9060 550  11020 550 
 Wire Notes Line
 	555  3825 11020 3825
+$Comp
+L power:PWR_FLAG #FLG0102
+U 1 1 6AAA2783
+P 1785 4880
+F 0 "#FLG0102" H 1785 4955 50  0001 C CNN
+F 1 "PWR_FLAG" H 1785 5053 50  0000 C CNN
+F 2 "" H 1785 4880 50  0001 C CNN
+F 3 "~" H 1785 4880 50  0001 C CNN
+	1    1785 4880
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1785 4880 1785 4940
+Connection ~ 1785 4940
+Wire Wire Line
+	1785 4940 2040 4940
+Wire Wire Line
+	8220 2720 8345 2720
+$Comp
+L power:PWR_FLAG #FLG0103
+U 1 1 6AA3F526
+P 2195 2105
+F 0 "#FLG0103" H 2195 2180 50  0001 C CNN
+F 1 "PWR_FLAG" H 2195 2278 50  0000 C CNN
+F 2 "" H 2195 2105 50  0001 C CNN
+F 3 "~" H 2195 2105 50  0001 C CNN
+	1    2195 2105
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2195 2105 2195 2170
+$Comp
+L power:PWR_FLAG #FLG0108
+U 1 1 6AA653F8
+P 3945 4875
+F 0 "#FLG0108" H 3945 4950 50  0001 C CNN
+F 1 "PWR_FLAG" H 3945 5048 50  0000 C CNN
+F 2 "" H 3945 4875 50  0001 C CNN
+F 3 "~" H 3945 4875 50  0001 C CNN
+	1    3945 4875
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3945 4875 3945 4940
+Wire Wire Line
+	7980 4910 8355 4910
 $EndSCHEMATC

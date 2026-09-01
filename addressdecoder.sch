@@ -27,12 +27,12 @@ $EndComp
 $Comp
 L power:GND #PWR014
 U 1 1 6A1895E3
-P 3275 3775
-F 0 "#PWR014" H 3275 3525 50  0001 C CNN
-F 1 "GND" H 3280 3602 50  0000 C CNN
-F 2 "" H 3275 3775 50  0001 C CNN
-F 3 "" H 3275 3775 50  0001 C CNN
-	1    3275 3775
+P 3275 3815
+F 0 "#PWR014" H 3275 3565 50  0001 C CNN
+F 1 "GND" H 3280 3642 50  0000 C CNN
+F 2 "" H 3275 3815 50  0001 C CNN
+F 3 "" H 3275 3815 50  0001 C CNN
+	1    3275 3815
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
@@ -51,11 +51,9 @@ F 3 "" H 3300 6050 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	3300 6000 3300 6050
+	3300 6000 3300 6020
 Wire Wire Line
-	3275 2675 3275 2725
-Wire Wire Line
-	3275 3775 3275 3725
+	3275 3815 3275 3775
 Wire Wire Line
 	5225 3250 5125 3250
 Wire Wire Line
@@ -218,7 +216,7 @@ Wire Wire Line
 Wire Wire Line
 	7225 3550 7275 3550
 Text Notes 3185 1000 0    118  Italic 24
-Those ICs are supplied to 5V. They can work with 3.3V signals as well 
+Those ICs can work with 5V and 3.3V signals as well 
 Wire Wire Line
 	4800 3750 5225 3750
 Text GLabel 5275 2325 0    50   BiDi ~ 0
@@ -226,11 +224,9 @@ Text GLabel 5275 2325 0    50   BiDi ~ 0
 Text GLabel 7165 3680 0    50   BiDi ~ 0
 3V3
 Wire Wire Line
-	3240 4905 3300 4905
+	3240 4830 3300 4830
 Wire Wire Line
-	3300 4905 3300 5000
-Wire Wire Line
-	3215 2675 3275 2675
+	3300 4830 3300 4930
 Wire Wire Line
 	5650 2900 5725 2900
 $Comp
@@ -387,9 +383,9 @@ F 6 "EM74LVC10APW" H 3250 2850 50  0001 C CNN "Man_PN"
 	4    3275 3225
 	1    0    0    -1  
 $EndComp
-Text GLabel 3215 2675 0    50   BiDi ~ 0
+Text GLabel 3190 2530 0    50   BiDi ~ 0
 3V3
-Text GLabel 3240 4905 0    50   BiDi ~ 0
+Text GLabel 3240 4830 0    50   BiDi ~ 0
 3V3
 Text GLabel 5650 2900 0    50   BiDi ~ 0
 3V3
@@ -407,4 +403,60 @@ F 6 "SN74LVC138APWR" H 6075 4050 50  0001 C CNN "Man_PN"
 	1    5725 3550
 	1    0    0    -1  
 $EndComp
+$Comp
+L CCAP0603:100nF C66
+U 1 1 6AAE505A
+P 2580 3270
+F 0 "C66" H 2672 3316 50  0000 L CNN
+F 1 "100nF" H 2672 3225 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0603_1608Metric_Pad1.08x0.95mm_HandSolder" H 2580 3270 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C524962.pdf" H 2580 3270 50  0001 C CNN
+F 4 "C524962" H 2580 3270 50  0001 C CNN "LCSC"
+	1    2580 3270
+	1    0    0    -1  
+$EndComp
+$Comp
+L CCAP0603:100nF C67
+U 1 1 6AAE7D28
+P 2385 5490
+F 0 "C67" H 2477 5536 50  0000 L CNN
+F 1 "100nF" H 2477 5445 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0603_1608Metric_Pad1.08x0.95mm_HandSolder" H 2385 5490 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C524962.pdf" H 2385 5490 50  0001 C CNN
+F 4 "C524962" H 2385 5490 50  0001 C CNN "LCSC"
+	1    2385 5490
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2580 3170 2580 2705
+Wire Wire Line
+	2580 2705 3275 2705
+Connection ~ 3275 2705
+Wire Wire Line
+	3275 2705 3275 2725
+Wire Wire Line
+	3275 2530 3275 2705
+Wire Wire Line
+	3190 2530 3275 2530
+Wire Wire Line
+	3275 3775 2580 3775
+Wire Wire Line
+	2580 3775 2580 3370
+Connection ~ 3275 3775
+Wire Wire Line
+	3275 3775 3275 3725
+Wire Wire Line
+	2385 5390 2385 4930
+Wire Wire Line
+	2385 4930 3300 4930
+Connection ~ 3300 4930
+Wire Wire Line
+	3300 4930 3300 5000
+Wire Wire Line
+	3300 6020 2385 6020
+Wire Wire Line
+	2385 6020 2385 5590
+Connection ~ 3300 6020
+Wire Wire Line
+	3300 6020 3300 6050
 $EndSCHEMATC

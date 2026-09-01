@@ -3,9 +3,9 @@ EELAYER 30 0
 EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
-Sheet 5 8
+Sheet 5 7
 Title "uSD Card, FPGA FLASH and AUDIO SECTION"
-Date "2026-08-31"
+Date "2026-09-01"
 Rev "1.0"
 Comp "RetroBit Lab"
 Comment1 "Gianluca Renzi"
@@ -43,12 +43,12 @@ $EndComp
 $Comp
 L power:GND #PWR089
 U 1 1 68DD51F9
-P 7890 4860
-F 0 "#PWR089" H 7890 4610 50  0001 C CNN
-F 1 "GND" H 7895 4687 50  0000 C CNN
-F 2 "" H 7890 4860 50  0001 C CNN
-F 3 "" H 7890 4860 50  0001 C CNN
-	1    7890 4860
+P 7890 4935
+F 0 "#PWR089" H 7890 4685 50  0001 C CNN
+F 1 "GND" H 7895 4762 50  0000 C CNN
+F 2 "" H 7890 4935 50  0001 C CNN
+F 3 "" H 7890 4935 50  0001 C CNN
+	1    7890 4935
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
@@ -314,16 +314,14 @@ Wire Wire Line
 $Comp
 L power:GND #PWR091
 U 1 1 69A15D35
-P 4175 5485
-F 0 "#PWR091" H 4175 5235 50  0001 C CNN
-F 1 "GND" H 4180 5312 50  0000 C CNN
-F 2 "" H 4175 5485 50  0001 C CNN
-F 3 "" H 4175 5485 50  0001 C CNN
-	1    4175 5485
+P 4175 5555
+F 0 "#PWR091" H 4175 5305 50  0001 C CNN
+F 1 "GND" H 4180 5382 50  0000 C CNN
+F 2 "" H 4175 5555 50  0001 C CNN
+F 3 "" H 4175 5555 50  0001 C CNN
+	1    4175 5555
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	4175 5435 4175 5485
 Wire Wire Line
 	2425 5110 3000 5110
 Wire Wire Line
@@ -331,13 +329,8 @@ Wire Wire Line
 Wire Wire Line
 	2925 5210 3300 5210
 Wire Wire Line
-	3300 5210 3300 5235
-Wire Wire Line
-	3800 5110 3800 5235
+	3300 5210 3300 5240
 Connection ~ 3300 5210
-Wire Wire Line
-	3800 5110 4050 5110
-Connection ~ 3800 5110
 Text GLabel 4050 5110 2    39   Output ~ 0
 AUDIOL
 Wire Wire Line
@@ -571,35 +564,18 @@ F 4 "C2798196" H -75 -240 50  0001 C CNN "LCSC"
 	1    2825 5560
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	3300 5435 3800 5435
 $Comp
 L CCAP0805:1uF C30
 U 1 1 68B8E954
-P 3300 5335
-F 0 "C30" H 3392 5381 50  0000 L CNN
-F 1 "1uF" H 3392 5290 50  0000 L CNN
-F 2 "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder" H 3300 5335 50  0001 C CNN
-F 3 "https://www.lcsc.com/datasheet/C2798196.pdf" H 3300 5335 50  0001 C CNN
-F 4 "C2798196" H -75 -240 50  0001 C CNN "LCSC"
-	1    3300 5335
+P 3300 5340
+F 0 "C30" H 3392 5386 50  0000 L CNN
+F 1 "1uF" H 3392 5295 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder" H 3300 5340 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C2798196.pdf" H 3300 5340 50  0001 C CNN
+F 4 "C2798196" H -75 -235 50  0001 C CNN "LCSC"
+	1    3300 5340
 	1    0    0    -1  
 $EndComp
-$Comp
-L CCAP0805:1uF C31
-U 1 1 68B8F331
-P 3800 5335
-F 0 "C31" H 3892 5381 50  0000 L CNN
-F 1 "1uF" H 3892 5290 50  0000 L CNN
-F 2 "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder" H 3800 5335 50  0001 C CNN
-F 3 "https://www.lcsc.com/datasheet/C2798196.pdf" H 3800 5335 50  0001 C CNN
-F 4 "C2798196" H -75 -240 50  0001 C CNN "LCSC"
-	1    3800 5335
-	1    0    0    -1  
-$EndComp
-Connection ~ 3800 5435
-Wire Wire Line
-	3800 5435 4175 5435
 $Comp
 L CRES0805:560R R46
 U 1 1 68B91DD7
@@ -612,8 +588,6 @@ F 4 "C28636" H 2830 5210 50  0001 C CNN "LCSC"
 	1    2830 5210
 	0    1    1    0   
 $EndComp
-Wire Wire Line
-	3200 5110 3800 5110
 $Comp
 L CRES0805:560R R45
 U 1 1 68B922A3
@@ -960,10 +934,6 @@ Wire Wire Line
 	10835 4455 10835 4815
 Text GLabel 3605 5620 2    50   BiDi ~ 0
 3V3
-Wire Wire Line
-	3550 5620 3605 5620
-Wire Wire Line
-	3550 5620 3545 5810
 Text Notes 5010 2570 0    50   ~ 10
 The microSD BUS will be available\nonly when FPGA is ready and programmed
 Text Notes 2085 2125 0    59   Italic 12
@@ -1145,4 +1115,66 @@ F 4 "C7393943" H 2750 6435 50  0001 C CNN "LCSC"
 	1    2750 6435
 	1    0    0    -1  
 $EndComp
+Wire Wire Line
+	7890 4860 7890 4935
+Wire Wire Line
+	3545 5810 3545 5620
+Wire Wire Line
+	3545 5620 3605 5620
+$Comp
+L CCAP0805:1uF C31
+U 1 1 68B8F331
+P 3800 5340
+F 0 "C31" H 3892 5386 50  0000 L CNN
+F 1 "1uF" H 3892 5295 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder" H 3800 5340 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C2798196.pdf" H 3800 5340 50  0001 C CNN
+F 4 "C2798196" H -75 -235 50  0001 C CNN "LCSC"
+	1    3800 5340
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4175 5485 4175 5555
+Wire Wire Line
+	3200 5110 3800 5110
+Wire Wire Line
+	3800 5240 3800 5110
+Connection ~ 3800 5110
+Wire Wire Line
+	3800 5110 4050 5110
+Wire Wire Line
+	3800 5440 3800 5485
+Wire Wire Line
+	3800 5485 4175 5485
+Wire Wire Line
+	3300 5440 3300 5485
+Wire Wire Line
+	3300 5485 3800 5485
+Connection ~ 3800 5485
+$Comp
+L power:PWR_FLAG #FLG0104
+U 1 1 6AA4C8BC
+P 2745 6275
+F 0 "#FLG0104" H 2745 6350 50  0001 C CNN
+F 1 "PWR_FLAG" H 2830 6405 39  0000 C CNN
+F 2 "" H 2745 6275 50  0001 C CNN
+F 3 "~" H 2745 6275 50  0001 C CNN
+	1    2745 6275
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2745 6310 2745 6275
+Connection ~ 2745 6310
+$Comp
+L power:PWR_FLAG #FLG0106
+U 1 1 6AA57957
+P 3225 6010
+F 0 "#FLG0106" H 3225 6085 50  0001 C CNN
+F 1 "PWR_FLAG" H 3310 6140 39  0000 C CNN
+F 2 "" H 3225 6010 50  0001 C CNN
+F 3 "~" H 3225 6010 50  0001 C CNN
+	1    3225 6010
+	1    0    0    -1  
+$EndComp
+Connection ~ 3225 6010
 $EndSCHEMATC
