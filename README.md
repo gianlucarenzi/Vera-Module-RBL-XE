@@ -477,6 +477,9 @@ pio run -e esp32s3fn8 --target upload
 ```
 Vera-Module-RBL-XE/
 ├── 📄 README.md                    # This documentation
+├── 📄 PIN-MAPPING.md               # ESP32-S3 / level-shifter pin mapping
+├── 📄 VERA-ATARI-HW-REQUIREMENTS.md # Hardware requirements & bring-up plan (from driver/emulator work)
+├── 📄 HW-MOD-GPIO0-VIRQ.md         # Rework note: ~mVIRQ -> GPIO0 (IRQ identification on $D1FF)
 ├── 📄 LICENSE                      # GPL v3 license
 ├── ⚙️ VERA-MODULE-RBL.pro         # KiCad project file
 ├── 📄 VERA-MODULE-RBL.sch         # Main schematic
@@ -503,6 +506,14 @@ Vera-Module-RBL-XE/
     ├── 📄 vera-fpga-flash.sch     # Flash memory
     └── 📄 powersupply.sch         # Power management
 ```
+
+### Hardware notes (read before bring-up)
+
+- [`VERA-ATARI-HW-REQUIREMENTS.md`](VERA-ATARI-HW-REQUIREMENTS.md) — what the VERA FPGA
+  requires from the bus, open points on this board (U19 output enable, WR hold time,
+  push-pull IRQ), reset/configuration sequence and the bring-up test plan.
+- [`HW-MOD-GPIO0-VIRQ.md`](HW-MOD-GPIO0-VIRQ.md) — wire/resistor rework and firmware
+  environment for PBI interrupt identification.
 
 ### Design Files
 

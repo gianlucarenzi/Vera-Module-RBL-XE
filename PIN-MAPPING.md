@@ -3,12 +3,21 @@
 Target MCU: **ESP32-S3FN8** — QFN56 package, 45 GPIOs, 8 MB in-package Quad SPI flash,
 512 KB SRAM, dual-core Xtensa LX7 @ 240 MHz.
 
+> **Documenti collegati:** requisiti e verifiche hardware emersi dal lavoro su driver ed emulatore
+> in [`VERA-ATARI-HW-REQUIREMENTS.md`](VERA-ATARI-HW-REQUIREMENTS.md); promemoria del filo di
+> modifica per l'IRQ in [`HW-MOD-GPIO0-VIRQ.md`](HW-MOD-GPIO0-VIRQ.md).
+>
+> **Nota sui riferimenti:** nella netlist (2026-09-01) `U6` è il transceiver Atari→scheda
+> (PHI2, R/W, D1XX, S4, S5, CCTL, REFRESH) e `U16` quello scheda→Atari (EXTSEL, MPD, RESET,
+> HALT, RD4, RD5, IRQ). Le versioni precedenti di questo file li avevano scambiati.
+
 ---
 
 ## ⚠ Critical Boot-Time Warnings
 
 | GPIO | QFN56 pin | Signal | Risk |
 |------|-----------|--------|------|
+| **GPIO 0** | 5 | BOOT0 | Strapping pin (boot mode) — **non è NC**: rete `BOOT0` con `R33` 4,7 kΩ → 3V3, pulsante `SW3`, `C61` 100 nF e `R54` 220 Ω verso `Q4` (auto-reset del programmatore). LOW al reset = modalità download. Opzionale: ingresso di sense per `~mVIRQ` tramite 470 Ω, vedere `HW-MOD-GPIO0-VIRQ.md`. |
 | **GPIO 3** | 8 | RAMBO\_EN | Strapping pin (JTAG source, no internal pull) — usato come **RAMbo hardware enable**: pull-up 10 kΩ → VCC = RAMbo presente; pull-down 10 kΩ → GND = assente. Letto una volta in `setup()`. |
 | **GPIO 26–32** | 28, 30–35 | — | Hard-wired to in-package Quad SPI flash (FN8 variant). **Never connect externally**. |
 | **GPIO 45** | 51 | A14 | Strapping pin (VDD_SPI select) — internal weak pull-down (~5 kΩ). Connesso ad A14 via 74LVC4245APW_118 U3. Al power-on il 6502 è in reset → A14 alta impedenza → U3 flotta → pull-down → **LOW → VDD_SPI da LDO interno (~1.8 V)**. Sicuro per variante FN8 (flash on-package). |
@@ -140,13 +149,13 @@ tramite `RAMBO_EN` (GPIO 3, vedere sezione 2).
 
 | Signal | GPIO | QFN56 pin | IO MUX | Direction | Active | Level shift | Description |
 |---|---|---|---|---|---|---|---|
-| PHI2 | 1 | 6 | GPIO1 | Input | HIGH | via U16 | Clock fase 2 CPU 6502 — 1.79 MHz |
-| R/W\_ | 2 | 7 | GPIO2 | Input | HIGH=read | via U16 | Read / Not-Write |
+| PHI2 | 1 | 6 | GPIO1 | Input | HIGH | via U6 | Clock fase 2 CPU 6502 — 1.79 MHz |
+| R/W\_ | 2 | 7 | GPIO2 | Input | HIGH=read | via U6 | Read / Not-Write |
 | RAMBO\_EN | 3 | 8 | GPIO3 | Input | HIGH | **direct** | RAMbo 256 KB enable — pull-up 10 kΩ→VCC = presente; pull-down 10 kΩ→GND = assente. Letto in `setup()`. |
-| EXTSEL\_N | 41 | 47 | MTDI | **Output** | LOW | via U6 | Disabilita MMU/Freddie per $D1xx, $D6xx e finestra RAMbo $4000–$7FFF. **Solo PBI mode** per VERA; RAMbo in entrambe le modalità. Ex-JTAG, reclaimed. |
+| EXTSEL\_N | 41 | 47 | MTDI | **Output** | LOW | via U16 | Disabilita MMU/Freddie per $D1xx, $D6xx e finestra RAMbo $4000–$7FFF. **Solo PBI mode** per VERA; RAMbo in entrambe le modalità. Ex-JTAG, reclaimed. |
 | DEV\_SEL\_N | 40 | 45 | MTDO | **Output** | LOW | **direct** | VERA chip select (3.3 V); PBI: VERA regs $D1xx; CCTL: range $D5xx. Ex-JTAG, reclaimed. |
-| MPD | 42 | 48 | MTMS | **Output** | LOW | via U6 | Math Pack Disable — disabilita ROM Atari $D800–$DFFF — **solo PBI mode**. Ex-JTAG, reclaimed. |
-| ARESET | 37 | 42 | GPIO37 | **Output** | LOW | via U6 | Atari System Reset — pilota /RESET bus Atari (open-drain + pull-up consigliati). |
+| MPD | 42 | 48 | MTMS | **Output** | LOW | via U16 | Math Pack Disable — disabilita ROM Atari $D800–$DFFF — **solo PBI mode**. Ex-JTAG, reclaimed. |
+| ARESET | 37 | 42 | GPIO37 | **Output** | LOW | via U16 | Atari System Reset — pilota /RESET bus Atari (open-drain + pull-up consigliati). |
 | CRESET | 38 | 43 | GPIO38 | **Output** | LOW | **direct** | VERA FPGA Reset — 3.3 V, diretto al chip FPGA. |
 | CDONE | 39 | 44 | MTCK | Input | HIGH | **direct** | VERA FPGA configured status — HIGH = configurazione completata. Ex-JTAG, reclaimed. |
 
@@ -267,7 +276,7 @@ corretto; sul bus dati **bidirezionale** (U19) DIR è invece pilotato dinamicame
 | A6/B6 | GPIO 45 (pin 51) — A14 | Atari A14 |
 | A7/B7 | GPIO 46 (pin 52) — A15 | Atari A15 |
 
-### U16 — Control signals, 6502 → MCU (fisso, input)
+### U6 — Control signals, 6502 → MCU (fisso, input)
 
 | Canale | Lato A (3.3 V, ESP32-S3) | Lato B (5 V, Atari) | Note |
 |---|---|---|---|
@@ -275,14 +284,15 @@ corretto; sul bus dati **bidirezionale** (U19) DIR è invece pilotato dinamicame
 | — | GPIO 2 (pin 7) — R/W\_ | Atari R/W\_ | Read / Not-Write |
 | — | — | D1XX\_N, S4\_N, S5\_N, CCTL\_N, REFRESH | Canali liberi, portati a test point — **non collegati a un GPIO in questo progetto** |
 
-### U6 — Control signals, MCU → 6502 (fisso, output)
+### U16 — Control signals, MCU → 6502 (fisso, output)
 
 | Canale | Lato A (3.3 V, ESP32-S3) | Lato B (5 V, Atari) | Note |
 |---|---|---|---|
 | — | GPIO 41 (pin 47) — EXTSEL\_N | Atari EXTSEL | Output, active LOW |
 | — | GPIO 42 (pin 48) — MPD | Atari ECI MPD | Output, active LOW |
 | — | GPIO 37 (pin 42) — ARESET | Atari /RESET | Output, active LOW |
-| — | — | RD4, RD5, HALT, IRQ | Canali liberi, portati a test point — **non collegati a un GPIO in questo progetto** |
+| — | — | RD4, RD5, HALT | Canali liberi, portati a test point — **non collegati a un GPIO in questo progetto** |
+| — | `~mVIRQ` (FPGA, pin 18 lato 3,3 V) | Atari IRQ (`ECI1` pin B) | Uscita FPGA **push-pull** direttamente sul bus: da sostituire con uno stadio open-drain (74LVC1G07), vedere `VERA-ATARI-HW-REQUIREMENTS.md` §2.3 |
 
 ### U19 — Data bus D0–D7 (bidirezionale, direzione dinamica)
 
@@ -342,9 +352,9 @@ Riferimento rapido ESP32-S3FN8 QFN56 (56 pin segnale + pad GND centrale).
 | 2   | 3V3 | 3.3 V |
 | 3   | EN (CHIP\_EN) | Pull-up 10 kΩ a 3.3 V |
 | 4   | — | (riservato / NC) |
-| 5   | GPIO 0 | NC (strapping, non usato) |
-| 6   | GPIO 1 | PHI2 input (via U16) |
-| 7   | GPIO 2 | R/W\_ input (via U16) |
+| 5   | GPIO 0 | BOOT0 (pulsante BOOT / auto-reset, pull-up `R33`); opzionale sense `~mVIRQ` via 470 Ω — strapping |
+| 6   | GPIO 1 | PHI2 input (via U6) |
+| 7   | GPIO 2 | R/W\_ input (via U6) |
 | 8   | GPIO 3 | RAMBO\_EN — pull-up 10 kΩ → VCC = RAMbo presente; pull-down 10 kΩ → GND = assente |
 | 9   | GPIO 4 | D0 (via U19) |
 | 10  | GPIO 5 | D1 (via U19) |
@@ -379,13 +389,13 @@ Riferimento rapido ESP32-S3FN8 QFN56 (56 pin segnale + pad GND centrale).
 | 39  | GPIO 34 | A13 (via U3) |
 | 40  | GPIO 35 | A10 (via U3) |
 | 41  | GPIO 36 | A11 (via U3) |
-| 42  | GPIO 37 | ARESET output (via U6) |
+| 42  | GPIO 37 | ARESET output (via U16) |
 | 43  | GPIO 38 | CRESET output (diretto VERA) |
 | 44  | GPIO 39 / MTCK | CDONE input (diretto VERA) — ex-JTAG |
 | 45  | GPIO 40 / MTDO | DEV\_SEL\_N output (diretto VERA) — ex-JTAG |
 | 46  | VDD3P3\_CPU | Alimentazione CPU — **non GPIO** |
-| 47  | GPIO 41 / MTDI | EXTSEL\_N output (via U6) — ex-JTAG |
-| 48  | GPIO 42 / MTMS | MPD output (via U6) — ex-JTAG |
+| 47  | GPIO 41 / MTDI | EXTSEL\_N output (via U16) — ex-JTAG |
+| 48  | GPIO 42 / MTMS | MPD output (via U16) — ex-JTAG |
 | 49  | GPIO 43 / U0TXD | UART0 TX — debug seriale |
 | 50  | GPIO 44 / U0RXD | UART0 RX — debug seriale |
 | 51  | GPIO 45 | A14 (via U3) — strapping VDD\_SPI; pull-down → LOW al boot (FN8 safe) |

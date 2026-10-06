@@ -80,7 +80,10 @@ static const uint8_t DBUS_PINS[8] = { 4, 5, 6, 7, 8, 9, 10, 11 };
  * ESP32-side internal pull resistors determine the final strapping level.
  *
  * GPIO0  —  Pin  5  |  Boot mode selection  |  Internal weak PULL-UP ~45 kΩ
- *   Not wired to any Atari signal in this design.
+ *   Net BOOT0: R33 4.7 kΩ pull-up, BOOT button SW3, C61, and R54 -> Q4 (auto-reset
+ *   from the programmer).  Not wired to any Atari signal, except with the optional
+ *   ~mVIRQ rework (470 Ω series resistor, see HW-MOD-GPIO0-VIRQ.md and
+ *   VERA_HAS_VIRQ_SENSE), where ~mVIRQ must be HIGH at reset.
  *   Pull-up holds GPIO0 HIGH throughout the strapping window.
  *   Sampled value: HIGH → SPI boot from embedded flash (correct for normal
  *   operation).  LOW would enter UART/JTAG download mode and halt the system.

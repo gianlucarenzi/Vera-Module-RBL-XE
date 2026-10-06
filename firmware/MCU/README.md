@@ -99,6 +99,7 @@ I pin GPIO 39–42 erano originariamente riservati a JTAG; vengono liberati in
 | A14          | 45          | 51         | Address bit 14 (via U4)           |
 | A15          | 46          | 52         | Address bit 15 (via U4)           |
 | ARESET       | 37          | 42         | System reset ATARI (output)       |
+| BOOT0 / VIRQ | 0           | 5          | Pulsante BOOT/auto-reset; opzionale sense `~mVIRQ` (`VERA_HAS_VIRQ_SENSE`) |
 | CRESET       | 38          | 43         | Chip reset VERA (output)          |
 | CDONE        | 39          | 44         | VERA programmata (input)          |
 | RAMBO\_EN    | 3           | 8          | RAMbo hardware enable (input, pull esterno 10 kΩ) |
@@ -121,7 +122,7 @@ Per la mappatura completa GPIO→QFN-56 e lo schema level shifter U4 vedere
 
 ```
 firmware/MCU/
-├── platformio.ini               # Configurazione build (target unificato: esp32s3fn8)
+├── platformio.ini               # Ambienti: esp32s3fn8, esp32s3fn8-cctl, esp32s3fn8-virq
 ├── pre_build_6502.py            # Script pre-build PlatformIO: esegue make in 6502/
 ├── include/
 │   ├── pbi-driver.h             # Strutture dati e costanti del protocollo PBI
@@ -142,8 +143,23 @@ firmware/MCU/
 
 ## 4. Modalità di Build
 
-Il progetto compila un unico ambiente PlatformIO (`esp32s3fn8`). La modalità
-PBI/CCTL è scelta tramite la macro in `main.cpp`:
+Ambienti PlatformIO disponibili (`platformio.ini`):
+
+| Ambiente | Modalità | Note |
+|---|---|---|
+| `esp32s3fn8` | PBI (`$D1FF`) | produzione, scheda senza modifiche |
+| `esp32s3fn8-cctl` | CCTL (`$D5FF`) | slot cartuccia |
+| `esp32s3fn8-virq` | PBI + `VERA_HAS_VIRQ_SENSE=1` | solo con il filo `~mVIRQ` → GPIO0 (`../../HW-MOD-GPIO0-VIRQ.md`) |
+
+Opzioni di compilazione (`-D`):
+
+| Macro | Default | Effetto |
+|---|---|---|
+| `VERA_BOARD_IS_PBI` | 1 | 1 = PBI, 0 = CCTL (impostata dall'ambiente) |
+| `VERA_TRACE_REGS` | 0 | log di ogni accesso ai registri VERA. **Solo debug**: costa ~1 µs nel loop del bus e può lasciare `DEV_SEL_N` asserito nel ciclo seguente |
+| `VERA_HAS_VIRQ_SENSE` | 0 | legge `~mVIRQ` su GPIO0 (pin di strapping) e pilota D7 alla lettura di `$D1FF` |
+
+La modalità PBI/CCTL è scelta tramite la macro in `main.cpp`:
 
 ```cpp
 #define VERA_BOARD_IS_PBI 0x01   /* 1 = PBI (default), 0 = CCTL */
@@ -159,11 +175,16 @@ del pin **GPIO 3** (`PIN_RAMBO_EN`, QFN56 pin 8) letto una volta in `setup()`.
 
 ### Modalità PBI (`VERA_BOARD_IS_PBI = 1`)
 
+> **Registri sempre presenti.** I registri VERA (`$D100–$D11F`) rispondono anche con il latch a
+> 0: l'OS deseleziona la scheda (`$D1FF` = 0) subito dopo l'`INIT` e il driver non la
+> riseleziona mai (selezionarla mappa la ROM e disattiva il Math Pack). Solo `MPD`, `EXTSEL_N`
+> per `$D600–$DFFF` e il servizio della ROM/RAM PBI dipendono dalla selezione.
+
 | Range         | Segnali affermati                       | Dati bus               |
 |---------------|-----------------------------------------|------------------------|
-| $D100–$D11F   | EXTSEL\_N + DEV\_SEL\_N (se selezionato) | VERA FPGA risponde     |
+| $D100–$D11F   | EXTSEL\_N + DEV\_SEL\_N (**sempre**, indipendente dal latch) | VERA FPGA risponde     |
 | $D120–$D1FE   | EXTSEL\_N (se selezionato)               | non decodificato       |
-| $D1FF         | latch VCS — write `0x80` per selezionare| —                      |
+| $D1FF         | latch VCS — **scrittura**: D7 = 1 seleziona, D7 = 0 deseleziona (si usa solo il proprio bit). **Lettura**: con `VERA_HAS_VIRQ_SENSE=1` e IRQ attivo pilota D7 | —                      |
 | $D600–$D7FF   | EXTSEL\_N (se selezionato)               | ESP32 → `ram_pbi[]`    |
 | $D800–$DFFF   | MPD (se selezionato)                    | ESP32 → `pbi_driver[]` |
 
