@@ -91,9 +91,39 @@ Richieste:
   in basso crea contesa.
 
 Richiesta: tra FPGA e ECI usare uno stadio open-drain/open-collector con uscita tollerante a
-5 V (74LVC1G07, oppure un NPN/MOSFET con base/gate pilotato da `~mVIRQ`). Il pull-up del lato
-Atari è già sulla scheda madre. Il pull-up `R65` sul lato 3,3 V non serve e può restare come
-pull-up di sicurezza dell'ingresso.
+5 V. Una linea IRQ open-collector è un OR cablato: ogni device può solo **tirarla in basso**,
+mai in alto; il livello alto lo dà l'unico pull-up sul computer. Aggiungere un proprio stadio
+open-drain dà esattamente questo comportamento con POKEY, PIA e gli altri device.
+
+**Soluzione consigliata (un componente).** `74LVC1G07` (buffer non invertente open-drain, SOT-23-5
+o SC-70-5), alimentato a 3,3 V:
+
+```
+ 3V3 ──┬── Vcc (pin 5)
+       └── 100 nF ── GND
+ ~mVIRQ (FPGA, 3,3 V, attivo basso) ──► A (pin 2)      GND (pin 3)
+ Y (pin 4, open-drain) ──► ECI1 pin B (~IRQ, 5 V)   [nessun pull-up proprio verso 5 V]
+```
+
+- Uscita bassa quando l'FPGA chiede IRQ, alta impedenza altrimenti: non invertente, quindi la
+  polarità resta quella di `~mVIRQ` (basso = IRQ).
+- L'uscita open-drain dell'LVC1G07 tollera 5,5 V (Ioff), quindi il pull-up da 5 V sul computer non
+  la danneggia, anche con la scheda spenta.
+- VOL tipico < 0,4 V a qualche mA: la corrente tipica del pull-up IRQ Atari (circa 1-1,5 mA con
+  3,3-4,7 kΩ, **verificare sul computer di prova**) è ampiamente entro i limiti.
+- **Modifica sulla scheda attuale:** (1) staccare `U16` pin 6 dalla rete `~IRQ` (altrimenti resta
+  l'uscita push-pull in parallelo); (2) collegare `Y` a `ECI1` pin B; (3) lasciare l'ingresso di
+  `U16` pin 18 collegato a `~mVIRQ` (innocuo, uscita non utilizzata). `R65` (10 kΩ sul lato
+  3,3 V) può restare come pull-up dell'ingresso dello stadio.
+
+**Alternative.** (a) `BSS138`/`2N7002` con gate pilotato da `NOT(~mVIRQ)`, per esempio da un
+`74LVC1G04`: due componenti; (b) diodo Schottky (BAT54) con anodo su `~IRQ` e catodo su
+`~mVIRQ`: funziona come OR cablato, ma il livello basso risulta VOL(FPGA) + Vf (circa 0,6-0,7 V)
+vicino al limite TTL di 0,8 V, quindi sconsigliato.
+
+**Cosa NON fare.** Non lasciare l'uscita push-pull verso il bus, non aggiungere un pull-up a
+5 V sulla scheda (la linea ha già il suo) e non usare un 74LVC4245 per questo segnale: non ha
+uscite open-drain.
 
 ### 2.4 [A] Presenza del bit IRQ su `$D1FF` in lettura
 
@@ -103,27 +133,55 @@ Gli altri bit devono restare Hi-Z. L'emulatore lo modella (`PBI_VERAX16_D1ffGetB
 
 Nella scheda attuale:
 - tutti i GPIO dell'ESP32 sono assegnati (`PIN-MAPPING.md` §7), quindi `~mVIRQ` non è letto dal firmware;
-- il firmware implementa il latch `$D1FF` in scrittura (`0x80` = seleziona), ma non risulta
-  pilotare D7 in lettura.
+- il firmware non pilotava D7 in lettura di `$D1FF`.
 
-Richiesta: o una piccola porta tri-state (`~mVIRQ` → D7, abilitata da `$D1FF & PHI2 & R/W`),
-oppure un GPIO per leggere `~mVIRQ` nel firmware. Oggi il software non abilita nessun IRQ della
-VERA, quindi la priorità è bassa finché non serve; va però deciso prima di usare VSYNC/LINE.
+**Firmware (fatto, disattivato di default).** `main.cpp` ora, con `-DVERA_HAS_VIRQ_SENSE=1`,
+legge `~mVIRQ` su **GPIO0** e pilota solo D7 (D0-D6 restano Hi-Z) a ogni lettura di `$D1FF`
+con IRQ attivo, a prescindere dal latch. Serve un **filo di modifica** da `~mVIRQ` (lato
+3,3 V, a monte del nuovo stadio open-drain) al pin 5 dell'ESP32 (GPIO0). GPIO0 è un pin di
+strapping: `~mVIRQ` deve essere **alto** al reset dell'ESP32 (a riposo lo è, per `R65`), altrimenti
+l'ESP32 entra in modalità download. In alternativa, una porta tri-state (`~mVIRQ` → D7, abilitata
+da `$D1FF & PHI2 & R/W`) senza usare GPIO. Oggi il software non abilita nessun IRQ della VERA,
+quindi la priorità è bassa finché non serve; va però deciso prima di usare VSYNC/LINE.
 
-### 2.5 [B] Scrittura `$D1FF`: solo il proprio bit
+### 2.5 [B] Scrittura `$D1FF`: solo il proprio bit — **corretto nel firmware**
 
-Il latch di selezione deve usare solo **D7** (bit del device). Il firmware usa "write `0x80`":
-se l'OS scrive altri valori (per esempio `0x81` per un'altra scheda sul bus) con D7 = 1, la scheda
-deve selezionarsi comunque; se D7 = 0 deve deselezionarsi. L'emulatore ora si comporta così
-(`byte & mask`). Verificare il confronto nel firmware (`== 0x80` contro `& 0x80`).
+Il latch di selezione deve usare solo **D7** (bit del device): con D7 = 1 la scheda si seleziona,
+con D7 = 0 si deseleziona, qualunque sia il valore degli altri bit. L'emulatore si comporta
+così (`byte & mask`) e ora anche `main.cpp` (`(data & PBI_DEV_ID) != 0`, prima `== 0x80`), sia in
+modalità PBI sia CCTL.
 
-### 2.6 [B] Header ROM PBI
+### 2.5b [A] I registri VERA devono rispondere anche con il latch a 0 — **corretto nel firmware**
+
+Il firmware asseriva `DEV_SEL_N` per `$D100-$D11F` **solo con la scheda selezionata** (latch
+`$D1FF` = `0x80`). Ma l'OS deseleziona la scheda (`$D1FF` = 0) subito dopo l'`INIT`, e il driver
+non la riseleziona mai: selezionarla mappa la ROM e disattiva il Math Pack (`MPD`), cosa che rompe
+la virgola mobile del BASIC. Risultato: dopo il boot i registri VERA non sarebbero più
+raggiungibili (il banner di boot compare perché l'`INIT` gira a scheda selezionata).
+
+Ora `DEV_SEL_N` ed `EXTSEL_N` vengono asseriti per `$D100-$D11F` **sempre** (come
+nell'emulatore e come presuppone il software); `MPD` e `EXTSEL_N` per `$D600-$DFFF` restano
+legati alla selezione.
+
+### 2.5c [A] Il log dei registri nel loop del bus faceva perdere cicli — **corretto nel firmware**
+
+Per ogni accesso ai registri VERA il loop chiamava `log_send()` (`xQueueSend` + `esp_timer_get_time`,
+circa 1 µs) mentre `DEV_SEL_N` era ancora asserito. Con un ciclo 6502 di 558 ns si poteva
+superare la fine di PHI2: `DEV_SEL_N` restava basso nel ciclo successivo (accessi spuri alla
+VERA con l'indirizzo sbagliato) oppure si perdeva il ciclo seguente. Ora il log dei registri è
+compilato solo con `-DVERA_TRACE_REGS=1` (debug, mai in produzione); resta attivo il log dei
+cambi di latch (rari).
+
+### 2.6 [B] Header ROM PBI — **ROM allineata**
 
 La ROM `vera_pbi_handler.rom` (2 KB, assemblata da `vera_pbi_handler.s`) ha l'header:
 `$D803 = $80`, `$D80B = $91`, `$D80C = 'V'`, vettori `$D805` (SIO, restituisce C=0 = non
 gestito) e `$D808` (IRQ). Il contenuto deve essere esattamente quello servito dalla scheda a
-`$D800-$DFFF`. Controllare che il firmware serva la ROM **aggiornata** (`firmware/MCU/6502/`
-contiene una copia `vera_pbi_handler.bin`: rigenerarla da `vera_pbi_handler.s`).
+`$D800-$DFFF`. La copia in `firmware/MCU/6502/src/vera_pbi_handler.s` (+ `inc/vera_common.inc`) è stata
+sostituita con l'handler corrente di `VERA_ATARI_PBI` e rigenerata con `make -C 6502`
+(`vera_pbi_handler.bin`, `include/vera_pbi_handler.h`, `FPGA/pbi_rom_pkg.vhd`): il binario è identico
+a `vera_pbi_handler.rom` di `VERA_ATARI_PBI`. Contiene il nuovo `IRQVECTOR` e l'attesa lunga di
+`WAIT_VERA`.
 
 ---
 
@@ -136,7 +194,7 @@ contiene una copia `vera_pbi_handler.bin`: rigenerarla da `vera_pbi_handler.s`).
 | 3 | Ritardo dopo `CDONE` prima di rilasciare `ARESET` (~1 ms) | verificare: la VERA ha un POR interno (128 cicli di `clk25`, ~5 µs) più `reset_sync` |
 | 4 | `ARESET` open-drain con pull-up | il tasto RESET Atari deve continuare a funzionare; mai pilotare la linea in alto |
 | 5 | Timeout se `CDONE` non arriva (oggi 5 s, solo log) | decidere: rilasciare comunque `ARESET`? Il software ha un timeout di ~0,7 s in `WAIT_VERA` e prosegue senza VERA |
-| 6 | Scrittura di `$80` in CTRL (`$D105`) | **protezione consigliata**: far mascherare al firmware/glue il bit 7 delle scritture a `$D105`, perché la riconfigurazione distrugge VRAM e blocca il bus ~100 ms. In alternativa il software non deve mai scriverlo (i test già non lo fanno) |
+| 6 | Scrittura di `$80` in CTRL (`$D105`) | **protezione consigliata**: far mascherare al firmware/glue il bit 7 delle scritture a `$D105`, perché la riconfigurazione distrugge VRAM e blocca il bus ~100 ms. In alternativa il software non deve mai scriverlo (i test già non lo fanno). **Non implementato nel firmware ESP32**: il dato è valido solo a metà di PHI2, quindi `DEV_SEL_N` andrebbe asserito in ritardo solo per `$D105`; ritirarlo dopo la lettura non basta, perché la VERA registra la scrittura alla fine di `bus_write` comunque. Senza hardware per misurarlo, un errore di temporizzazione farebbe perdere scritture legittime a CTRL (cambi di DCSEL): rischio peggiore del problema |
 
 Durante una riconfigurazione il bus VERA non è pilotato: le letture danno valori casuali.
 L'emulatore la simula con 100 ms di bus morto (`-verax16-config-ms`, 0 = RESET tenuto fino a

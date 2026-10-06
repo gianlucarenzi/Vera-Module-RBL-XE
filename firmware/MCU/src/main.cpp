@@ -186,6 +186,21 @@ static inline uint8_t IRAM_ATTR decode_data(uint32_t lo)
  * =========================================================================== */
 
 #define PBI_DEV_ID        0x80u  /* PBI Device ID bit 7 */
+
+/* Per-register trace (EVT_REG) costs ~1 us per access inside the bus loop:
+ * enough to miss the next PHI2 edge or leave DEV_SEL_N asserted into the
+ * following cycle (spurious VERA accesses).  Debug builds only. */
+#ifndef VERA_TRACE_REGS
+#define VERA_TRACE_REGS 0
+#endif
+
+/* Optional: ~mVIRQ wired to GPIO0 (bodge) so that $D1FF reads can show the
+ * VERA IRQ on D7 (PBI interrupt identification).  See VERA-ATARI-HW-REQUIREMENTS.md
+ * §2.3/§2.4.  GPIO0 is a strapping pin: ~mVIRQ idles HIGH (boot from flash). */
+#ifndef VERA_HAS_VIRQ_SENSE
+#define VERA_HAS_VIRQ_SENSE 0
+#endif
+#define PIN_VIRQ_N        0
 /* VERA_BOARD_IS_PBI is injected by the build system (-D flag in platformio.ini) */
 #ifndef VERA_BOARD_IS_PBI
 #define VERA_BOARD_IS_PBI 0x01u  /* fallback: PBI */
@@ -297,6 +312,15 @@ static inline void IRAM_ATTR bus_drive(uint8_t val)
 {
     GPIO.out = lut_drive[val];
     GPIO.enable_w1ts = DBUS_MASK;
+}
+
+/**
+ * Drive only D7 high (PBI $D1FF IRQ identification); D0-D6 stay High-Z.
+ */
+static inline void IRAM_ATTR bus_drive_d7(void)
+{
+    GPIO.out = (1UL << DBUS_PINS[7]);
+    GPIO.enable_w1ts = (1UL << DBUS_PINS[7]);
 }
 
 /**
@@ -422,6 +446,14 @@ static void IRAM_ATTR MonitorTask(void *arg)
         {
             if (vera_board_is_pbi)
             {
+                /* VERA registers ($D100-$D11F) are ALWAYS present, independent of
+                 * the $D1FF latch: the OS deselects the card ($D1FF = 0) right
+                 * after INIT and the driver never selects it again (selecting
+                 * would also map the ROM and disable the Math Pack, breaking
+                 * BASIC floating point). */
+                if (is_vera_range)
+                    ctrl &= ~(DEDIC_OUT_DEVSELN | DEDIC_OUT_EXTSEL);
+
                 if (selected)
                 {
                     /* Disable MMU for D1xx (except VCS latch) and D6xx */
@@ -431,10 +463,6 @@ static void IRAM_ATTR MonitorTask(void *arg)
                     /* Disable Math Pack for ROM area */
                     if (is_d8xx)
                         ctrl &= ~DEDIC_OUT_MPD;
-
-                    /* Chip-select VERA for register accesses */
-                    if (is_vera_range)
-                        ctrl &= ~DEDIC_OUT_DEVSELN;
                 }
             }
             else
@@ -463,16 +491,26 @@ static void IRAM_ATTR MonitorTask(void *arg)
                 {
                     bus_drive(ram_pbi[addr & 0x1FFu]);
                 }
-                else if (is_vera_range)
-                {
-                    /* VERA drives the bus; re-read to capture what it put on the line. */
-                    uint8_t reg_data = decode_data(GPIO.in);
-                    uint8_t fl = 0x00;  /* read */
-                    if (!(ctrl & DEDIC_OUT_MPD))    fl |= 0x04;
-                    if (!(ctrl & DEDIC_OUT_EXTSEL)) fl |= 0x08;
-                    log_send(EVT_REG, off8, reg_data, fl);
-                }
             }
+#if VERA_TRACE_REGS
+            if (vera_board_is_pbi && is_vera_range)
+            {
+                /* VERA drives the bus; re-read to capture what it put on the line. */
+                uint8_t reg_data = decode_data(GPIO.in);
+                uint8_t fl = 0x00;  /* read */
+                if (!(ctrl & DEDIC_OUT_MPD))    fl |= 0x04;
+                if (!(ctrl & DEDIC_OUT_EXTSEL)) fl |= 0x08;
+                log_send(EVT_REG, off8, reg_data, fl);
+            }
+#endif
+#if VERA_HAS_VIRQ_SENSE
+            /* PBI interrupt identification: $D1FF read returns one bit per
+             * device.  Drive our bit (D7) when ~mVIRQ is asserted, whether or
+             * not the card is selected; D0-D6 stay High-Z. */
+            if (vera_board_is_pbi && is_vcs_latch &&
+                !(g_lo & (1UL << PIN_VIRQ_N)))
+                bus_drive_d7();
+#endif
             if (rambo_active && is_rambo_window)
             {
                 uint8_t bank = ((PORTB >> 2) & 0x03u) | ((PORTB >> 3) & 0x0Cu);
@@ -490,7 +528,8 @@ static void IRAM_ATTR MonitorTask(void *arg)
             {
                 if (is_vcs_latch)
                 {
-                    bool new_sel = (data == PBI_DEV_ID);
+                    /* PBI: each device latches only its own data bit */
+                    bool new_sel = ((data & PBI_DEV_ID) != 0u);
                     if (new_sel != selected)
                     {
                         selected = new_sel;
@@ -500,6 +539,7 @@ static void IRAM_ATTR MonitorTask(void *arg)
                         log_send(EVT_LATCH, off8, data, fl);
                     }
                 }
+#if VERA_TRACE_REGS
                 else if (is_vera_range)
                 {
                     uint8_t fl = 0x01u;  /* write */
@@ -507,12 +547,13 @@ static void IRAM_ATTR MonitorTask(void *arg)
                     if (!(ctrl & DEDIC_OUT_EXTSEL)) fl |= 0x08u;
                     log_send(EVT_REG, off8, data, fl);
                 }
+#endif
             }
             else
             {
                 if (is_cctl_latch)
                 {
-                    bool new_sel = (data == PBI_DEV_ID);
+                    bool new_sel = ((data & PBI_DEV_ID) != 0u);
                     if (new_sel != selected)
                     {
                         selected = new_sel;
@@ -613,6 +654,14 @@ void setup(void)
     /* Bank 0 inputs: PHI2, RW, D0-D7, A0-A9 */
     cfg.pin_bit_mask = (1ULL << PIN_PHI2) | (1ULL << PIN_RW) | DBUS_MASK | ABUS_LO_MASK;
     gpio_config(&cfg);
+
+#if VERA_HAS_VIRQ_SENSE
+    /* ~mVIRQ sense input on GPIO0 (strapping pin, internal pull-up) */
+    cfg.pull_up_en   = GPIO_PULLUP_ENABLE;
+    cfg.pin_bit_mask = (1ULL << PIN_VIRQ_N);
+    gpio_config(&cfg);
+    cfg.pull_up_en   = GPIO_PULLUP_DISABLE;
+#endif
 
     /* Bank 1 inputs: A10-A15, CDONE */
     cfg.pin_bit_mask = (1ULL << PIN_A10) | (1ULL << PIN_A11) |
