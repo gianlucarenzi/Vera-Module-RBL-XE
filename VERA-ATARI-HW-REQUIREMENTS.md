@@ -234,9 +234,9 @@ a `vera_pbi_handler.rom` di `VERA_ATARI_PBI`. Contiene il nuovo `IRQVECTOR` e l'
 |---|---|---|
 | 1 | Tenere l'Atari in reset (`ARESET` basso) fino a CONFIG_DONE della VERA | **già così**: `ARESET`, `CRESET` bassi in `setup()`; `CRESET` alto, attesa `CDONE`, poi `ARESET` alto |
 | 2 | Il blocco vale **solo al power-on** | la sequenza è eseguita una volta: **non** deve essere rieseguita se `CDONE` scende dopo una riconfigurazione (CTRL bit 7) |
-| 3 | Ritardo dopo `CDONE` prima di rilasciare `ARESET` (~1 ms) | verificare: la VERA ha un POR interno (128 cicli di `clk25`, ~5 µs) più `reset_sync` |
+| 3 | Ritardo dopo `CDONE` prima di rilasciare `ARESET` (~1 ms) | **fatto**: `delayMicroseconds(VERA_POST_CDONE_DELAY_US)`, default 1000 µs (la VERA ha un POR interno di 128 cicli di `clk25`, ~5 µs, più `reset_sync`) |
 | 4 | `ARESET` open-drain con pull-up | il tasto RESET Atari deve continuare a funzionare; mai pilotare la linea in alto |
-| 5 | Timeout se `CDONE` non arriva (oggi 5 s, solo log) | decidere: rilasciare comunque `ARESET`? Il software ha un timeout di ~0,7 s in `WAIT_VERA` e prosegue senza VERA |
+| 5 | Timeout se `CDONE` non arriva (oggi 5 s, solo log) | decidere: rilasciare comunque `ARESET`? Il software ha un timeout di ~0,7 s in `WAIT_VERA`: prosegue senza VERA ed emette **tre beep** dall'altoparlante della console (un colore sullo schermo ANTIC non resta: l'OS reimposta i colori dopo l'`INIT` PBI) |
 | 6 | Scrittura di `$80` in CTRL (`$D105`) | **protezione consigliata**: far mascherare al firmware/glue il bit 7 delle scritture a `$D105`, perché la riconfigurazione distrugge VRAM e blocca il bus ~100 ms. In alternativa il software non deve mai scriverlo (i test già non lo fanno). **Non implementato nel firmware ESP32**: il dato è valido solo a metà di PHI2, quindi `DEV_SEL_N` andrebbe asserito in ritardo solo per `$D105`; ritirarlo dopo la lettura non basta, perché la VERA registra la scrittura alla fine di `bus_write` comunque. Senza hardware per misurarlo, un errore di temporizzazione farebbe perdere scritture legittime a CTRL (cambi di DCSEL): rischio peggiore del problema |
 
 Durante una riconfigurazione il bus VERA non è pilotato: le letture danno valori casuali.

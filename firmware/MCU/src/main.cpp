@@ -195,6 +195,11 @@ static inline uint8_t IRAM_ATTR decode_data(uint32_t lo)
 #define VERA_TRACE_REGS 0
 #endif
 
+/* Delay between CDONE high and the release of the Atari reset (VERA POR). */
+#ifndef VERA_POST_CDONE_DELAY_US
+#define VERA_POST_CDONE_DELAY_US 1000u
+#endif
+
 /* VERA_BOARD_IS_PBI is injected by the build system (-D flag in platformio.ini) */
 #ifndef VERA_BOARD_IS_PBI
 #define VERA_BOARD_IS_PBI 0x01u  /* fallback: PBI */
@@ -388,6 +393,10 @@ static void IRAM_ATTR MonitorTask(void *arg)
         if (elapsed_ms < 5000u)
             Serial.printf("[VeraX16] VERA: CDONE OK (~%u ms)\n", elapsed_ms);
     }
+    /* CDONE only says the bitstream is loaded: the VERA still runs its
+     * internal power-on reset (128 clk25 cycles + reset synchroniser, a few
+     * us).  Give it a comfortable margin before the 6502 can touch the bus. */
+    delayMicroseconds(VERA_POST_CDONE_DELAY_US);
     GPIO.out1_w1ts.val = (1UL << (PIN_ARESET - 32));
     Serial.println("[VeraX16] ATARI: released from reset — bus active");
 

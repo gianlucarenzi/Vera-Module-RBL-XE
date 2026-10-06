@@ -653,7 +653,7 @@ Il lavoro sul driver 6502 e sull'emulatore (confrontato con l'HDL della VERA 47.
 \end{itemize}
 
 \subsection*{Sequenza di reset e configurazione}
-Il firmware già tiene \texttt{ARESET} e \texttt{CRESET} bassi in \texttt{setup()}, rilascia \texttt{CRESET}, attende \texttt{CDONE} e solo allora rilascia \texttt{ARESET}. La sequenza vale \textbf{solo al power-on}: non deve essere ripetuta se \texttt{CDONE} scende dopo una riconfigurazione (CTRL bit\,7). \texttt{ARESET} deve essere open-drain con pull-up e il tasto RESET Atari deve continuare a funzionare. Un ritardo di circa 1\,ms dopo \texttt{CDONE} copre il POR interno della VERA.
+Il firmware già tiene \texttt{ARESET} e \texttt{CRESET} bassi in \texttt{setup()}, rilascia \texttt{CRESET}, attende \texttt{CDONE} e solo allora rilascia \texttt{ARESET}. La sequenza vale \textbf{solo al power-on}: non deve essere ripetuta se \texttt{CDONE} scende dopo una riconfigurazione (CTRL bit\,7). \texttt{ARESET} deve essere open-drain con pull-up e il tasto RESET Atari deve continuare a funzionare. Fra \texttt{CDONE} e il rilascio di \texttt{ARESET} il firmware attende \texttt{VERA\_POST\_CDONE\_DELAY\_US} (default 1000\,\textmu s) per coprire il POR interno della VERA. Se la VERA non risponde entro $\approx$0.7\,s, l'\texttt{INIT} della ROM PBI non scrive sul bus ed emette tre beep dall'altoparlante della console.
 
 \subsection*{Modifiche al firmware ESP32}
 \begin{itemize}

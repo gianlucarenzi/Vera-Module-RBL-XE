@@ -38,7 +38,9 @@ creato. Prima di entrare nel hot loop esegue la sequenza di sincronizzazione:
    caricamento del bitstream dalla flash SPI on-board.
 2. **Poll CDONE** (GPIO 39): attesa con `vTaskDelay(1)` finché il pin va HIGH —
    ICE40UP5K tipicamente < 100 ms. Timeout 5 s con log di errore.
-3. **ARESET → HIGH** (`GPIO.out1_w1ts`): l'Atari esce dal reset. Da questo momento
+3. **Attesa `VERA_POST_CDONE_DELAY_US`** (default 1000 µs): copre il power-on reset
+   interno della VERA, che parte solo dopo `CDONE`.
+4. **ARESET → HIGH** (`GPIO.out1_w1ts`): l'Atari esce dal reset. Da questo momento
    il bus è live e il hot loop deve rispondere ad ogni ciclo PHI2.
 
 ### Hot loop (Core 1, priorità massima FreeRTOS)
