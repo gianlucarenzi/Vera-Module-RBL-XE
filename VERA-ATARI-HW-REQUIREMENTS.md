@@ -291,10 +291,11 @@ Il driver e i test già le seguono, ma valgono per qualunque programma futuro:
    di RAM/ROM (§2.1) e il margine di hold sulle scritture (§2.2).
 4. **Rilevamento**: dal DOS, `vera_detect()` (CTRL=`$7E`, `$D109`=`'V'`, `$D10A`=47) via
    un programma minimo; poi `$D1FF`/ROM (`$D803=$80`, `$D80B=$91`).
-5. **Test funzionali** dal disco `disk2-veratests-*.atr` in questo ordine: `TESTFX.COM`
-   (atteso **PASS: 34, FAIL: 0**), `TEST8.COM` (ESC per uscire), `TESTGS8.COM`,
-   `TESTMAZ8.COM`, `TESTMTX8.COM`, `TESTPLR.COM`, poi `RUNCPM.COM` con FujiNet.
-6. **IRQ** solo quando §2.3 (stadio open-drain) è montato: `TESTIRQ.COM` (atteso PASS 13, FAIL 0).
+5. **Test funzionali** in questo ordine: da `disk3-standalone.atr` `TESTFX.COM` (atteso
+   **PASS: 34, FAIL: 0**); da `disk2-veratests-*.atr` `TEST8.COM`, `TESTGS8.COM`, `TESTMAZ8.COM`,
+   `TESTMTX8.COM` (ESC per uscire); da `disk3-standalone.atr` `TESTPLR.COM`; poi `RUNCPM.COM`
+   (`disk1-runcpm.atr`) con FujiNet.
+6. **IRQ** solo quando §2.3 (stadio open-drain) è montato: `TESTIRQ.COM` da `disk3-standalone.atr` (atteso PASS 13, FAIL 0).
 7. Ogni anomalia va riprodotta in emulatore con `-verax16-config-ms` (0 e 100) per separare
    problemi software da problemi di scheda.
 
