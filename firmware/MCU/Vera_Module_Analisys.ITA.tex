@@ -114,46 +114,60 @@ Il firmware supporta due modalità operative, selezionate a compile-time tramite
 \begin{itemize}
     \item \textbf{PBI mode (\texttt{VERA\_BOARD\_IS\_PBI=1}, default):} Il modulo si collega al connettore ECI della serie XL/XE.
     \begin{itemize}
-        \item \textbf{VCS latch:} scrittura di \$80 a \$D1FF attiva il dispositivo; qualsiasi altro valore lo disattiva.
+        \item \textbf{VCS latch (\$D1FF):} in scrittura il dispositivo usa solo il \emph{proprio} bit dati (D7): D7\,=\,1 seleziona, D7\,=\,0 deseleziona (\texttt{data \& 0x80}). In lettura, con \texttt{VERA\_HAS\_VIRQ\_SENSE=1} e IRQ VERA attivo, il firmware pilota D7 (D0--D6 restano Hi-Z) per l'identificazione dell'interrupt PBI.
         \item \textbf{ROM \$D800--\$DFFF (2\,KB, 11 bit A0--A10):} \texttt{MPD} (Math Pack Disable, GPIO42) viene asserito basso per ogni ciclo ROM con device selezionato, disabilitando la ROM Math Pack interna all'Atari.
         \item \textbf{RAM \$D600--\$D7FF (512\,B, 9 bit A0--A8):} buffer IRAM esposto al 6502. \texttt{EXTSEL\_N} viene asserito per-ciclo.
-        \item \textbf{Registri VERA \$D100--\$D11F} (32 registri): \texttt{DEV\_SEL\_N} e \texttt{EXTSEL\_N} affermati quando selezionato; la FPGA VERA guida il bus dati.
-        \item \textbf{Intervallo \$D120--\$D1FE}: \texttt{EXTSEL\_N} asserito; nessun dato guidato dall'ESP32 (non implementato nel firmware corrente).
+        \item \textbf{Registri VERA \$D100--\$D11F} (32 registri): \texttt{DEV\_SEL\_N} e \texttt{EXTSEL\_N} affermati \emph{sempre}, indipendentemente dal latch; la FPGA VERA guida il bus dati. L'OS deseleziona la scheda (\$D1FF\,=\,0) subito dopo l'\texttt{INIT} e il driver non la riseleziona mai (selezionarla mapperebbe la ROM e disattiverebbe il Math Pack, rompendo la virgola mobile del BASIC): i registri devono quindi restare raggiungibili con il latch a 0.
+        \item \textbf{Intervallo \$D120--\$D1FE}: \texttt{EXTSEL\_N} asserito solo con scheda selezionata; nessun dato guidato dall'ESP32 (non implementato nel firmware corrente).
         \item \textbf{EXTSEL\_N (GPIO41):} segnale \emph{per-ciclo} che disabilita MMU/Freddie dell'Atari per accessi D1xx e D6xx. Non è un segnale persistente.
     \end{itemize}
     \item \textbf{CCTL mode (\texttt{VERA\_BOARD\_IS\_PBI=0}):} Il modulo si collega alla porta cartuccia. Il firmware decodifica l'indirizzo completo a 16\,bit e intercetta \$D500--\$D5FF: \texttt{DEV\_SEL\_N} affermato per \$D500--\$D5FE (FPGA guida il bus dati), latch di selezione a \$D5FF (scrittura di \$80 seleziona la scheda).
 \end{itemize}
 
 \subsection{Ambiente di build PlatformIO}
-Il file \texttt{platformio.ini} definisce un unico ambiente unificato:
+Il file \texttt{platformio.ini} definisce tre ambienti:
 
 \begin{center}
-\begin{tabular}{llll}
+\begin{tabular}{lll}
 \toprule
-\textbf{Ambiente} & \textbf{MCU} & \textbf{Modalità} & \textbf{Piattaforma} \\
+\textbf{Ambiente} & \textbf{Modalità} & \textbf{Note} \\
 \midrule
-\texttt{esp32s3fn8} & ESP32-S3FN8 & PBI + CCTL (unificato, runtime) & espressif32@6.6.0 \\
+\texttt{esp32s3fn8}      & PBI (\$D1FF)  & produzione, scheda senza modifiche \\
+\texttt{esp32s3fn8-cctl} & CCTL (\$D5FF) & slot cartuccia \\
+\texttt{esp32s3fn8-virq} & PBI + sense IRQ & solo con il filo \texttt{\textasciitilde mVIRQ}$\rightarrow$GPIO0 \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-La modalità PBI/CCTL non è più selezionata da ambienti separati ma dalla macro
-\texttt{VERA\_BOARD\_IS\_PBI} in \texttt{main.cpp}: valore \texttt{1} per PBI (default),
-\texttt{0} per CCTL.
+Opzioni di compilazione (\texttt{-D}):
+
+\begin{center}
+\begin{tabular}{lcp{8cm}}
+\toprule
+\textbf{Macro} & \textbf{Default} & \textbf{Effetto} \\
+\midrule
+\texttt{VERA\_BOARD\_IS\_PBI}  & 1 & 1 = PBI, 0 = CCTL (impostata dall'ambiente) \\
+\texttt{VERA\_TRACE\_REGS}     & 0 & log di ogni accesso ai registri VERA. \textbf{Solo debug}: costa $\approx$1\,\textmu s nel loop del bus (un ciclo 6502 dura 559\,ns) e può lasciare \texttt{DEV\_SEL\_N} asserito nel ciclo successivo con accessi spuri alla VERA \\
+\texttt{VERA\_HAS\_VIRQ\_SENSE} & 0 & legge \texttt{\textasciitilde mVIRQ} su GPIO0 e pilota D7 alla lettura di \$D1FF \\
+\bottomrule
+\end{tabular}
+\end{center}
 
 \subsection{Interfacciamento Bus}
 L'ESP32 legge il bus indirizzi completo \textbf{A0--A15} e i segnali \texttt{PHI2} e \texttt{R/W\_} direttamente dai propri GPIO ad ogni ciclo di clock. \textbf{Non esiste alcuna logica esterna di pre-decodifica degli indirizzi}: i segnali \texttt{D1XX\_N}, \texttt{ROM\_SEL\_N} e \texttt{RAM\_SEL\_N} del progetto precedente sono stati eliminati. La decodifica è interamente software in \texttt{decode\_addr()}, che restituisce un indirizzo a 16\,bit senza ambiguità di pagina.
 
 \begin{sloppypar}
-I quattro TXS0108E (U1--U4) svolgono esclusivamente adattamento di livello 5\,V\,$\leftrightarrow$\,3.3\,V:
+L'adattamento di livello 5\,V\,$\leftrightarrow$\,3.3\,V è affidato a cinque \textbf{74LVC4245} (lato A = Atari 5\,V, lato B = scheda 3.3\,V; direzione cablata, tranne \texttt{U19}) e a due porte \textbf{SN74HCT04} (\texttt{U23}). I TXS0108E delle revisioni precedenti sono stati eliminati (il 74LVC4245 non ha auto-sensing). Riferimenti secondo la netlist del 2026-09-01; dettaglio in \texttt{PIN-MAPPING.md}:
 \end{sloppypar}
 
 \begin{itemize}
-    \item {\bfseries U1 — Bus Dati D0--D7 (GPIO\,4--11, Bank-0 bit 4--11):} bidirezionale. Il firmware abilita le uscite con \texttt{GPIO.enable\_w1ts} solo durante i cicli di lettura che richiedono risposta dell'ESP32 (ROM \$D800--\$DFFF, RAM \$D600--\$D7FF, RAMbo \$4000--\$7FFF).
-    \item {\bfseries U2 — Bus Indirizzi A0--A7 (GPIO\,12--19, Bank-0 bit 12--19):} tutti ingressi B→A (Atari 5\,V → ESP32 3.3\,V). GPIO\,19 condivide il pad USB D-; USB CDC è disabilitato nel firmware.
-    \item {\bfseries U3 — A8--A11, PHI2, R/W\_, EXTSEL\_N, MPD (GPIO\,20--21, 35--36, 1, 2, 41, 42):} ingressi B→A per A8, A9, A10, A11, PHI2, R/W\_; uscite A→B per \texttt{EXTSEL\_N} (GPIO\,41) e \texttt{MPD} (GPIO\,42). \texttt{ARESET} (GPIO\,37) è anch'esso su U3 (uscita A→B). I GPIO\,39--42 erano riservati a JTAG: \texttt{setup()} li de-registra con \texttt{gpio\_reset\_pin()} prima di creare il Dedicated GPIO bundle.
-    \item {\bfseries U4 — Bus Indirizzi A12--A15 (GPIO\,33--34, 45--46, Bank-1):} tutti ingressi B→A (4 canali su 8 utilizzati). GPIO\,33 e GPIO\,34 si trovano sul lato opposto del QFN56 rispetto a GPIO\,45 e GPIO\,46: applicare \emph{length matching} (serpentine alla traccia più lunga) per eliminare lo skew su U4.
-    \item {\bfseries Connessioni dirette (senza level shifter, 3.3\,V):} \texttt{DEV\_SEL\_N} (GPIO\,40) → VERA /CS; \texttt{CRESET} (GPIO\,38) → VERA /RESET; \texttt{CDONE} (GPIO\,39) $\leftarrow$ VERA CDONE.
+    \item {\bfseries U19 — Bus Dati D0--D7 (GPIO\,4--11):} bidirezionale. \texttt{DIR} = NOT R/W\_ e \texttt{\textasciitilde OE\_} = NOT PHI2, entrambi tramite \texttt{U23}. Il firmware abilita le uscite ESP32 con \texttt{GPIO.enable\_w1ts} solo nei cicli che richiedono risposta dell'ESP32 (ROM \$D800--\$DFFF, RAM \$D600--\$D7FF, RAMbo \$4000--\$7FFF, D7 di \$D1FF).
+    \item {\bfseries U4 — Bus Indirizzi A0--A7 (GPIO\,12--19):} ingressi Atari$\rightarrow$ESP32. GPIO\,19 condivide il pad USB D-; USB CDC è disabilitato nel firmware.
+    \item {\bfseries U3 — Bus Indirizzi A8--A15 (GPIO\,20--21, 35--36, 33--34, 45--46):} ingressi. Applicare \emph{length matching} (serpentine alla traccia più lunga) ad A12--A15; GPIO\,33--34 e GPIO\,45--46 sono su lati opposti del QFN56.
+    \item {\bfseries U6 — PHI2, R/W\_ (GPIO\,1, 2), più D1XX, S4, S5, CCTL, REFRESH:} ingressi Atari$\rightarrow$scheda. I cinque segnali pre-decodificati sono portati a test point e \emph{non} collegati a GPIO.
+    \item {\bfseries U16 — EXTSEL\_N, MPD, ARESET (GPIO\,41, 42, 37), \texttt{\textasciitilde mVIRQ} della FPGA, più HALT, RD4, RD5:} uscite scheda$\rightarrow$Atari. HALT, RD4 e RD5 sono a test point. \textbf{L'IRQ della VERA è attualmente un'uscita push-pull sul bus} (vedere sezione~\ref{sec:hwverif}). I GPIO\,39--42 erano riservati a JTAG: \texttt{setup()} li de-registra con \texttt{gpio\_reset\_pin()} prima di creare il Dedicated GPIO bundle.
+    \item {\bfseries U5 (74HC00) — strobe VERA:} \texttt{\textasciitilde mRE} = NAND(PHI2, R/W\_), \texttt{\textasciitilde mWE} = NAND(PHI2, NOT R/W\_) verso la FPGA VERA, che richiede RD\_n e WR\_n distinti.
+    \item {\bfseries Connessioni dirette (senza level shifter, 3.3\,V):} \texttt{DEV\_SEL\_N} (GPIO\,40) $\rightarrow$ \texttt{\textasciitilde mVCS0} (VERA /CS); \texttt{CRESET} (GPIO\,38) $\rightarrow$ reset VERA; \texttt{CDONE} (GPIO\,39) $\leftarrow$ VERA CDONE.
 \end{itemize}
 
 I segnali \texttt{DEV\_SEL\_N}, \texttt{EXTSEL\_N} e \texttt{MPD} sono raggruppati nel \textbf{Dedicated GPIO output bundle} (Core 1, canali 0--2): vengono asseriti e de-asseriti in un'unica istruzione TIE Xtensa (\texttt{ee.wr\_mask\_gpio\_out}, $\approx$1\,ciclo CPU), anziché con tre scritture APB separate ($\approx$18\,cicli totali). Il segnale \texttt{PHI2} è nel bundle di ingresso (canale 0): il polling avviene via \texttt{ee.get\_gpio\_in} (1\,ciclo CPU).
@@ -171,7 +185,7 @@ I pin fisici del package QFN56 sono numerati 1--56 (più il pad GND centrale). L
 \toprule
 \textbf{Segnale} & \textbf{GPIO} & \textbf{Pin QFN56} & \textbf{IO MUX} & \textbf{Dir.} & \textbf{Note} \\
 \midrule
-\multicolumn{6}{l}{\textit{Bus dati D0--D7 — bidirezionale via TXS0108E U1 (Bank-0 bit 4--11)}} \\
+\multicolumn{6}{l}{\textit{Bus dati D0--D7 — bidirezionale via 74LVC4245 U19 (Bank-0 bit 4--11)}} \\
 D0 & 4  &  9 & GPIO4  & I/O & glitch LOW 60\,µs al power-up \\
 D1 & 5  & 10 & GPIO5  & I/O & \\
 D2 & 6  & 11 & GPIO6  & I/O & \\
@@ -181,7 +195,7 @@ D5 & 9  & 14 & GPIO9  & I/O & \\
 D6 & 10 & 15 & GPIO10 & I/O & \\
 D7 & 11 & 16 & GPIO11 & I/O & \\
 \midrule
-\multicolumn{6}{l}{\textit{Bus indirizzi A0--A7 — input via TXS0108E U2 (Bank-0 bit 12--19)}} \\
+\multicolumn{6}{l}{\textit{Bus indirizzi A0--A7 — input via 74LVC4245 U4 (Bank-0 bit 12--19)}} \\
 A0 & 12 & 17 & GPIO12       & IN & \\
 A1 & 13 & 18 & GPIO13       & IN & \\
 A2 & 14 & 19 & GPIO14       & IN & \\
@@ -191,7 +205,7 @@ A5 & 17 & 23 & GPIO17       & IN & \\
 A6 & 18 & 24 & GPIO18       & IN & \\
 A7 & 19 & 25 & USB\_D$-$    & IN & USB CDC disabilitato \\
 \midrule
-\multicolumn{6}{l}{\textit{Bus indirizzi A8--A11 e controllo — via TXS0108E U3}} \\
+\multicolumn{6}{l}{\textit{Bus indirizzi A8--A11 (U3) e controllo (U6: PHI2, R/W\_; U16: EXTSEL\_N, MPD, ARESET)}} \\
 A8  & 20 & 26 & USB\_D$+$ & IN  & USB CDC disabilitato \\
 A9  & 21 & 27 & GPIO21    & IN  & \\
 A10 & 35 & 40 & GPIO35    & IN  & Bank-1 bit\,3 \\
@@ -202,7 +216,7 @@ EXTSEL\_N & 41 & 47 & MTDI  & OUT & Dedicated GPIO output ch\,1; ex-JTAG, reclai
 MPD       & 42 & 48 & MTMS  & OUT & Dedicated GPIO output ch\,2; ex-JTAG, reclaimed \\
 ARESET   & 37 & 42 & GPIO37 & OUT & Reset sistema Atari (LOW asserito) \\
 \midrule
-\multicolumn{6}{l}{\textit{Bus indirizzi A12--A15 — input via TXS0108E U4 (Bank-1)}} \\
+\multicolumn{6}{l}{\textit{Bus indirizzi A12--A15 — input via 74LVC4245 U3 (Bank-1)}} \\
 A12 & 33 & 38 & GPIO33  & IN & Bank-1 bit\,1; length matching con A13--A15 \\
 A13 & 34 & 39 & GPIO34  & IN & Bank-1 bit\,2 \\
 A14 & 45 & 51 & GPIO45  & IN & Bank-1 bit\,13; pin di strapping, usato come A14 \\
@@ -213,6 +227,7 @@ DEV\_SEL\_N & 40 & 45 & MTDO  & OUT & VERA /CS; Dedicated GPIO output ch\,0; ex-
 CRESET     & 38 & 43 & GPIO38 & OUT & VERA /RESET \\
 CDONE      & 39 & 44 & MTCK  & IN  & VERA configurata (HIGH = OK); ex-JTAG \\
 RAMBO\_EN  &  3 &  8 & GPIO3  & IN  & RAMbo enable: pull-up 10\,k$\Omega$→VCC = presente \\
+BOOT0 / VIRQ & 0 & 5 & GPIO0 & IN & pulsante BOOT / auto-reset (rete \texttt{BOOT0}); opzionale sense \texttt{\textasciitilde mVIRQ} tramite 470\,$\Omega$ \\
 \midrule
 \multicolumn{6}{l}{\textit{Debug}} \\
 UART TX & 43 & 49 & U0TXD & OUT & Serial debug @ 115200 baud \\
@@ -256,15 +271,21 @@ di \texttt{setup()}. Al momento del campionamento dei pin di strapping GPIO\,37 
 in alta impedenza: l'ESP32 \textbf{non ha ancora asserito} la linea di reset dell'Atari.
 È la circuiteria di power-on reset dell'Atari stessa (rete RC di MMU/POKEY) che mantiene
 il pin \texttt{RESET\#} del 6502 basso, mettendo il bus indirizzi in alta impedenza.
-I level-shifter TXS0108E (U1--U4), con gli ingressi lato Atari flottanti, mantengono le
-uscite lato ESP32 in alta impedenza: i pull resistori interni dell'ESP32 determinano
-il livello finale di campionamento.
+I transceiver 74LVC4245, con gli ingressi lato Atari flottanti, \emph{non} garantiscono
+uscite in alta impedenza (non hanno auto-sensing né bus-hold): per A14 e A15 il livello
+campionato dipende dal pull-down interno dell'ESP32 contro un nodo non pilotato.
+\textbf{Da verificare sulla scheda}; se necessario aggiungere un pull-down da 10\,k$\Omega$
+lato ESP32 su GPIO\,45 e GPIO\,46.
 
 \begin{itemize}
 
   \item \textbf{GPIO\,0 — Pin\,5 \quad|\quad Boot mode \quad|\quad Pull-UP interno
         $\approx$45\,k$\Omega$}\\
-    Non connesso al bus ATARI. Il pull-up interno mantiene GPIO\,0 HIGH per tutta la
+    Rete \texttt{BOOT0}: \texttt{R33} 4.7\,k$\Omega$ verso 3V3, pulsante \texttt{SW3}, \texttt{C61}
+    100\,nF e \texttt{R54} 220\,$\Omega$ verso \texttt{Q4} (auto-reset del programmatore).
+    Non connesso al bus ATARI, salvo la modifica opzionale \texttt{\textasciitilde mVIRQ} (resistenza serie
+    470\,$\Omega$, vedere \texttt{HW-MOD-GPIO0-VIRQ.md}): in quel caso \texttt{\textasciitilde mVIRQ} deve
+    essere \textbf{alto} al reset dell'ESP32. Il pull-up mantiene GPIO\,0 HIGH per tutta la
     finestra di campionamento.
     Valore campionato: \textbf{HIGH $\rightarrow$ SPI boot dalla flash integrata}
     (comportamento corretto per il normale funzionamento).
@@ -288,10 +309,10 @@ il livello finale di campionamento.
 
   \item \textbf{GPIO\,45 — Pin\,51 \quad|\quad VDD\_SPI voltage \quad|\quad Pull-DOWN
         interno $\approx$5\,k$\Omega$}\\
-    Connesso al bit A14 del bus indirizzi ATARI tramite TXS0108E U4
+    Connesso al bit A14 del bus indirizzi ATARI tramite 74LVC4245 U3
     (5\,V\,$\leftrightarrow$\,3.3\,V). Al power-on il \texttt{RESET\#} del 6502 è basso
-    $\rightarrow$ il pin A14 lato Atari è in alta impedenza $\rightarrow$ U4 mantiene
-    l'uscita lato ESP32 in alta impedenza $\rightarrow$ il pull-down interno porta
+    $\rightarrow$ il pin A14 lato Atari è in alta impedenza; l'uscita lato ESP32 di U3
+    non è pilotata in modo garantito (vedere sopra) e il pull-down interno porta
     GPIO\,45 a LOW.\\
     Valore campionato: \textbf{LOW $\rightarrow$ VDD\_SPI alimentato dal LDO interno
     ($\approx$1.8\,V)}.
@@ -306,9 +327,9 @@ il livello finale di campionamento.
 
   \item \textbf{GPIO\,46 — Pin\,52 \quad|\quad ROM messages (UART0) \quad|\quad Pull-DOWN
         interno $\approx$5\,k$\Omega$}\\
-    Connesso al bit A15 del bus indirizzi ATARI tramite TXS0108E U4. Scenario di
+    Connesso al bit A15 del bus indirizzi ATARI tramite 74LVC4245 U3. Scenario di
     power-on identico a GPIO\,45: 6502 in reset $\rightarrow$ A15 alta impedenza
-    $\rightarrow$ U4 in alta impedenza $\rightarrow$ pull-down $\rightarrow$ GPIO\,46 LOW.\\
+    $\rightarrow$ ingresso U3 non pilotato $\rightarrow$ pull-down $\rightarrow$ GPIO\,46 LOW.\\
     Valore campionato: \textbf{LOW $\rightarrow$ messaggi ROM del primo stage su UART0
     disabilitati}. Corretto per la produzione: il firmware inizializza UART0 autonomamente
     tramite \texttt{Serial.begin()} e lo usa esclusivamente per l'output di debug.
@@ -438,6 +459,7 @@ Di seguito è riportato un estratto aggiornato del file \texttt{main.cpp} che mo
 #define PIN_EXTSEL_N    41   /* GPIO41, pin 47  -- Dedicated out ch 1 */
 #define PIN_MPD         42   /* GPIO42, pin 48  -- Dedicated out ch 2 */
 #define PIN_RAMBO_EN     3   /* GPIO3,  pin  8  -- RAMbo enable  */
+#define PIN_VIRQ_N       0   /* GPIO0,  pin  5  -- ~mVIRQ sense (opzionale) */
 
 /* Dedicated GPIO channel masks */
 #define DEDIC_IN_PHI2       (1u << 0)
@@ -492,11 +514,13 @@ static void IRAM_ATTR MonitorTask(void *arg)
         /* 3. Asserzione segnali controllo (1 istruzione TIE) */
         {
             uint8_t ctrl = DEDIC_OUT_CTRL_IDLE;
+            /* Registri VERA sempre presenti, anche con latch = 0 */
+            if (is_vera_range)
+                ctrl &= ~(DEDIC_OUT_DEVSELN | DEDIC_OUT_EXTSEL);
             if (selected) {
                 if ((is_d1xx && !is_vcs_latch) || is_d6xx)
                     ctrl &= ~DEDIC_OUT_EXTSEL;
                 if (is_d8xx)   ctrl &= ~DEDIC_OUT_MPD;
-                if (is_vera_range) ctrl &= ~DEDIC_OUT_DEVSELN;
             }
             if (rambo_active && is_rambo_win)
                 ctrl &= ~DEDIC_OUT_EXTSEL;
@@ -509,6 +533,11 @@ static void IRAM_ATTR MonitorTask(void *arg)
                 bus_drive(pbi_driver[addr & 0x7FFu]);
             else if (selected && is_d6xx)
                 bus_drive(ram_pbi[addr & 0x1FFu]);
+#if VERA_HAS_VIRQ_SENSE
+            /* $D1FF in lettura: D7 = IRQ VERA, D0-D6 Hi-Z (a prescindere dal latch) */
+            if (is_vcs_latch && !(g_lo & (1UL << PIN_VIRQ_N)))
+                bus_drive_d7();
+#endif
             if (rambo_active && is_rambo_win) {
                 uint8_t bank = ((PORTB>>2)&3u)|((PORTB>>3)&0xCu);
                 bus_drive(extended_rambo_256k[((uint32_t)bank<<14)|(addr&0x3FFFu)]);
@@ -518,7 +547,7 @@ static void IRAM_ATTR MonitorTask(void *arg)
         else {
             uint8_t data = decode_data(GPIO.in);
             if (is_vcs_latch) {
-                selected = (data == PBI_DEV_ID);
+                selected = ((data & PBI_DEV_ID) != 0u);   /* solo il proprio bit */
             }
             /* Snoop PIA 6520 (passivo -- il 6520 fisico risponde; ESP32 solo osserva) */
             if (addr == 0xD303u) PBCTL = data;
@@ -557,13 +586,13 @@ La logica principale del firmware è contenuta nel \texttt{MonitorTask}, che vie
     \node[proc, below=of init]       (wait_phi2) {Spin-wait salita PHI2 + snapshot \texttt{GPIO.in}/\texttt{GPIO.in1.val}};
     \node[proc, below=of wait_phi2]  (decode)    {Decode: addr(A0--A15), is\_read,\\is\_d1xx, is\_d6xx, is\_d8xx, is\_vera\_range,\\is\_rambo\_win, is\_vcs\_latch};
 
-    \node[test, below=of decode]     (check_sel) {selected \&\& (D1xx o RAM)?};
+    \node[test, below=of decode]     (check_sel) {is\_vera\_range o (selected \&\& (D1xx o RAM))?};
     \node[proc, below=of check_sel]  (extsel)    {EXTSEL\_N LOW (per-ciclo)};
 
     \node[test, below=of extsel]     (check_mpd) {selected \&\& is\_rom?};
     \node[proc, below=of check_mpd]  (mpd)       {MPD LOW};
 
-    \node[test, below=of mpd]        (check_vera){selected \&\& is\_vera\_range?};
+    \node[test, below=of mpd]        (check_vera){is\_vera\_range? (sempre)};
     \node[proc, below=of check_vera] (vera_cs)   {DEV\_SEL\_N LOW (VERA CS)};
 
     \node[test, below=of vera_cs]    (check_rw)  {is\_read?};
@@ -607,6 +636,39 @@ La logica principale del firmware è contenuta nel \texttt{MonitorTask}, che vie
 \label{fig:flowchart}
 \end{figure}
 
+% --- SEZIONE: VERIFICHE HARDWARE ---
+\section{Verifiche hardware emerse dal lavoro su driver ed emulatore}
+\label{sec:hwverif}
+Il lavoro sul driver 6502 e sull'emulatore (confrontato con l'HDL della VERA 47.0.2) ha evidenziato requisiti e rischi per la scheda; il dettaglio, con il piano di bring-up, è in \texttt{VERA-ATARI-HW-REQUIREMENTS.md}. I punti seguenti derivano dalla \emph{netlist} (nessuna simulazione elettrica né misura) e vanno confermati sullo schema aggiornato e con l'oscilloscopio.
+
+\subsection*{Cosa richiede la VERA sul bus}
+\begin{itemize}
+  \item RD\_n e WR\_n \textbf{distinti}: \texttt{bus\_read = !cs\_n \&\& wr\_n \&\& !rd\_n}, \texttt{bus\_write = !cs\_n \&\& !wr\_n}.
+  \item In scrittura l'indirizzo è campionato sul fronte di \emph{salita} di \texttt{bus\_write} e il \textbf{dato sul fronte di discesa} (fine scrittura): il dato deve restare stabile \emph{dopo} la salita di WR\_n/CS\_n (tempo di hold).
+  \item In lettura gli effetti collaterali (autoincremento, prefetch) avvengono sulla fine di RD\_n (circa 120\,ns di sincronizzazione): ogni attivazione di RD\_n è un evento, quindi niente cicli doppi (RMW, dummy read) sulle porte DATA0/DATA1.
+  \item \textbf{Nessun pin di reset}: solo un POR interno (128 cicli di \texttt{clk25}). La scrittura di CTRL bit\,7 (\$D105) \textbf{riconfigura l'intero FPGA} (VRAM persa, bus morto $\approx$100\,ms).
+  \item \texttt{IRQ\_n} è \textbf{push-pull} a livello. I registri FX sono in sola scrittura (la lettura restituisce \texttt{'V',47,0,0}).
+\end{itemize}
+
+\subsection*{Punti aperti sulla scheda attuale}
+\begin{itemize}
+  \item \textbf{Priorità A --- possibile contesa sul bus dati.} \texttt{U19} ha \texttt{\textasciitilde OE\_} = NOT(PHI2) \emph{senza} dipendere dalla selezione: in ogni lettura (anche di RAM/ROM Atari) il transceiver pilota il bus Atari dal lato scheda, dove GPIO ESP32 e uscite FPGA sono Hi-Z. \texttt{\textasciitilde OE\_} deve essere attivo solo quando la scheda risponde, oppure in scrittura.
+  \item \textbf{Priorità A --- hold del dato sul fronte di salita di WR\_n.} \texttt{\textasciitilde mWE} nasce da un 74HC00 a 3.3\,V; lo stesso fronte di discesa di PHI2 disabilita \texttt{U19} tramite \texttt{U23}: il dato può sparire quasi nello stesso istante in cui WR\_n sale. Usare una porta più veloce (74LVC00/74AHC00) e rilasciare \texttt{U19} dopo WR\_n; verificare con l'analizzatore logico.
+  \item \textbf{Priorità A --- IRQ push-pull sul bus.} \texttt{\textasciitilde mVIRQ} arriva a \texttt{U16} e quindi al pin B del connettore ECI. La linea IRQ Atari è open-collector condivisa: serve uno stadio open-drain tollerante a 5\,V (\texttt{74LVC1G07}, un componente, con \texttt{U16} pin\,6 scollegato dalla rete \texttt{\textasciitilde IRQ}).
+  \item \textbf{Priorità A --- bit IRQ su \$D1FF.} In lettura di \$D1FF la scheda deve pilotare solo il proprio bit (D7). Il firmware lo fa con \texttt{VERA\_HAS\_VIRQ\_SENSE=1}, leggendo \texttt{\textasciitilde mVIRQ} su GPIO0 tramite una resistenza da 470\,$\Omega$ (filo di modifica descritto in \texttt{HW-MOD-GPIO0-VIRQ.md}); il pin è di strapping e \texttt{\textasciitilde mVIRQ} deve essere alto al reset dell'ESP32.
+\end{itemize}
+
+\subsection*{Sequenza di reset e configurazione}
+Il firmware già tiene \texttt{ARESET} e \texttt{CRESET} bassi in \texttt{setup()}, rilascia \texttt{CRESET}, attende \texttt{CDONE} e solo allora rilascia \texttt{ARESET}. La sequenza vale \textbf{solo al power-on}: non deve essere ripetuta se \texttt{CDONE} scende dopo una riconfigurazione (CTRL bit\,7). \texttt{ARESET} deve essere open-drain con pull-up e il tasto RESET Atari deve continuare a funzionare. Un ritardo di circa 1\,ms dopo \texttt{CDONE} copre il POR interno della VERA.
+
+\subsection*{Modifiche al firmware ESP32}
+\begin{itemize}
+  \item I \textbf{registri VERA} (\$D100--\$D11F) rispondono con il latch a 0 (vedere sezione~2): prima il firmware asseriva \texttt{DEV\_SEL\_N} solo con la scheda selezionata, quindi dopo l'\texttt{INIT} i registri non erano più raggiungibili.
+  \item Il \textbf{latch} usa solo il proprio bit (\texttt{data \& 0x80}).
+  \item Il \textbf{trace per registro} è compilato solo con \texttt{VERA\_TRACE\_REGS=1}: \texttt{log\_send()} nel loop del bus costa $\approx$1\,\textmu s, più di un ciclo 6502 (559\,ns).
+  \item La \textbf{ROM 6502} (\texttt{6502/src/vera\_pbi\_handler.s}) è l'handler corrente: \texttt{IRQVECTOR} conferma gli IRQ, \texttt{WAIT\_VERA} attende fino a $\approx$0.7\,s il byte \texttt{'V'} del DCSEL\,63 e l'\texttt{INIT} salta lo schermo se la VERA non risponde.
+\end{itemize}
+
 % --- SEZIONE 7: CONCLUSIONE ---
 \section{Conclusione}
 L'analisi conferma che l'architettura hardware e software del progetto è solida e performante. L'ESP32-S3FN8 a 240\,MHz garantisce circa 67 cicli di clock nella finestra critica di PHI2 alto (279\,ns), ampiamente sufficienti per l'intera catena di decodifica e pilotaggio del bus. Le tecniche di programmazione a basso livello — accesso diretto ai registri GPIO (\texttt{GPIO.in}, \texttt{GPIO.in1.val}, \texttt{GPIO.out\_w1ts}/\texttt{w1tc}, \texttt{GPIO.out1\_w1tc}/\texttt{out1\_w1ts}), funzioni in IRAM, LUT pre-calcolata per il bus dati — garantiscono un percorso critico tipicamente inferiore a 20 cicli.
@@ -615,15 +677,15 @@ L'analisi conferma che l'architettura hardware e software del progetto è solida
 La revisione del firmware e della mappatura hardware ha chiarito e corretto i seguenti aspetti:
 
 \begin{itemize}
-  \item \textbf{EXTSEL\_N} (GPIO\,41, Dedicated GPIO output ch\,1) è un segnale \emph{per-ciclo}: viene asserito basso quando il device è selezionato (\texttt{selected=true}) e l'accesso ricade in \$D100--\$D1FE (escluso \$D1FF) oppure in \$D600--\$D7FF; oppure quando RAMbo è attivo e l'accesso è nella finestra \$4000--\$7FFF (indipendentemente da \texttt{selected}). Viene sempre deassertato al termine del ciclo. Non è un segnale persistente legato allo stato del latch VCS.
+  \item \textbf{EXTSEL\_N} (GPIO\,41, Dedicated GPIO output ch\,1) è un segnale \emph{per-ciclo}: viene asserito basso per gli accessi ai registri VERA \$D100--\$D11F (sempre), quando il device è selezionato (\texttt{selected=true}) e l'accesso ricade in \$D100--\$D1FE (escluso \$D1FF) oppure in \$D600--\$D7FF, e quando RAMbo è attivo e l'accesso è nella finestra \$4000--\$7FFF (indipendentemente da \texttt{selected}). Viene sempre deassertato al termine del ciclo. Non è un segnale persistente legato allo stato del latch VCS.
 
   \item \textbf{MPD (Math Pack Disable)} (GPIO\,42, Dedicated GPIO output ch\,2) viene asserito basso esclusivamente quando il device è selezionato e l'accesso riguarda la ROM interna \$D800--\$DFFF. Non viene asserito per accessi alla RAM, a VERA o alla finestra RAMbo. Viene asserito insieme a EXTSEL\_N e DEV\_SEL\_N in un'unica istruzione TIE (\texttt{cpu\_ll\_write\_dedic\_gpio\_mask}).
 
   \item \textbf{RAM interna PBI 512\,B} (\$D600--\$D7FF): indirizzata su 9 bit via \texttt{ram\_pbi[addr \& 0x1FFu]}. Rilevata per confronto diretto dell'indirizzo a 16\,bit (\texttt{addr >= 0xD600u \&\& addr <= 0xD7FFu}): non esiste più il segnale hardware \texttt{RAM\_SEL\_N}. GPIO\,40 (MTDO, QFN56 pin\,45) è ora \texttt{DEV\_SEL\_N} (VERA chip select).
 
-  \item \textbf{Decodifica indirizzi software (nessuna logica 74HCT/74LVC):} il firmware precedente utilizzava IC 74HCT e 74LVC per pre-decodificare gli indirizzi e generare segnali (\texttt{D1XX\_N}, \texttt{ROM\_SEL\_N}, \texttt{RAM\_SEL\_N}) come ingressi ESP32. Nel firmware attuale questi segnali sono stati eliminati: l'ESP32 legge A0--A15 direttamente (tramite i quattro TXS0108E U1--U4, usati solo per adattamento di livello 5\,V\,$\leftrightarrow$\,3.3\,V) e decodifica tutto in software tramite \texttt{decode\_addr()}.
+  \item \textbf{Decodifica indirizzi software (nessuna logica 74HCT/74LVC):} il firmware precedente utilizzava IC 74HCT e 74LVC per pre-decodificare gli indirizzi e generare segnali (\texttt{D1XX\_N}, \texttt{ROM\_SEL\_N}, \texttt{RAM\_SEL\_N}) come ingressi ESP32. Nel firmware attuale questi segnali sono stati eliminati: l'ESP32 legge A0--A15 direttamente (tramite i 74LVC4245 U3, U4, U6, U16 e U19, usati solo per adattamento di livello 5\,V\,$\leftrightarrow$\,3.3\,V) e decodifica tutto in software tramite \texttt{decode\_addr()}.
 
-  \item \textbf{Ruolo attuale di U3:} il TXS0108E U3 trasporta A8, A9, A10, A11 (ingressi B→A), PHI2, R/W\_ (ingressi B→A), EXTSEL\_N e MPD (uscite A→B) e ARESET (uscita A→B). Tutti gli 8 canali di U3 sono occupati; nessun canale è disponibile. La quarta istanza di TXS0108E (U4) è dedicata esclusivamente a A12--A15.
+  \item \textbf{Ripartizione dei transceiver (netlist 2026-09-01):} \texttt{U4} porta A0--A7 e \texttt{U3} porta A8--A15 (ingressi Atari$\rightarrow$ESP32); \texttt{U6} porta PHI2, R/W\_ (e a test point D1XX, S4, S5, CCTL, REFRESH); \texttt{U16} porta EXTSEL\_N, MPD, ARESET (uscite) e l'IRQ della VERA; \texttt{U19} è il bus dati bidirezionale. Le versioni precedenti di questo documento e di \texttt{PIN-MAPPING.md} scambiavano \texttt{U6} e \texttt{U16}.
 
   \item \textbf{Snooping passivo della PIA 6520 — PBCTL\,(\$D303) e PORTB\,(\$D301):}
   il chip \textbf{6520 PIA è fisicamente presente} sulla scheda madre dell'Atari e
@@ -669,8 +731,8 @@ La revisione del firmware e della mappatura hardware ha chiarito e corretto i se
 
 \begin{sloppypar}
 Il firmware supporta le due modalità (\texttt{VERA\_BOARD\_IS\_PBI=1} PBI,
-\texttt{VERA\_BOARD\_IS\_PBI=0} CCTL) in un unico ambiente di build
-(\texttt{esp32s3fn8}), senza duplicazione di codice. La tabella dei pin fisici
+\texttt{VERA\_BOARD\_IS\_PBI=0} CCTL) con ambienti di build dedicati
+(\texttt{esp32s3fn8}, \texttt{esp32s3fn8-cctl}, \texttt{esp32s3fn8-virq}), senza duplicazione di codice. La tabella dei pin fisici
 del package QFN56 consente di realizzare il PCB direttamente dalla documentazione
 senza ambiguità tra numero GPIO logico e pad fisico.
 \end{sloppypar}
