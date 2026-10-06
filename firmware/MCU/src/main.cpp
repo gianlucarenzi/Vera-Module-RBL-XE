@@ -81,9 +81,7 @@ static const uint8_t DBUS_PINS[8] = { 4, 5, 6, 7, 8, 9, 10, 11 };
  *
  * GPIO0  —  Pin  5  |  Boot mode selection  |  Internal weak PULL-UP ~45 kΩ
  *   Net BOOT0: R33 4.7 kΩ pull-up, BOOT button SW3, C61, and R54 -> Q4 (auto-reset
- *   from the programmer).  Not wired to any Atari signal, except with the optional
- *   ~mVIRQ rework (470 Ω series resistor, see HW-MOD-GPIO0-VIRQ.md and
- *   VERA_HAS_VIRQ_SENSE), where ~mVIRQ must be HIGH at reset.
+ *   from the programmer).  Not wired to any Atari signal.
  *   Pull-up holds GPIO0 HIGH throughout the strapping window.
  *   Sampled value: HIGH → SPI boot from embedded flash (correct for normal
  *   operation).  LOW would enter UART/JTAG download mode and halt the system.
@@ -197,13 +195,6 @@ static inline uint8_t IRAM_ATTR decode_data(uint32_t lo)
 #define VERA_TRACE_REGS 0
 #endif
 
-/* Optional: ~mVIRQ wired to GPIO0 (bodge) so that $D1FF reads can show the
- * VERA IRQ on D7 (PBI interrupt identification).  See VERA-ATARI-HW-REQUIREMENTS.md
- * §2.3/§2.4.  GPIO0 is a strapping pin: ~mVIRQ idles HIGH (boot from flash). */
-#ifndef VERA_HAS_VIRQ_SENSE
-#define VERA_HAS_VIRQ_SENSE 0
-#endif
-#define PIN_VIRQ_N        0
 /* VERA_BOARD_IS_PBI is injected by the build system (-D flag in platformio.ini) */
 #ifndef VERA_BOARD_IS_PBI
 #define VERA_BOARD_IS_PBI 0x01u  /* fallback: PBI */
@@ -315,15 +306,6 @@ static inline void IRAM_ATTR bus_drive(uint8_t val)
 {
     GPIO.out = lut_drive[val];
     GPIO.enable_w1ts = DBUS_MASK;
-}
-
-/**
- * Drive only D7 high (PBI $D1FF IRQ identification); D0-D6 stay High-Z.
- */
-static inline void IRAM_ATTR bus_drive_d7(void)
-{
-    GPIO.out = (1UL << DBUS_PINS[7]);
-    GPIO.enable_w1ts = (1UL << DBUS_PINS[7]);
 }
 
 /**
@@ -506,14 +488,6 @@ static void IRAM_ATTR MonitorTask(void *arg)
                 log_send(EVT_REG, off8, reg_data, fl);
             }
 #endif
-#if VERA_HAS_VIRQ_SENSE
-            /* PBI interrupt identification: $D1FF read returns one bit per
-             * device.  Drive our bit (D7) when ~mVIRQ is asserted, whether or
-             * not the card is selected; D0-D6 stay High-Z. */
-            if (vera_board_is_pbi && is_vcs_latch &&
-                !(g_lo & (1UL << PIN_VIRQ_N)))
-                bus_drive_d7();
-#endif
             if (rambo_active && is_rambo_window)
             {
                 uint8_t bank = ((PORTB >> 2) & 0x03u) | ((PORTB >> 3) & 0x0Cu);
@@ -658,13 +632,6 @@ void setup(void)
     cfg.pin_bit_mask = (1ULL << PIN_PHI2) | (1ULL << PIN_RW) | DBUS_MASK | ABUS_LO_MASK;
     gpio_config(&cfg);
 
-#if VERA_HAS_VIRQ_SENSE
-    /* ~mVIRQ sense input on GPIO0 (strapping pin, internal pull-up) */
-    cfg.pull_up_en   = GPIO_PULLUP_ENABLE;
-    cfg.pin_bit_mask = (1ULL << PIN_VIRQ_N);
-    gpio_config(&cfg);
-    cfg.pull_up_en   = GPIO_PULLUP_DISABLE;
-#endif
 
     /* Bank 1 inputs: A10-A15, CDONE */
     cfg.pin_bit_mask = (1ULL << PIN_A10) | (1ULL << PIN_A11) |

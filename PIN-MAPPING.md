@@ -4,8 +4,7 @@ Target MCU: **ESP32-S3FN8** — QFN56 package, 45 GPIOs, 8 MB in-package Quad SP
 512 KB SRAM, dual-core Xtensa LX7 @ 240 MHz.
 
 > **Documenti collegati:** requisiti e verifiche hardware emersi dal lavoro su driver ed emulatore
-> in [`VERA-ATARI-HW-REQUIREMENTS.md`](VERA-ATARI-HW-REQUIREMENTS.md); promemoria del filo di
-> modifica per l'IRQ in [`HW-MOD-GPIO0-VIRQ.md`](HW-MOD-GPIO0-VIRQ.md).
+> in [`VERA-ATARI-HW-REQUIREMENTS.md`](VERA-ATARI-HW-REQUIREMENTS.md).
 >
 > **Nota sui riferimenti:** nella netlist (2026-09-01) `U6` è il transceiver Atari→scheda
 > (PHI2, R/W, D1XX, S4, S5, CCTL, REFRESH) e `U16` quello scheda→Atari (EXTSEL, MPD, RESET,
@@ -17,7 +16,7 @@ Target MCU: **ESP32-S3FN8** — QFN56 package, 45 GPIOs, 8 MB in-package Quad SP
 
 | GPIO | QFN56 pin | Signal | Risk |
 |------|-----------|--------|------|
-| **GPIO 0** | 5 | BOOT0 | Strapping pin (boot mode) — **non è NC**: rete `BOOT0` con `R33` 4,7 kΩ → 3V3, pulsante `SW3`, `C61` 100 nF e `R54` 220 Ω verso `Q4` (auto-reset del programmatore). LOW al reset = modalità download. Opzionale: ingresso di sense per `~mVIRQ` tramite 470 Ω, vedere `HW-MOD-GPIO0-VIRQ.md`. |
+| **GPIO 0** | 5 | BOOT0 | Strapping pin (boot mode) — **non è NC**: rete `BOOT0` con `R33` 4,7 kΩ → 3V3, pulsante `SW3`, `C61` 100 nF e `R54` 220 Ω verso `Q4` (auto-reset del programmatore). LOW al reset = modalità download. |
 | **GPIO 3** | 8 | RAMBO\_EN | Strapping pin (JTAG source, no internal pull) — usato come **RAMbo hardware enable**: pull-up 10 kΩ → VCC = RAMbo presente; pull-down 10 kΩ → GND = assente. Letto una volta in `setup()`. |
 | **GPIO 26–32** | 28, 30–35 | — | Hard-wired to in-package Quad SPI flash (FN8 variant). **Never connect externally**. |
 | **GPIO 45** | 51 | A14 | Strapping pin (VDD_SPI select) — internal weak pull-down (~5 kΩ). Connesso ad A14 via 74LVC4245APW_118 U3. Al power-on il 6502 è in reset → A14 alta impedenza → U3 flotta → pull-down → **LOW → VDD_SPI da LDO interno (~1.8 V)**. Sicuro per variante FN8 (flash on-package). |
@@ -301,6 +300,13 @@ logica di un transceiver dati 6502 classico: direzione verso l'Atari durante i c
 lettura del 6502, verso l'ESP32 durante i cicli di scrittura), non più dall'auto-sensing
 del TXS0108E.
 
+> **`~OE_` (pin 22): da modificare.** Oggi è `NOT(PHI2)` (via `U23`), quindi `U19` pilota il bus Atari in
+> ogni lettura, anche di memorie non della scheda. Deve diventare
+> `~OE_ = NAND(PHI2, NAND(R/W, AND3(DEV_SEL_N, EXTSEL_N, MPD)))`: attivo in scrittura e nelle
+> sole letture a cui la scheda risponde (non va collegato a `CDONE`). Dettaglio, parti e tempi in
+> `VERA-ATARI-HW-REQUIREMENTS.md` §2.1. Nella netlist `VCCA` (pin 1) di `U19` è a 5 V: il lato "A" di
+> questa tabella (3,3 V) e il lato "B" (5 V) vanno **verificati** sullo schema.
+
 | Canale | Lato A (3.3 V, ESP32-S3) | Lato B (5 V, Atari) |
 |---|---|---|
 | A0/B0 | GPIO 4  (pin  9) — D0 | Atari D0 |
@@ -352,7 +358,7 @@ Riferimento rapido ESP32-S3FN8 QFN56 (56 pin segnale + pad GND centrale).
 | 2   | 3V3 | 3.3 V |
 | 3   | EN (CHIP\_EN) | Pull-up 10 kΩ a 3.3 V |
 | 4   | — | (riservato / NC) |
-| 5   | GPIO 0 | BOOT0 (pulsante BOOT / auto-reset, pull-up `R33`); opzionale sense `~mVIRQ` via 470 Ω — strapping |
+| 5   | GPIO 0 | BOOT0 (pulsante BOOT / auto-reset, pull-up `R33`) — strapping |
 | 6   | GPIO 1 | PHI2 input (via U6) |
 | 7   | GPIO 2 | R/W\_ input (via U6) |
 | 8   | GPIO 3 | RAMBO\_EN — pull-up 10 kΩ → VCC = RAMbo presente; pull-down 10 kΩ → GND = assente |

@@ -58,10 +58,41 @@ dell'Atari dal lato scheda, dove i GPIO dell'ESP32 e le uscite dell'FPGA sono Hi
 pilotati. Un 74LVC4245 non ha bus-hold, quindi la contesa con RAM/ROM sul bus è probabile,
 con possibili errori di lettura in tutto il sistema.
 
-Richiesta: `~OE_` di `U19` deve essere attivo **solo** quando la scheda risponde (registri VERA,
-RAM `$D600-$D7FF`, ROM `$D800-$DFFF`), oppure in scrittura (Atari→scheda). Per esempio
-`~OE_ = ~(PHI2 & (sel_scheda | scrittura))`, dove `sel_scheda` è `DEV_SEL_N`/`EXTSEL_N`/
-decodifica ROM-RAM. Se la scheda attuale non ha un gating simile altrove, va aggiunto.
+Richiesta: `~OE_` di `U19` deve essere attivo **solo** quando la scheda risponde in lettura
+(registri VERA, RAM `$D600-$D7FF`, ROM `$D800-$DFFF`, finestra RAMbo), oppure in scrittura
+(Atari→scheda, dove `U19` pilota solo il lato scheda). **Non** va collegato a `CDONE`: quello
+segnala solo la configurazione dell'FPGA ed è già usato per rilasciare `ARESET`. Il gating è
+ciclo per ciclo.
+
+I segnali che indicano "la scheda risponde" esistono già: il firmware abbassa `DEV_SEL_N` (registri
+VERA), `EXTSEL_N` (RAM `$D6xx`, RAMbo) e `MPD` (ROM `$D800`) quando la scheda risponde, e li rialza a
+fine ciclo. Quindi:
+
+```
+~OE_ = NOT( PHI2 AND ( NOT R/W   OR   ~DEV_SEL_N OR ~EXTSEL_N OR ~MPD ) )
+```
+
+Con porte a 3,3 V:
+
+```
+A    = AND3(DEV_SEL_N, EXTSEL_N, MPD)    ; 1 quando nessuno risponde
+B    = NAND(R/W, A)                       ; 1 se scrittura oppure la scheda risponde
+~OE_ = NAND(PHI2, B)                      ; verso U19 pin 22 (al posto di NOT(PHI2))
+```
+
+Parti: un `74LVC11` (AND a tre ingressi) e due NAND. Una NAND è la quarta porta libera di `U5`
+(pin 12 e 13, oggi a GND) se `U5` diventa un 74LVC00 come richiesto in §2.2; l'altra può essere un
+`74LVC1G00`. `NOT R/W` esiste già (`U23` pin 2, che pilota `DIR`); `DIR` resta invariato.
+Il pin 22 non deve più essere collegato a `U23` pin 4.
+
+Da controllare:
+- **Tempi.** `DEV_SEL_N`, `EXTSEL_N` e `MPD` vengono asseriti dall'ESP32 dopo la salita di PHI2
+  (latenza del firmware più i ritardi di porta): `~OE_` si abbassa in ritardo. Il dato in
+  lettura deve comunque essere valido alla CPU prima della discesa di PHI2 meno il suo tempo di
+  setup. Da misurare con l'oscilloscopio.
+- **`$D1FF` in lettura non abilita `U19`** (nessun segnale di risposta è asserito): è voluto, vedere §2.4.
+- **Scritture.** `U19` resta abilitato in ogni scrittura: l'ESP32 deve vedere tutte le scritture
+  (`$D301`, `$D303`, latch `$D1FF`, finestra RAMbo).
 
 ### 2.2 [A] Hold del dato sul fronte di salita di WR_n — VERIFICA
 
@@ -121,28 +152,36 @@ o SC-70-5), alimentato a 3,3 V:
 `~mVIRQ`: funziona come OR cablato, ma il livello basso risulta VOL(FPGA) + Vf (circa 0,6-0,7 V)
 vicino al limite TTL di 0,8 V, quindi sconsigliato.
 
+**Gestione dell'IRQ.** Con lo stadio open-drain basta un gancio software sul vettore IRQ (vedere §2.4):
+non serve nessun collegamento aggiuntivo all'ESP32.
+
 **Cosa NON fare.** Non lasciare l'uscita push-pull verso il bus, non aggiungere un pull-up a
 5 V sulla scheda (la linea ha già il suo) e non usare un 74LVC4245 per questo segnale: non ha
 uscite open-drain.
 
-### 2.4 [A] Presenza del bit IRQ su `$D1FF` in lettura
+### 2.4 [A] Identificazione dell'IRQ: via software, non tramite `$D1FF`
 
-La PBI richiede che il device pilota il **proprio bit** (qui D7) di `$D1FF` in lettura per
-dire "ho richiesto io l'IRQ" (l'OS legge `$D1FF & PDIMSK` per sapere quale ROM chiamare).
-Gli altri bit devono restare Hi-Z. L'emulatore lo modella (`PBI_VERAX16_D1ffGetByte`).
+**Perché non tramite `$D1FF`.** Il PBI prevede che ogni device pilota il proprio bit (la VERA: D7) in
+lettura di `$D1FF`, con gli altri bit Hi-Z, e che l'OS legga `$D1FF & PDIMSK` per scegliere la ROM da
+chiamare. Con la scheda attuale non è realizzabile:
+- `U19` è un 74LVC4245: abilita **tutti e otto** i canali o nessuno. Pilotare solo D7 dal lato ESP32
+  lascerebbe D0-D6 del lato scheda non pilotati, e `U19` li porterebbe sul bus Atari a un livello
+  casuale, in contesa con i bit di eventuali altri device PBI. Con la regola di §2.1 `U19` non viene
+  nemmeno abilitato per `$D1FF`.
+- Tutti i GPIO dell'ESP32 sono assegnati (`PIN-MAPPING.md` §7): `~mVIRQ` non arriva all'ESP32, salvo
+  un filo su GPIO0 (rete `BOOT0`, pin di strapping), che richiederebbe comunque un buffer tri-state
+  separato per D7. Per questo il filo `~mVIRQ`→GPIO0 e l'opzione firmware `VERA_HAS_VIRQ_SENSE` sono
+  stati **eliminati** (il documento `HW-MOD-GPIO0-VIRQ.md` non esiste più).
 
-Nella scheda attuale:
-- tutti i GPIO dell'ESP32 sono assegnati (`PIN-MAPPING.md` §7), quindi `~mVIRQ` non è letto dal firmware;
-- il firmware non pilotava D7 in lettura di `$D1FF`.
+**Soluzione adottata: gancio software sul vettore IRQ.** I registri VERA sono sempre leggibili
+(§2.5b). Un programma che usa gli IRQ della VERA aggancia `VIMIRQ` (`$0216`): legge `ISR` e `IEN`,
+se `ISR & IEN` ha bit attivi conferma VSYNC/LINE/SPRCOL scrivendo 1 in `ISR` e maschera AFLOW in
+`IEN`, altrimenti passa il controllo al gestore precedente. Serve solo lo stadio open-drain di §2.3 sulla
+linea IRQ. L'OS **non** viene più usato per smistare l'IRQ: `PDIMSK` (`$0249`) resta a 0 e
+`IRQVECTOR` della ROM PBI (`$D808`) non verrà chiamato.
 
-**Firmware (fatto, disattivato di default).** `main.cpp` ora, con `-DVERA_HAS_VIRQ_SENSE=1`,
-legge `~mVIRQ` su **GPIO0** e pilota solo D7 (D0-D6 restano Hi-Z) a ogni lettura di `$D1FF`
-con IRQ attivo, a prescindere dal latch. Serve un **filo di modifica** da `~mVIRQ` (lato
-3,3 V, a monte del nuovo stadio open-drain) al pin 5 dell'ESP32 (GPIO0). GPIO0 è un pin di
-strapping: `~mVIRQ` deve essere **alto** al reset dell'ESP32 (a riposo lo è, per `R65`), altrimenti
-l'ESP32 entra in modalità download. In alternativa, una porta tri-state (`~mVIRQ` → D7, abilitata
-da `$D1FF & PHI2 & R/W`) senza usare GPIO. Oggi il software non abilita nessun IRQ della VERA,
-quindi la priorità è bassa finché non serve; va però deciso prima di usare VSYNC/LINE.
+Stato: oggi nessun programma abilita `IEN`, quindi non c'è ancora il gancio IRQ nei test; va
+scritto quando serve (vedere l'elenco delle attività software).
 
 ### 2.5 [B] Scrittura `$D1FF`: solo il proprio bit — **corretto nel firmware**
 
@@ -232,7 +271,8 @@ Il driver e i test già le seguono, ma valgono per qualunque programma futuro:
 3. Non scrivere `$80` in `$D105` (riconfigurazione dell'FPGA).
 4. Non leggere i registri FX: sono in sola scrittura (restituiscono `'V',47,0,0`).
 5. Niente sincronismo supposto con il VBI Atari.
-6. Dopo il reset Atari la VERA mantiene tutto lo stato: l'handler `INIT` ne riscrive solo una
+6. Gli IRQ della VERA si gestiscono agganciando `VIMIRQ` (`$0216`), non via `$D1FF`/`PDIMSK` (§2.4).
+7. Dopo il reset Atari la VERA mantiene tutto lo stato: l'handler `INIT` ne riscrive solo una
    parte. Un programma che lascia FX o IEN attivi lascia lo stato anche al riavvio.
 
 ---
@@ -250,7 +290,7 @@ Il driver e i test già le seguono, ma valgono per qualunque programma futuro:
 5. **Test funzionali** dal disco `disk2-veratests-*.atr` in questo ordine: `TESTFX.COM`
    (atteso **PASS: 34, FAIL: 0**), `TEST8.COM` (ESC per uscire), `TESTGS8.COM`,
    `TESTMAZ8.COM`, `TESTMTX8.COM`, `TESTPLR.COM`, poi `RUNCPM.COM` con FujiNet.
-6. **IRQ** solo quando §2.3 e §2.4 sono risolti.
+6. **IRQ** solo quando §2.3 (stadio open-drain) è montato e il gancio software di §2.4 è scritto.
 7. Ogni anomalia va riprodotta in emulatore con `-verax16-config-ms` (0 e 100) per separare
    problemi software da problemi di scheda.
 

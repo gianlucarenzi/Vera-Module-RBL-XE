@@ -479,7 +479,6 @@ Vera-Module-RBL-XE/
 ├── 📄 README.md                    # This documentation
 ├── 📄 PIN-MAPPING.md               # ESP32-S3 / level-shifter pin mapping
 ├── 📄 VERA-ATARI-HW-REQUIREMENTS.md # Hardware requirements & bring-up plan (from driver/emulator work)
-├── 📄 HW-MOD-GPIO0-VIRQ.md         # Rework note: ~mVIRQ -> GPIO0 (IRQ identification on $D1FF)
 ├── 📄 LICENSE                      # GPL v3 license
 ├── ⚙️ VERA-MODULE-RBL.pro         # KiCad project file
 ├── 📄 VERA-MODULE-RBL.sch         # Main schematic
@@ -511,9 +510,8 @@ Vera-Module-RBL-XE/
 
 - [`VERA-ATARI-HW-REQUIREMENTS.md`](VERA-ATARI-HW-REQUIREMENTS.md) — what the VERA FPGA
   requires from the bus, open points on this board (U19 output enable, WR hold time,
-  push-pull IRQ), reset/configuration sequence and the bring-up test plan.
-- [`HW-MOD-GPIO0-VIRQ.md`](HW-MOD-GPIO0-VIRQ.md) — wire/resistor rework and firmware
-  environment for PBI interrupt identification.
+  push-pull IRQ), the gating logic for the data-bus transceiver output enable,
+  reset/configuration sequence and the bring-up test plan.
 
 ### Design Files
 
