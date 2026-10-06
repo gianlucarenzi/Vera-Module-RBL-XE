@@ -629,7 +629,7 @@ La logica principale del firmware è contenuta nel \texttt{MonitorTask}, che vie
 % --- SEZIONE: VERIFICHE HARDWARE ---
 \section{Verifiche hardware emerse dal lavoro su driver ed emulatore}
 \label{sec:hwverif}
-Il lavoro sul driver 6502 e sull'emulatore (confrontato con l'HDL della VERA 47.0.2) ha evidenziato requisiti e rischi per la scheda; il dettaglio, con il piano di bring-up, è in \texttt{VERA-ATARI-HW-REQUIREMENTS.md}. I punti seguenti derivano dalla \emph{netlist} (nessuna simulazione elettrica né misura) e vanno confermati sullo schema aggiornato e con l'oscilloscopio.
+Il lavoro sul driver 6502 e sull'emulatore (confrontato con l'HDL della VERA 48.0.1, che per il bus coincide con la 47.0.2 salvo la cattura dell'indirizzo di scrittura direttamente all'inizio di WR) ha evidenziato requisiti e rischi per la scheda; il dettaglio, con il piano di bring-up, è in \texttt{VERA-ATARI-HW-REQUIREMENTS.md}. I punti seguenti derivano dalla \emph{netlist} (nessuna simulazione elettrica né misura) e vanno confermati sullo schema aggiornato e con l'oscilloscopio.
 
 \subsection*{Cosa richiede la VERA sul bus}
 \begin{itemize}
@@ -637,7 +637,7 @@ Il lavoro sul driver 6502 e sull'emulatore (confrontato con l'HDL della VERA 47.
   \item In scrittura l'indirizzo è campionato sul fronte di \emph{salita} di \texttt{bus\_write} e il \textbf{dato sul fronte di discesa} (fine scrittura): il dato deve restare stabile \emph{dopo} la salita di WR\_n/CS\_n (tempo di hold).
   \item In lettura gli effetti collaterali (autoincremento, prefetch) avvengono sulla fine di RD\_n (circa 120\,ns di sincronizzazione): ogni attivazione di RD\_n è un evento, quindi niente cicli doppi (RMW, dummy read) sulle porte DATA0/DATA1.
   \item \textbf{Nessun pin di reset}: solo un POR interno (128 cicli di \texttt{clk25}). La scrittura di CTRL bit\,7 (\$D105) \textbf{riconfigura l'intero FPGA} (VRAM persa, bus morto $\approx$100\,ms).
-  \item \texttt{IRQ\_n} è \textbf{push-pull} a livello. I registri FX sono in sola scrittura (la lettura restituisce \texttt{'V',47,0,0}).
+  \item \texttt{IRQ\_n} è \textbf{push-pull} a livello. I registri FX sono in sola scrittura (la lettura restituisce i byte di identità del firmware, \texttt{'V',48,0,1} sulla 48.0.1).
 \end{itemize}
 
 \subsection*{Punti aperti sulla scheda attuale}

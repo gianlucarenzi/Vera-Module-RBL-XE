@@ -23,7 +23,12 @@ driver.
 
 ---
 
-## 1. Cosa fa la VERA sul bus (dall'HDL 47.0.2)
+## 1. Cosa fa la VERA sul bus (dall'HDL 48.0.1)
+
+Firmware di riferimento: **48.0.1** (`VERA_ATARI_PBI/fpga-vera/48.0.1`). Rispetto alla 47.0.2 l'HDL
+cambia solo in tre punti: l'indirizzo di scrittura è catturato direttamente all'inizio di WR (prima
+passava da un registro intermedio), i byte di versione restituiscono anche minor e build, e le onde
+sawtooth/triangle del PSG sono in XOR con `~pulsewidth`. I requisiti per la scheda non cambiano.
 
 Questi sono i vincoli che l'hardware deve rispettare, indipendentemente dal progetto.
 
@@ -35,7 +40,7 @@ Questi sono i vincoli che l'hardware deve rispettare, indipendentemente dal prog
 | Reset | solo POR interno (`por_cnt_r`, 128 cicli di `clk25`); **nessun pin di reset** | il RESET Atari non resetta la VERA |
 | CTRL bit 7 (`$D105`) | `fpga_reconfigure` → ricarica l'intero bitstream: VRAM persa, bus morto ~100 ms | scrittura distruttiva; vedi §3 |
 | IRQ | `extbus_irq_n = (irq_status & irq_enable) == 0`: **push-pull**, a livello | non può pilotare direttamente una linea IRQ condivisa |
-| Registri FX | in sola scrittura (la lettura di `$D109-$D10C` con DCSEL≥2 restituisce `'V',47,0,0`, tranne FX_CTRL e POLY_FILL_L/H) | niente read-back di FX |
+| Registri FX | in sola scrittura (la lettura di `$D109-$D10C` con DCSEL≥2 restituisce i byte di identità del firmware, `'V',48,0,1` sulla 48.0.1, tranne FX_CTRL e POLY_FILL_L/H) | niente read-back di FX |
 
 ---
 
@@ -273,7 +278,7 @@ Il driver e i test già le seguono, ma valgono per qualunque programma futuro:
 2. **Mai** indirizzamento indicizzato su `$D100-$D11F` (una dummy read al cambio di pagina
    colpisce `DATA0/DATA1`), né `sta abs,x` / `sta (zp),y` con base nella pagina `$D1`.
 3. Non scrivere `$80` in `$D105` (riconfigurazione dell'FPGA).
-4. Non leggere i registri FX: sono in sola scrittura (restituiscono `'V',47,0,0`).
+4. Non leggere i registri FX: sono in sola scrittura (restituiscono i byte di identità del firmware, `'V',48,0,1` sulla 48.0.1).
 5. Niente sincronismo supposto con il VBI Atari.
 6. Gli IRQ della VERA si gestiscono agganciando `VIMIRQ` (`$0216`), non via `$D1FF`/`PDIMSK` (§2.4).
 7. Dopo il reset Atari la VERA mantiene tutto lo stato: l'handler `INIT` ne riscrive solo una
@@ -292,7 +297,7 @@ Il driver e i test già le seguono, ma valgono per qualunque programma futuro:
 4. **Rilevamento**: dal DOS, `vera_detect()` (CTRL=`$7E`, `$D109`=`'V'`, `$D10A`=47) via
    un programma minimo; poi `$D1FF`/ROM (`$D803=$80`, `$D80B=$91`).
 5. **Test funzionali** in questo ordine: da `disk3-standalone.atr` `TESTFX.COM` (atteso
-   **PASS: 34, FAIL: 0**); da `disk2-veratests-*.atr` `TEST8.COM`, `TESTGS8.COM`, `TESTMAZ8.COM`,
+   **PASS: 36, FAIL: 0**, e la riga `VERA firmware 48.0.1`); da `disk2-veratests-*.atr` `TEST8.COM`, `TESTGS8.COM`, `TESTMAZ8.COM`,
    `TESTMTX8.COM` (ESC per uscire); da `disk3-standalone.atr` `TESTPLR.COM`; poi `RUNCPM.COM`
    (`disk1-runcpm.atr`) con FujiNet.
 6. **IRQ** solo quando §2.3 (stadio open-drain) è montato: `TESTIRQ.COM` da `disk3-standalone.atr` (atteso PASS 13, FAIL 0).
