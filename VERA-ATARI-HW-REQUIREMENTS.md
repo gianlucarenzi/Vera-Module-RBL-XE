@@ -180,8 +180,12 @@ se `ISR & IEN` ha bit attivi conferma VSYNC/LINE/SPRCOL scrivendo 1 in `ISR` e m
 linea IRQ. L'OS **non** viene più usato per smistare l'IRQ: `PDIMSK` (`$0249`) resta a 0 e
 `IRQVECTOR` della ROM PBI (`$D808`) non verrà chiamato.
 
-Stato: oggi nessun programma abilita `IEN`, quindi non c'è ancora il gancio IRQ nei test; va
-scritto quando serve (vedere l'elenco delle attività software).
+Stato: **scritto e provato in emulatore**. Il gancio è in `VERA_ATARI_PBI/vera-tests/vera_irq.s`
+(interfaccia C in `vera_irq.h`: `vera_irq_install`, `vera_irq_enable`, `vera_irq_disable`,
+`vera_irq_take`, `vera_irq_set_line`, `vera_irq_set_callback`, `vera_irq_remove`). Il test
+`TESTIRQ.COM` verifica VSYNC (circa 59,94 Hz anche con Atari PAL), LINE, il mascheramento di AFLOW,
+la catena verso l'OS e la rimozione: 13 PASS, 0 FAIL in NTSC e in PAL. Sulla scheda reale va
+provato dopo il montaggio dello stadio open-drain. Guida d'uso: `VERA_ATARI_PBI/Documentation/VERA-IRQ.md`.
 
 ### 2.5 [B] Scrittura `$D1FF`: solo il proprio bit — **corretto nel firmware**
 
@@ -290,7 +294,7 @@ Il driver e i test già le seguono, ma valgono per qualunque programma futuro:
 5. **Test funzionali** dal disco `disk2-veratests-*.atr` in questo ordine: `TESTFX.COM`
    (atteso **PASS: 34, FAIL: 0**), `TEST8.COM` (ESC per uscire), `TESTGS8.COM`,
    `TESTMAZ8.COM`, `TESTMTX8.COM`, `TESTPLR.COM`, poi `RUNCPM.COM` con FujiNet.
-6. **IRQ** solo quando §2.3 (stadio open-drain) è montato e il gancio software di §2.4 è scritto.
+6. **IRQ** solo quando §2.3 (stadio open-drain) è montato: `TESTIRQ.COM` (atteso PASS 13, FAIL 0).
 7. Ogni anomalia va riprodotta in emulatore con `-verax16-config-ms` (0 e 100) per separare
    problemi software da problemi di scheda.
 
