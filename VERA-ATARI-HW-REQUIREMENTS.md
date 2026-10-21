@@ -220,6 +220,11 @@ VERA con l'indirizzo sbagliato) oppure si perdeva il ciclo seguente. Ora il log 
 compilato solo con `-DVERA_TRACE_REGS=1` (debug, mai in produzione); resta attivo il log dei
 cambi di latch (rari).
 
+Aggiornamento: anche il log dei cambi di latch costava circa 1 µs (`xQueueSend` +
+`esp_timer_get_time`) proprio nel ciclo dopo la scrittura su `$D1FF`, a cui seguono i fetch
+dalla ROM PBI. Ora il hot loop gira sul Core 0 e passa gli eventi al Core 1 (che stampa su
+`Serial`) con un ring buffer senza lock: il push costa poche istruzioni.
+
 ### 2.6 [B] Header ROM PBI — **ROM allineata**
 
 La ROM `vera_pbi_handler.rom` (2 KB, assemblata da `vera_pbi_handler.s`) ha l'header:

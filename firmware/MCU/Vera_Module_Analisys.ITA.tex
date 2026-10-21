@@ -168,7 +168,7 @@ L'adattamento di livello 5\,V\,$\leftrightarrow$\,3.3\,V è affidato a cinque \t
     \item {\bfseries Connessioni dirette (senza level shifter, 3.3\,V):} \texttt{DEV\_SEL\_N} (GPIO\,40) $\rightarrow$ \texttt{\textasciitilde mVCS0} (VERA /CS); \texttt{CRESET} (GPIO\,38) $\rightarrow$ reset VERA; \texttt{CDONE} (GPIO\,39) $\leftarrow$ VERA CDONE.
 \end{itemize}
 
-I segnali \texttt{DEV\_SEL\_N}, \texttt{EXTSEL\_N} e \texttt{MPD} sono raggruppati nel \textbf{Dedicated GPIO output bundle} (Core 1, canali 0--2): vengono asseriti e de-asseriti in un'unica istruzione TIE Xtensa (\texttt{ee.wr\_mask\_gpio\_out}, $\approx$1\,ciclo CPU), anziché con tre scritture APB separate ($\approx$18\,cicli totali). Il segnale \texttt{PHI2} è nel bundle di ingresso (canale 0): il polling avviene via \texttt{ee.get\_gpio\_in} (1\,ciclo CPU).
+I segnali \texttt{DEV\_SEL\_N}, \texttt{EXTSEL\_N} e \texttt{MPD} sono raggruppati nel \textbf{Dedicated GPIO output bundle} (Core 0, canali 0--2): vengono asseriti e de-asseriti in un'unica istruzione TIE Xtensa (\texttt{ee.wr\_mask\_gpio\_out}, $\approx$1\,ciclo CPU), anziché con tre scritture APB separate ($\approx$18\,cicli totali). Il segnale \texttt{PHI2} è nel bundle di ingresso (canale 0): il polling avviene via \texttt{ee.get\_gpio\_in} (1\,ciclo CPU).
 
 % --- SEZIONE 3: MAPPING DEI PIN ---
 \section{Mapping dei Pin (ESP32-S3FN8, QFN56)}
@@ -392,7 +392,11 @@ Il rapporto tra la finestra critica e il ciclo dell'ESP32 è:
 \frac{T_{PHI2\uparrow}}{T_{ESP32}} = \frac{279\,\text{ns}}{4.17\,\text{ns}} \approx 67\,\text{cicli ESP32}
 \]
 
-Anche considerando solo la semi-finestra di PHI2 alto (il caso peggiore), l'ESP32-S3 dispone di circa \textbf{67 cicli di clock} per completare tutta la catena: lettura di \texttt{GPIO.in} / \texttt{GPIO.in1.val}, decodifica dell'indirizzo, lookup nella LUT, pilotaggio del bus dati. Poiché tutte le funzioni critiche risiedono in IRAM (\texttt{IRAM\_ATTR}) ed operano solo su registri hardware, il percorso critico è tipicamente inferiore a 20 cicli.
+Anche considerando solo la semi-finestra di PHI2 alto (il caso peggiore), l'ESP32-S3 dispone di circa \textbf{67 cicli di clock} per completare tutta la catena: lettura di \texttt{GPIO.in} / \texttt{GPIO.in1.val}, decodifica dell'indirizzo, asserzione dei segnali di controllo, pilotaggio del bus dati.
+
+La versione precedente decodificava l'indirizzo con confronti di range a ogni ciclo: dal disassemblato risultavano circa \textbf{95 istruzioni} fra le letture APB e l'asserzione dei segnali di controllo, oltre la finestra disponibile. La versione corrente usa tabelle precalcolate (\texttt{include/bus\_decode.h}): la pagina A8--A15, presa nell'ordine dei pin, indicizza una tabella di 256 voci per lo stato corrente (latch selezionato $\times$ RAMbo attivo) con i livelli di \texttt{DEV\_SEL\_N}/\texttt{EXTSEL\_N}/\texttt{MPD} e le azioni da eseguire. Il percorso critico è ora di \textbf{16 istruzioni} dopo le letture APB (26 per \texttt{\$D1xx}/\texttt{\$D5xx}, che dipendono anche da A0--A7) e circa 22 ulteriori per il dato in lettura. Il codice e i dati del hot loop sono rispettivamente in IRAM e DRAM; i tempi reali (letture APB, sincronizzatori GPIO) vanno confermati con un analizzatore logico.
+
+Nei cicli di scrittura il dato del 6502 è valido solo $\approx$100--150\,ns dopo la salita di PHI2: il firmware rilegge \texttt{GPIO.in} finché PHI2 è alto (PHI2 è nello stesso registro) e usa l'ultimo campione, poi applica gli effetti (latch, PORTB/PBCTL, RAM PBI, RAMbo) durante PHI1.
 
 \subsection{Accesso diretto ai registri GPIO}
 Per eliminare qualsiasi overhead di astrazione, il firmware usa esclusivamente accesso diretto ai registri hardware dell'ESP32:
@@ -464,28 +468,32 @@ Di seguito è riportato un estratto aggiornato del file \texttt{main.cpp} che mo
 #define DEDIC_OUT_CTRL_MASK 0x07u
 #define DEDIC_OUT_CTRL_IDLE 0x07u  /* tutti HIGH = deasserted */
 
-static inline uint16_t IRAM_ATTR decode_addr(uint32_t lo, uint32_t hi)
+/* include/bus_decode.h: indice di pagina A8-A15 nell'ordine dei pin
+ *   bit 0,1 = A8,A9 (GPIO20,21)   bit 2,3 = A12,A13 (GPIO33,34)
+ *   bit 4,5 = A10,A11 (GPIO35,36) bit 6,7 = A14,A15 (GPIO45,46)   */
+static inline uint32_t bus_page_idx(uint32_t lo, uint32_t hi)
 {
-    uint16_t a = (uint16_t)((lo >> 12) & 0x3FFu);         /* A0-A9  */
-    a |= (uint16_t)(((hi >> (PIN_A10-32)) & 1u) << 10);   /* A10    */
-    a |= (uint16_t)(((hi >> (PIN_A11-32)) & 1u) << 11);   /* A11    */
-    a |= (uint16_t)(((hi >> (PIN_A12-32)) & 1u) << 12);   /* A12    */
-    a |= (uint16_t)(((hi >> (PIN_A13-32)) & 1u) << 13);   /* A13    */
-    a |= (uint16_t)(((hi >> (PIN_A14-32)) & 1u) << 14);   /* A14    */
-    a |= (uint16_t)(((hi >> (PIN_A15-32)) & 1u) << 15);   /* A15    */
-    return a;
+    return ((lo >> 20) & 0x03u) | ((hi << 1) & 0x3Cu) | ((hi >> 7) & 0xC0u);
 }
+
+/* Voce di tabella: bit 0-2 livelli DEV_SEL_N/EXTSEL_N/MPD, poi i flag */
+#define CT_SLOW    (1u << 3)   /* $D1xx/$D5xx: dipende anche da A0-A7 */
+#define CT_DRIVE   (1u << 4)   /* lettura: pilota rd_base[idx][A0-A7] */
+#define CT_RAMBO   (1u << 5)   /* + offset del banco RAMbo corrente   */
+#define CT_WR_MEM  (1u << 6)   /* scrittura: memorizza in rd_base     */
+#define CT_WR_REG  (1u << 7)   /* scrittura: latch / snoop PIA        */
 \end{lstlisting}
 
 \begin{lstlisting}[style=cppstyle, caption={Nucleo del MonitorTask -- hot loop semplificato (PBI + RAMbo)}, label=code:monitor_task]
-static void IRAM_ATTR MonitorTask(void *arg)
+static void IRAM_ATTR MonitorTask(void *arg)   /* Core 0 */
 {
     /* Bundle Dedicated GPIO: input [PHI2], output [DEV_SEL_N, EXTSEL_N, MPD] */
-    /* ... (setup bundle omesso per brevita') ... */
-    cpu_ll_write_dedic_gpio_mask(DEDIC_OUT_CTRL_MASK, DEDIC_OUT_CTRL_IDLE);
-
-    bool selected = false;
-    bus_release();
+    /* ... (setup bundle e sequenza di reset omessi per brevita') ... */
+    bool           selected  = false;
+    uint8_t        portb = 0xFF, pbctl = 0x00;
+    bool           rambo_on  = false;
+    const uint8_t *ctrl_cur  = bus_ctrl[bus_state(selected, rambo_on)];
+    uint32_t       rambo_off = bus_rambo_bank(portb) << 14;
 
     for (;;) {
         /* 1. Attesa fronte di salita PHI2 via TIE (1 ciclo CPU) */
@@ -493,72 +501,62 @@ static void IRAM_ATTR MonitorTask(void *arg)
         uint32_t g_lo = GPIO.in;
         uint32_t g_hi = GPIO.in1.val;
 
-        /* 2. Decodifica indirizzo A0-A15 (16 bit, software puro) */
-        bool     is_read = (g_lo & (1UL << PIN_RW)) != 0;
-        uint16_t addr    = decode_addr(g_lo, g_hi);
-        uint8_t  off8    = (uint8_t)(addr & 0xFFu);
-
-        bool is_d1xx       = (addr >= 0xD100u && addr <= 0xD1FFu);
-        bool is_d6xx       = (addr >= 0xD600u && addr <= 0xD7FFu);
-        bool is_d8xx       = (addr >= 0xD800u && addr <= 0xDFFFu);
-        bool is_vera_range = is_d1xx && (off8 <= 0x1Fu);
-        bool is_vcs_latch  = is_d1xx && (off8 == 0xFFu);
-        bool is_rambo_win  = (addr >= 0x4000u && addr <= 0x7FFFu);
-        bool rambo_active  = rambo_hw_enabled && ((PORTB & 0x10u) == 0u);
+        /* 2. Lookup di pagina: livelli di controllo e azioni */
+        uint32_t idx  = bus_page_idx(g_lo, g_hi);
+        uint32_t c    = ctrl_cur[idx];
+        uint32_t off8 = (g_lo >> 12) & 0xFFu;
+        if (c & CT_SLOW)
+            c = bus_slow_ctrl(c, off8, selected, is_pbi);
 
         /* 3. Asserzione segnali controllo (1 istruzione TIE) */
-        {
-            uint8_t ctrl = DEDIC_OUT_CTRL_IDLE;
-            /* Registri VERA sempre presenti, anche con latch = 0 */
-            if (is_vera_range)
-                ctrl &= ~(DEDIC_OUT_DEVSELN | DEDIC_OUT_EXTSEL);
-            if (selected) {
-                if ((is_d1xx && !is_vcs_latch) || is_d6xx)
-                    ctrl &= ~DEDIC_OUT_EXTSEL;
-                if (is_d8xx)   ctrl &= ~DEDIC_OUT_MPD;
+        cpu_ll_write_dedic_gpio_mask(DEDIC_OUT_CTRL_MASK, c);
+
+        if (g_lo & (1UL << PIN_RW)) {
+            /* 4a. Lettura: ROM PBI / RAM PBI / banco RAMbo */
+            if (c & CT_DRIVE) {
+                const uint8_t *p = bus_rd_base[idx];
+                if (c & CT_RAMBO) p += rambo_off;
+                bus_drive(p[off8]);
             }
-            if (rambo_active && is_rambo_win)
-                ctrl &= ~DEDIC_OUT_EXTSEL;
-            cpu_ll_write_dedic_gpio_mask(DEDIC_OUT_CTRL_MASK, ctrl);
+            while (cpu_ll_read_dedic_gpio_in() & DEDIC_IN_PHI2);
+            if (c & CT_DRIVE) bus_release();
+            cpu_ll_write_dedic_gpio_mask(DEDIC_OUT_CTRL_MASK, DEDIC_OUT_CTRL_IDLE);
+            continue;
         }
 
-        /* 4. Ciclo di lettura */
-        if (is_read) {
-            if (selected && is_d8xx)
-                bus_drive(pbi_driver[addr & 0x7FFu]);
-            else if (selected && is_d6xx)
-                bus_drive(ram_pbi[addr & 0x1FFu]);
-            if (rambo_active && is_rambo_win) {
-                uint8_t bank = ((PORTB>>2)&3u)|((PORTB>>3)&0xCu);
-                bus_drive(extended_rambo_256k[((uint32_t)bank<<14)|(addr&0x3FFFu)]);
-            }
-        }
-        /* 5. Ciclo di scrittura */
-        else {
-            uint8_t data = decode_data(GPIO.in);
-            if (is_vcs_latch) {
-                selected = ((data & PBI_DEV_ID) != 0u);   /* solo il proprio bit */
-            }
-            /* Snoop PIA 6520 (passivo -- il 6520 fisico risponde; ESP32 solo osserva) */
-            if (addr == 0xD303u) PBCTL = data;
-            if (addr == 0xD301u && (PBCTL & 0x04u)) PORTB = data;
-            if (rambo_active && is_rambo_win) {
-                uint8_t bank = ((PORTB>>2)&3u)|((PORTB>>3)&0xCu);
-                extended_rambo_256k[((uint32_t)bank<<14)|(addr&0x3FFFu)] = data;
-            }
-        }
-
-        /* 6. Fine ciclo: rilascia bus, deasserta controlli */
-        while (cpu_ll_read_dedic_gpio_in() & DEDIC_IN_PHI2);
-        bus_release();
+        /* 4b. Scrittura: ultimo campione con PHI2 ancora alto */
+        uint32_t last = g_lo, now;
+        while ((now = GPIO.in) & (1UL << PIN_PHI2)) last = now;
         cpu_ll_write_dedic_gpio_mask(DEDIC_OUT_CTRL_MASK, DEDIC_OUT_CTRL_IDLE);
+        uint8_t data = decode_data(last);
+
+        /* 5. Effetti durante PHI1 */
+        if (c & CT_WR_MEM) {                     /* RAM PBI o RAMbo */
+            uint8_t *p = (uint8_t *)bus_rd_base[idx];
+            if (c & CT_RAMBO) p += rambo_off;
+            p[off8] = data;
+        }
+        if (c & CT_WR_REG) {
+            uint8_t page = bus_idx_to_page(idx);
+            if (off8 == 0xFF && page == (is_pbi ? 0xD1 : 0xD5)) {
+                selected = (data & PBI_DEV_ID) != 0;   /* + log_send() */
+            } else if (page == 0xD3) {         /* snoop PIA (passivo) */
+                if (off8 == 0x03) pbctl = data;
+                else if (off8 == 0x01 && (pbctl & 0x04)) {
+                    portb     = data;
+                    rambo_off = bus_rambo_bank(portb) << 14;
+                    rambo_on  = rambo_hw_enabled && !(portb & 0x10);
+                }
+            }
+            ctrl_cur = bus_ctrl[bus_state(selected, rambo_on)];
+        }
     }
 }
 \end{lstlisting}
 
 % --- SEZIONE 6: DIAGRAMMA DI FLUSSO ---
 \section{Diagramma di Flusso del Firmware}
-La logica principale del firmware è contenuta nel \texttt{MonitorTask}, che viene eseguito sul secondo core dell'ESP32 (Core 1) con priorità massima per garantire prestazioni in tempo reale.
+La logica principale del firmware è contenuta nel \texttt{MonitorTask}, che viene eseguito da solo sul Core 0 con priorità massima e non cede mai la CPU (l'idle task del Core 0 è tolto dal task watchdog). Il Core 1 esegue \texttt{setup()}/\texttt{loop()}: svuota il ring buffer degli eventi (\texttt{log\_ring}, single-producer/single-consumer senza lock) e li stampa su \texttt{Serial}.
 
 \begin{figure}[H]
 \centering
@@ -571,55 +569,34 @@ La logica principale del firmware è contenuta nel \texttt{MonitorTask}, che vie
     term/.style={base, rounded rectangle, fill=green!20},
     arrow/.style={-latex, thick}
 ]
-    \node[term] (start) {Inizio \texttt{MonitorTask} (Core 1)};
+    \node[term] (start) {Inizio \texttt{MonitorTask} (Core 0)};
     \node[proc, below=of start]      (init)      {Deassert: EXTSEL\_N HIGH, DEV\_SEL\_N HIGH, MPD HIGH; bus\_release()};
     \node[proc, below=of init]       (wait_phi2) {Spin-wait salita PHI2 + snapshot \texttt{GPIO.in}/\texttt{GPIO.in1.val}};
-    \node[proc, below=of wait_phi2]  (decode)    {Decode: addr(A0--A15), is\_read,\\is\_d1xx, is\_d6xx, is\_d8xx, is\_vera\_range,\\is\_rambo\_win, is\_vcs\_latch};
+    \node[proc, below=of wait_phi2]  (decode)    {idx = pagina A8--A15;\\c = ctrl\_cur[idx] (tabella dello stato);\\se CT\_SLOW: correzione con A0--A7};
+    \node[proc, below=of decode]     (assert)    {ee.wr\_mask\_gpio\_out: DEV\_SEL\_N / EXTSEL\_N / MPD};
 
-    \node[test, below=of decode]     (check_sel) {is\_vera\_range o (selected \&\& (D1xx o RAM))?};
-    \node[proc, below=of check_sel]  (extsel)    {EXTSEL\_N LOW (per-ciclo)};
+    \node[test, below=of assert]     (check_rw)  {R/W = lettura?};
+    \node[proc, below=of check_rw, xshift=-3.5cm] (bus_drv)  {se CT\_DRIVE: bus\_drive()\\ROM / RAM PBI / RAMbo;\\spin-wait discesa PHI2;\\bus\_release()};
+    \node[proc, below=of check_rw, xshift=+3.5cm] (wr_data)  {Rilegge GPIO.in finché PHI2 alto:\\ultimo campione = dato};
 
-    \node[test, below=of extsel]     (check_mpd) {selected \&\& is\_rom?};
-    \node[proc, below=of check_mpd]  (mpd)       {MPD LOW};
-
-    \node[test, below=of mpd]        (check_vera){is\_vera\_range? (sempre)};
-    \node[proc, below=of check_vera] (vera_cs)   {DEV\_SEL\_N LOW (VERA CS)};
-
-    \node[test, below=of vera_cs]    (check_rw)  {is\_read?};
-    \node[proc, below=of check_rw, xshift=-3cm]   (bus_drv)  {bus\_drive():\\ROM / RAM PBI / RAMbo};
-    \node[proc, below=of check_rw, xshift=+3cm]   (wr_data)  {Cattura dato;\\aggiorna selected;\\snoop PBCTL/PORTB; RAMbo write};
-
-    \node[proc, below=2.5cm of check_rw] (phi2_low)  {Spin-wait discesa PHI2};
-    \node[proc, below=of phi2_low]       (release)   {bus\_release(); MPD HIGH;\\EXTSEL\_N HIGH; DEV\_SEL\_N HIGH};
+    \node[proc, below=1.2cm of bus_drv, xshift=3.5cm] (release)   {Controlli HIGH (ee.wr\_mask\_gpio\_out)};
+    \node[proc, below=of release]        (effects)   {Solo scrittura, durante PHI1:\\RAM PBI / RAMbo; latch; snoop PBCTL/PORTB;\\cambio tabella; log\_send() al Core 1};
 
     % Connessioni principali
     \draw[arrow] (start)      -- (init);
     \draw[arrow] (init)       -- (wait_phi2);
     \draw[arrow] (wait_phi2)  -- (decode);
-    \draw[arrow] (decode)     -- (check_sel);
-    \draw[arrow] (check_sel)  -- node[right, pos=0.4]{Sì} (extsel);
-    \draw[arrow] (extsel)     -- (check_mpd);
-    \draw[arrow] (check_mpd)  -- node[right, pos=0.4]{Sì} (mpd);
-    \draw[arrow] (mpd)        -- (check_vera);
-    \draw[arrow] (check_vera) -- node[right, pos=0.4]{Sì} (vera_cs);
-    \draw[arrow] (vera_cs)    -- (check_rw);
+    \draw[arrow] (decode)     -- (assert);
+    \draw[arrow] (assert)     -- (check_rw);
     \draw[arrow] (check_rw)   -- node[above, pos=0.4]{Lettura}  (bus_drv);
     \draw[arrow] (check_rw)   -- node[above, pos=0.4]{Scrittura} (wr_data);
-    \draw[arrow] (bus_drv)    |- (phi2_low);
-    \draw[arrow] (wr_data)    |- (phi2_low);
-    \draw[arrow] (phi2_low)   -- (release);
-
-    % Rami "No" che saltano verso release
-    \coordinate (no_sel) at ([xshift=-4cm]check_sel.west);
-    \draw[arrow] (check_sel.west) -- node[above]{No} (no_sel) |- (check_rw.west);
-    \coordinate (no_mpd) at ([xshift=4cm]check_mpd.east);
-    \draw[arrow] (check_mpd.east) -- node[above]{No} (no_mpd) |- (check_vera.east);
-    \coordinate (no_vera) at ([xshift=4cm]check_vera.east);
-    \draw[arrow] (check_vera.east) -- node[above]{No} (no_vera) |- (check_rw.east);
+    \draw[arrow] (bus_drv)    |- (release);
+    \draw[arrow] (wr_data)    |- (release);
+    \draw[arrow] (release)    -- (effects);
 
     % Loop di ritorno
-    \coordinate (back) at ([xshift=-5.5cm]release.west);
-    \draw[arrow] (release.west) -| (back) |- (wait_phi2.west);
+    \coordinate (back) at ([xshift=-6cm]effects.west);
+    \draw[arrow] (effects.west) -| (back) |- (wait_phi2.west);
 
 \end{tikzpicture}
 \caption{Diagramma di flusso semplificato del \texttt{MonitorTask} (modalità PBI, ESP32-S3FN8).}

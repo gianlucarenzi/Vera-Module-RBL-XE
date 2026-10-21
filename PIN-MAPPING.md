@@ -93,15 +93,19 @@ Firmware data decode: `data = (GPIO.in >> 4) & 0xFF`
 
 ### Firmware: decode indirizzo completo (16 bit)
 
+Il hot loop non ricompone l'indirizzo bit per bit: usa la pagina A8–A15 **nell'ordine dei
+pin** come indice di tabelle precalcolate (`firmware/MCU/include/bus_decode.h`) e A0–A7
+come offset nella pagina.
+
 ```c
-/* decode_addr(g_lo, g_hi) — restituisce A0-A15 (16 bit): */
-uint16_t a = (g_lo >> 12) & 0x3FF;               /* A0-A9  — Bank 0 bits 12-21 */
-a |= ((g_hi >> (35 - 32)) & 1u) << 10;           /* A10    — Bank 1 bit  3     */
-a |= ((g_hi >> (36 - 32)) & 1u) << 11;           /* A11    — Bank 1 bit  4     */
-a |= ((g_hi >> (33 - 32)) & 1u) << 12;           /* A12    — Bank 1 bit  1     */
-a |= ((g_hi >> (34 - 32)) & 1u) << 13;           /* A13    — Bank 1 bit  2     */
-a |= ((g_hi >> (45 - 32)) & 1u) << 14;           /* A14    — Bank 1 bit 13     */
-a |= ((g_hi >> (46 - 32)) & 1u) << 15;           /* A15    — Bank 1 bit 14     */
+/* bus_page_idx(g_lo, g_hi) — indice di pagina, 6 istruzioni:            */
+/*   bit 0,1 = A8,A9   — Bank 0 bits 20,21                               */
+/*   bit 2,3 = A12,A13 — Bank 1 bits 1,2   (GPIO33,34)                   */
+/*   bit 4,5 = A10,A11 — Bank 1 bits 3,4   (GPIO35,36)                   */
+/*   bit 6,7 = A14,A15 — Bank 1 bits 13,14 (GPIO45,46)                   */
+uint32_t idx  = ((g_lo >> 20) & 0x03) | ((g_hi << 1) & 0x3C) | ((g_hi >> 7) & 0xC0);
+uint32_t off8 = (g_lo >> 12) & 0xFF;              /* A0-A7 — Bank 0 bits 12-19 */
+/* bus_idx_to_page(idx) ricostruisce A15..A8 quando serve (fuori dal percorso critico) */
 ```
 
 La modalità operativa è selezionata a compile time tramite `VERA_BOARD_IS_PBI` in `main.cpp`:
@@ -112,13 +116,13 @@ La modalità operativa è selezionata a compile time tramite `VERA_BOARD_IS_PBI`
 | `0`           | **CCTL** | $D500–$D5FF                           | write `0x80` → $D5FF |
 
 ```c
-/* Confronti indirizzi — PBI mode (VERA_BOARD_IS_PBI = 1): */
-/* VERA regs  $D100-$D11F   32 B  →  EXTSEL_N + DEV_SEL_N (se selezionato) */
+/* Pagine gestite — PBI mode (VERA_BOARD_IS_PBI = 1), tabelle in bus_decode.h: */
+/* VERA regs  $D100-$D11F   32 B  →  EXTSEL_N + DEV_SEL_N (sempre)         */
 /* PBI latch  $D1FF              →  write 0x80 = seleziona scheda           */
 /* RAM        $D600-$D7FF  512 B  →  ram_pbi[addr & 0x1FF]  (ESP32 drive)   */
 /* ROM        $D800-$DFFF 2048 B  →  pbi_driver[addr & 0x7FF] (ESP32 drive) */
 
-/* Confronti indirizzi — CCTL mode (VERA_BOARD_IS_PBI = 0): */
+/* Pagine gestite — CCTL mode (VERA_BOARD_IS_PBI = 0): */
 /* CCTL range $D500-$D5FE       →  DEV_SEL_N (se selezionato, FPGA drive)  */
 /* CCTL latch $D5FF             →  write 0x80 = seleziona scheda            */
 ```

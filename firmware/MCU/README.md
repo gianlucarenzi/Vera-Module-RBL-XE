@@ -31,8 +31,10 @@ le modalità.
 JTAG — prima ancora di `Serial.begin` — garantendo che Atari e FPGA VERA rimangano
 in reset per tutta la durata dell'inizializzazione ESP32.
 
-`MonitorTask` ha priorità massima su Core 1 e preempta `setup()` appena viene
-creato. Prima di entrare nel hot loop esegue la sequenza di sincronizzazione:
+`setup()` (Core 1) crea `MonitorTask` sul **Core 0** con priorità massima, dopo
+aver tolto l'idle task del Core 0 dal task watchdog (`disableCore0WDT()`): il hot
+loop non cede mai la CPU. Prima di entrare nel hot loop il task esegue la
+sequenza di sincronizzazione:
 
 1. **CRESET → HIGH** (`GPIO.out1_w1ts`): la FPGA VERA esce dal reset e inizia il
    caricamento del bitstream dalla flash SPI on-board.
@@ -43,26 +45,55 @@ creato. Prima di entrare nel hot loop esegue la sequenza di sincronizzazione:
 4. **ARESET → HIGH** (`GPIO.out1_w1ts`): l'Atari esce dal reset. Da questo momento
    il bus è live e il hot loop deve rispondere ad ogni ciclo PHI2.
 
-### Hot loop (Core 1, priorità massima FreeRTOS)
+### Divisione dei core
 
-Il task `MonitorTask()` gira sul Core 1 con priorità `configMAX_PRIORITIES - 1`.
-Ad ogni ciclo di clock del 6502 (PHI2 @ 1,79 MHz, finestra utile ≈ 279 ns a
-240 MHz di CPU):
+| Core | Cosa gira | Interrupt |
+|------|-----------|-----------|
+| **0** | solo `MonitorTask` (hot loop del bus, priorità `configMAX_PRIORITIES - 1`, non cede mai la CPU) | tick FreeRTOS |
+| **1** | `setup()`, `loop()`: svuota `log_ring` e stampa su `Serial` | tick, UART0 |
+
+Il hot loop passa gli eventi (cambio di latch, registri VERA con
+`-DVERA_TRACE_REGS=1`) a `loop()` tramite `log_ring`, un ring buffer
+single-producer/single-consumer senza lock: il push costa poche istruzioni
+(timestamp = tick FreeRTOS in ms). `xQueueSend()` + `esp_timer_get_time()`
+costavano circa 1 µs e facevano perdere i cicli successivi — dopo una
+scrittura su `$D1FF` sono i fetch dalla ROM PBI. Se il ring è pieno l'evento
+viene scartato e `loop()` stampa quanti ne sono stati persi.
+
+### Hot loop (Core 0, priorità massima FreeRTOS)
+
+Ad ogni ciclo di clock del 6502 (PHI2 @ 1,79 MHz, finestra utile ≈ 279 ns,
+circa 67 cicli CPU a 240 MHz):
 
 1. Attende il fronte di salita di PHI2 tramite **Dedicated GPIO in**
    (`ee.get_gpio_in`, 1 ciclo CPU anziché ~6 cicli via APB).
-2. Legge il bus indirizzi A0–A15 e la linea R/W dai registri `GPIO.in` /
-   `GPIO.in1.val` (due letture APB sequenziali).
-3. Decodifica l'indirizzo via software (`decode_addr()`) e determina il range
-   attivo in base alla modalità selezionata.
-4. Afferma in modo atomico i segnali di controllo attivi-LOW tramite
-   **Dedicated GPIO out** (`ee.wr_mask_gpio_out`, 1 ciclo CPU — tutti i segnali
-   in un'unica istruzione TIE).
-5. **Solo PBI:** se l'accesso è in lettura verso la ROM ($D800–$DFFF) o la RAM
-   ($D600–$D7FF), guida il bus dati D0–D7 con `bus_drive()` (2 scritture APB).
-   In CCTL mode l'ESP32 non tocca mai il bus dati — è la FPGA a rispondere.
-6. Attende il fronte di discesa di PHI2, rilascia il bus e de-afferma i
-   segnali di controllo con un'altra `ee.wr_mask_gpio_out`.
+2. Legge A0–A15, R/W e D0–D7 da `GPIO.in` / `GPIO.in1.val` (due letture APB).
+3. Calcola l'indice di pagina (A8–A15, nell'ordine dei pin) e legge la voce
+   della tabella dello stato corrente (`include/bus_decode.h`): livelli di
+   DEV\_SEL\_N / EXTSEL\_N / MPD e azioni (pilotare il bus, scrivere in memoria,
+   snoop dei registri). Solo `$D1xx` (PBI) e `$D5xx` (CCTL) guardano anche A0–A7.
+   Le tabelle sono 4 (latch selezionato × RAMbo attivo) e si cambiano per
+   puntatore quando cambia lo stato.
+4. Afferma i segnali di controllo con **Dedicated GPIO out**
+   (`ee.wr_mask_gpio_out`, un'unica istruzione TIE): **16 istruzioni** dopo le
+   letture APB (26 per `$D1xx`/`$D5xx`), contro le circa 95 della versione con
+   confronti di range.
+5. **Lettura:** se la pagina lo prevede, guida D0–D7 con `bus_drive()` (ROM PBI
+   `$D800–$DFFF`, RAM PBI `$D600–$D7FF`, banco RAMbo), poi attende il fronte di
+   discesa di PHI2 e rilascia bus e controlli.
+6. **Scrittura:** rilegge `GPIO.in` finché PHI2 è alto e usa l'ultimo campione
+   (il dato del 6502 è valido solo ~100–150 ns dopo la salita di PHI2 e resta
+   ~10–30 ns dopo la discesa). Rilascia i controlli e applica gli effetti
+   durante PHI1: RAM PBI, banco RAMbo, latch `$D1FF`/`$D5FF`, snoop di
+   PORTB/PBCTL.
+
+La logica di decodifica non dipende da ESP-IDF ed è verificata sul PC contro la
+versione a confronti di range, per tutti gli indirizzi e stati:
+
+```bash
+cd test/host
+cc -O2 -Wall -I../../include test_bus_decode.c -o test_bus_decode && ./test_bus_decode
+```
 
 ### Dedicated GPIO (modulo ESP32-S3)
 
@@ -111,9 +142,9 @@ I pin GPIO 39–42 erano originariamente riservati a JTAG; vengono liberati in
 | Debug TX     | 43          | 49         | UART0 TX (Serial)                 |
 | Debug RX     | 44          | 50         | UART0 RX (Serial)                 |
 
-`decode_addr()` restituisce un indirizzo **16 bit** completo: nessuna ambiguità di
-pagina. I bit A12–A15 sono catturati nella stessa lettura `GPIO.in1.val` già
-eseguita per A10–A11 — zero cicli APB aggiuntivi nel hot loop.
+Tutti i 16 bit di indirizzo sono decodificati: la pagina (A8–A15) indicizza le
+tabelle di `bus_decode.h`, A0–A7 l'offset nella pagina. I bit A10–A15 arrivano
+dalla stessa lettura `GPIO.in1.val` — zero cicli APB aggiuntivi nel hot loop.
 
 Per la mappatura completa GPIO→QFN-56 e lo schema level shifter U4 vedere
 `PIN-MAPPING.md` nella root.
@@ -127,10 +158,13 @@ firmware/MCU/
 ├── platformio.ini               # Ambienti: esp32s3fn8, esp32s3fn8-cctl
 ├── pre_build_6502.py            # Script pre-build PlatformIO: esegue make in 6502/
 ├── include/
+│   ├── bus_decode.h             # Tabelle di decodifica del bus (hot loop), senza dipendenze IDF
 │   ├── pbi-driver.h             # Strutture dati e costanti del protocollo PBI
 │   └── vera_pbi_handler.h       # ROM 6502 compilata come array C (generato da make)
 ├── src/
 │   └── main.cpp                 # Sorgente principale del firmware ESP32
+├── test/host/
+│   └── test_bus_decode.c        # Test di equivalenza della decodifica (gcc sul PC)
 └── 6502/
     ├── Makefile                 # Compila il driver e genera vera_pbi_handler.h
     ├── pbi-driver.ld            # Script linker (indirizzo base $D800, 2 KB)

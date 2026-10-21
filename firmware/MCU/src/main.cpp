@@ -27,6 +27,7 @@
 #include <hal/cpu_ll.h>
 #include <esp_timer.h>
 #include "pbi-driver.h"
+#include "bus_decode.h"
 
 /* ===========================================================================
  * Hardware Pin Mapping (ESP32-S3FN8 QFN56)
@@ -134,25 +135,6 @@ static const uint8_t DBUS_PINS[8] = { 4, 5, 6, 7, 8, 9, 10, 11 };
  * Helper Macros & Inline Functions
  * =========================================================================== */
 
-/*
- * Decode full 16-bit address from GPIO input snapshots.
- * A0-A9  : Bank 0 bits 12-21.
- * A10-A13: Bank 1 bits 3, 4, 1, 2  (GPIO 35, 36, 33, 34 → offsets from 32).
- * A14-A15: Bank 1 bits 13, 14       (GPIO 45, 46).
- * All bits captured in the same g_lo / g_hi APB reads — no extra reads needed.
- */
-static inline uint16_t IRAM_ATTR decode_addr(uint32_t lo, uint32_t hi)
-{
-    uint16_t a = (uint16_t)((lo >> 12) & 0x3FFu);              /* A0-A9  */
-    a |= (uint16_t)(((hi >> (PIN_A10 - 32)) & 1u) << 10);      /* A10    */
-    a |= (uint16_t)(((hi >> (PIN_A11 - 32)) & 1u) << 11);      /* A11    */
-    a |= (uint16_t)(((hi >> (PIN_A12 - 32)) & 1u) << 12);      /* A12    */
-    a |= (uint16_t)(((hi >> (PIN_A13 - 32)) & 1u) << 13);      /* A13    */
-    a |= (uint16_t)(((hi >> (PIN_A14 - 32)) & 1u) << 14);      /* A14    */
-    a |= (uint16_t)(((hi >> (PIN_A15 - 32)) & 1u) << 15);      /* A15    */
-    return a;
-}
-
 /**
  * Decode D0-D7 from Bank 0 snapshot.
  */
@@ -176,11 +158,7 @@ static inline uint8_t IRAM_ATTR decode_data(uint32_t lo)
  * Input and output channel spaces are independent on ESP32-S3.
  */
 #define DEDIC_IN_PHI2        (1u << 0)
-#define DEDIC_OUT_DEVSELN    (1u << 0)
-#define DEDIC_OUT_EXTSEL     (1u << 1)
-#define DEDIC_OUT_MPD        (1u << 2)
-#define DEDIC_OUT_CTRL_MASK  0x07u
-#define DEDIC_OUT_CTRL_IDLE  0x07u   /* all HIGH = deasserted (active LOW) */
+/* Output channel bits (DEDIC_OUT_*) are defined in bus_decode.h */
 
 /* ===========================================================================
  * Compile-time Configuration
@@ -206,9 +184,15 @@ static inline uint8_t IRAM_ATTR decode_data(uint32_t lo)
 #endif
 
 /* ===========================================================================
- * Log Queue (Core 1 → Core 0)
+ * Log Ring (Core 0 bus loop → Core 1 loop(), which prints on Serial)
+ *
+ * Single producer / single consumer, lock-free: the producer only stores the
+ * event and advances `head` (a few instructions).  xQueueSend() would take a
+ * spinlock and a critical section (~1 us), losing the bus cycles that follow
+ * the logged one -- after a $D1FF write those are the PBI ROM fetches.
+ * When the ring is full new events are dropped and counted.
  * =========================================================================== */
-#define LOG_QUEUE_SIZE 64
+#define LOG_RING_SIZE 64u   /* power of two */
 
 #define EVT_LATCH 0   /* VCS/CCTL latch state change */
 #define EVT_REG   1   /* VERA register ($D1xx) access */
@@ -216,7 +200,7 @@ static inline uint8_t IRAM_ATTR decode_data(uint32_t lo)
 /* flags: bit0=write(1)/read(0)  bit1=latch state (EVT_LATCH)  bit2=MPD asserted  bit3=EXTSEL asserted */
 typedef struct
 {
-    uint64_t ts_us;   /* microseconds since boot (esp_timer_get_time()) */
+    uint32_t ts_ms;   /* FreeRTOS tick count (1 ms) on Core 0 */
     uint8_t  type;
     uint8_t  offset;  /* register offset: 0x00-0xFF within address range */
     uint8_t  data;
@@ -227,8 +211,13 @@ typedef struct
  * Shared Data
  * =========================================================================== */
 
-static IRAM_ATTR uint32_t lut_drive[256];   /* Lookup table for fast data bus drive */
-static IRAM_ATTR uint8_t  ram_pbi[512];     /* 512B RAM at $D600-$D7FF */
+/* Hot-loop data lives in DRAM (data bus), not in IRAM (instruction bus). */
+static DRAM_ATTR uint32_t lut_drive[256];   /* Lookup table for fast data bus drive */
+static DRAM_ATTR uint8_t  ram_pbi[512];     /* 512B RAM at $D600-$D7FF */
+
+/* Bus decode tables (see bus_decode.h), built in setup(). */
+static DRAM_ATTR uint8_t        bus_ctrl[BUS_STATES][256];
+static DRAM_ATTR const uint8_t *bus_rd_base[256];
 
 static bool rambo_hw_enabled = false; /* set in setup() reading PIN_RAMBO_EN */
 
@@ -254,7 +243,7 @@ static uint8_t extended_rambo_256k[256 * 1024] __attribute__((section(".iram0.bs
  *      Altirra Hardware Reference Manual §8; Motorola 6520 PIA datasheet.
  * Initialised to 0xFF (RAME = 1) — RAMbo disabled until OS writes $D301.
  */
-static IRAM_ATTR uint8_t PORTB = 0xFFu;
+static DRAM_ATTR uint8_t PORTB = 0xFFu;
 
 /*
  * PBCTL ($D303) — PIA 6520 Control Register B.
@@ -274,9 +263,12 @@ static IRAM_ATTR uint8_t PORTB = 0xFFu;
  * Initialised to 0x00 (bit 2 = 0 → DDR exposed at $D301); the OS sets bit 2
  * before using $D301 as the bank-selection register.
  */
-static IRAM_ATTR uint8_t PBCTL = 0x00u;
+static DRAM_ATTR uint8_t PBCTL = 0x00u;
 
-static QueueHandle_t log_queue;
+static DRAM_ATTR LogEvt   log_ring[LOG_RING_SIZE];
+static DRAM_ATTR uint32_t log_head = 0;     /* written by Core 0 only */
+static DRAM_ATTR uint32_t log_tail = 0;     /* written by Core 1 only */
+static DRAM_ATTR uint32_t log_dropped = 0;  /* written by Core 0 only */
 
 /* ===========================================================================
  * Bus Drive/Release Logic
@@ -321,21 +313,35 @@ static inline void IRAM_ATTR bus_release(void)
     GPIO.enable_w1tc = DBUS_MASK;
 }
 
-/* Enqueue a log event without blocking (drops if queue full). */
+/* Push a log event into the ring without blocking (drops if full). */
 static inline void IRAM_ATTR log_send(uint8_t type, uint8_t offset,
                                       uint8_t data, uint8_t flags)
 {
-    LogEvt evt = {(uint64_t)esp_timer_get_time(), type, offset, data, flags};
-    xQueueSend(log_queue, &evt, 0);
+    uint32_t h = log_head;
+    if (h - __atomic_load_n(&log_tail, __ATOMIC_ACQUIRE) >= LOG_RING_SIZE)
+    {
+        log_dropped++;
+        return;
+    }
+    LogEvt *e = &log_ring[h & (LOG_RING_SIZE - 1u)];
+    e->ts_ms  = (uint32_t)xTaskGetTickCount();
+    e->type   = type;
+    e->offset = offset;
+    e->data   = data;
+    e->flags  = flags;
+    __atomic_store_n(&log_head, h + 1u, __ATOMIC_RELEASE);
 }
 
 /* ===========================================================================
- * MonitorTask -- Core 1, IRAM-resident
+ * MonitorTask -- Core 0, IRAM-resident
+ *
+ * Core 0 runs only this task (it never yields); Core 1 runs setup()/loop(),
+ * Serial and its UART interrupt, and prints the events pushed into log_ring.
  * =========================================================================== */
 static void IRAM_ATTR MonitorTask(void *arg)
 {
     /*
-     * Dedicated GPIO bundles — MUST be created on Core 1 (the executing core).
+     * Dedicated GPIO bundles — MUST be created on the executing core (Core 0).
      *
      * Input  bundle: [PHI2]                    → input  ch 0 (bit 0 of ee.get_gpio_in)
      * Output bundle: [DEV_SEL_N, EXTSEL_N, MPD] → output ch 0-2 (bits 0-2 of
@@ -365,10 +371,17 @@ static void IRAM_ATTR MonitorTask(void *arg)
      * glitch that would occur if the dedicated GPIO output register starts at 0. */
     cpu_ll_write_dedic_gpio_mask(DEDIC_OUT_CTRL_MASK, DEDIC_OUT_CTRL_IDLE);
 
-    bool selected = false;
     bus_release();
 
-    bool vera_board_is_pbi = VERA_BOARD_IS_PBI;
+    const bool is_pbi = VERA_BOARD_IS_PBI;
+
+    /* Card state, kept in registers; the tables are switched by pointer. */
+    bool           selected  = false;
+    uint8_t        portb     = PORTB;
+    uint8_t        pbctl     = PBCTL;
+    bool           rambo_on  = rambo_hw_enabled && !(portb & 0x10u);
+    const uint8_t *ctrl_cur  = bus_ctrl[bus_state(selected, rambo_on)];
+    uint32_t       rambo_off = bus_rambo_bank(portb) << 14;
 
     /*
      * Startup sync sequence — executed once before the hot loop:
@@ -409,181 +422,132 @@ static void IRAM_ATTR MonitorTask(void *arg)
         uint32_t g_lo = GPIO.in;
         uint32_t g_hi = GPIO.in1.val;
 
-        /* 2. Decode address and R/W */
-        bool     is_read = (g_lo & (1UL << PIN_RW)) != 0;
-        uint16_t addr    = decode_addr(g_lo, g_hi);
-        uint8_t  off8    = (uint8_t)(addr & 0xFFu);
+        /* 2. Page lookup: control levels and actions for A8-A15 in the
+         *    current state.  Only $D1xx (PBI) / $D5xx (CCTL) also need A0-A7. */
+        uint32_t idx  = bus_page_idx(g_lo, g_hi);
+        uint32_t c    = ctrl_cur[idx];
+        uint32_t off8 = (g_lo >> 12) & 0xFFu;
+        if (c & CT_SLOW)
+            c = bus_slow_ctrl(c, off8, selected, is_pbi);
 
-        /* PBI address ranges */
-        bool is_d1xx = (addr >= 0xD100u && addr <= 0xD1FFu);
-        bool is_d6xx = (addr >= 0xD600u && addr <= 0xD7FFu);
-        bool is_d8xx = (addr >= 0xD800u && addr <= 0xDFFFu);
+        /* 3. Assert control signals atomically (one ee.wr_mask_gpio_out;
+         *    the mask keeps the CT_* flag bits off the pins). */
+        cpu_ll_write_dedic_gpio_mask(DEDIC_OUT_CTRL_MASK, c);
 
-        bool is_vera_range = is_d1xx && (off8 <= 0x1Fu);
-        bool is_vcs_latch  = is_d1xx && (off8 == 0xFFu);
-
-        /* CCTL address range ($D500-$D5FF, latch at $D5FF) */
-        bool is_d5xx       = (addr >= 0xD500u && addr <= 0xD5FFu);
-        bool is_cctl_range = is_d5xx && (off8 != 0xFFu);
-        bool is_cctl_latch = is_d5xx && (off8 == 0xFFu);
-
-        /* RAMbo: 256 KB bank-switched at $4000-$7FFF, independent of PBI/CCTL mode.
-         * Active when PIN_RAMBO_EN=1 (hardware present) and bit 4 of PORTB ($D301) = 0.
-         * Bank (0-15) from PORTB bits 6,5,3,2: bank = ((portb>>2)&0x03)|((portb>>3)&0x0C) */
-        bool is_rambo_window = (addr >= 0x4000u && addr <= 0x7FFFu);
-        bool rambo_active    = rambo_hw_enabled && ((PORTB & 0x10u) == 0u);
-
-        /* 3. Assert control signals atomically in one ee.wr_mask_gpio_out instruction.
-         *    Previously: up to 3 separate APB writes (~18 cycles total).
-         *    Now: 1 TIE instruction (~1 cycle). */
-        uint8_t ctrl = DEDIC_OUT_CTRL_IDLE;
+        if (g_lo & (1UL << PIN_RW))
         {
-            if (vera_board_is_pbi)
+            /* 4a. Read cycle: drive PBI ROM / PBI RAM / RAMbo data. */
+            if (c & CT_DRIVE)
             {
-                /* VERA registers ($D100-$D11F) are ALWAYS present, independent of
-                 * the $D1FF latch: the OS deselects the card ($D1FF = 0) right
-                 * after INIT and the driver never selects it again (selecting
-                 * would also map the ROM and disable the Math Pack, breaking
-                 * BASIC floating point). */
-                if (is_vera_range)
-                    ctrl &= ~(DEDIC_OUT_DEVSELN | DEDIC_OUT_EXTSEL);
-
-                if (selected)
-                {
-                    /* Disable MMU for D1xx (except VCS latch) and D6xx */
-                    if ((is_d1xx && !is_vcs_latch) || is_d6xx)
-                        ctrl &= ~DEDIC_OUT_EXTSEL;
-
-                    /* Disable Math Pack for ROM area */
-                    if (is_d8xx)
-                        ctrl &= ~DEDIC_OUT_MPD;
-                }
-            }
-            else
-            {
-                /* CCTL: assert DEV_SEL_N only when selected and in non-latch range */
-                if (selected && is_cctl_range)
-                    ctrl &= ~DEDIC_OUT_DEVSELN;
-            }
-            /* RAMbo: suppress Atari internal RAM in the bank window */
-            if (rambo_active && is_rambo_window)
-                ctrl &= ~DEDIC_OUT_EXTSEL;
-
-            cpu_ll_write_dedic_gpio_mask(DEDIC_OUT_CTRL_MASK, ctrl);
-        }
-
-        /* 4. Cycle Handling */
-        if (is_read)
-        {
-            if (vera_board_is_pbi && selected)
-            {
-                if (is_d8xx)
-                {
-                    bus_drive(pbi_driver[addr & 0x7FFu]);
-                }
-                else if (is_d6xx)
-                {
-                    bus_drive(ram_pbi[addr & 0x1FFu]);
-                }
+                const uint8_t *p = bus_rd_base[idx];
+                if (c & CT_RAMBO)
+                    p += rambo_off;
+                bus_drive(p[off8]);
             }
 #if VERA_TRACE_REGS
-            if (vera_board_is_pbi && is_vera_range)
+            if ((c & CT_SLOW) && is_pbi && off8 <= 0x1Fu)
             {
-                /* VERA drives the bus; re-read to capture what it put on the line. */
-                uint8_t reg_data = decode_data(GPIO.in);
+                /* VERA drives the bus: sample it just before PHI2 falls. */
+                uint32_t last = g_lo, now;
+                while ((now = GPIO.in) & (1UL << PIN_PHI2))
+                    last = now;
                 uint8_t fl = 0x00;  /* read */
-                if (!(ctrl & DEDIC_OUT_MPD))    fl |= 0x04;
-                if (!(ctrl & DEDIC_OUT_EXTSEL)) fl |= 0x08;
-                log_send(EVT_REG, off8, reg_data, fl);
+                if (!(c & DEDIC_OUT_MPD))    fl |= 0x04;
+                if (!(c & DEDIC_OUT_EXTSEL)) fl |= 0x08;
+                log_send(EVT_REG, (uint8_t)off8, decode_data(last), fl);
             }
 #endif
-            if (rambo_active && is_rambo_window)
-            {
-                uint8_t bank = ((PORTB >> 2) & 0x03u) | ((PORTB >> 3) & 0x0Cu);
-                bus_drive(extended_rambo_256k[((uint32_t)bank << 14) | (addr & 0x3FFFu)]);
-            }
-            /* CCTL mode: no data bus driving */
-        }
-        else
-        {
-            /* Write cycle: re-read GPIO.in to ensure data has settled well after
-             * the PHI2 rising edge (6502 data is stable during all of PHI2 high). */
-            uint8_t data = decode_data(GPIO.in);
-
-            if (vera_board_is_pbi)
-            {
-                if (is_vcs_latch)
-                {
-                    /* PBI: each device latches only its own data bit */
-                    bool new_sel = ((data & PBI_DEV_ID) != 0u);
-                    if (new_sel != selected)
-                    {
-                        selected = new_sel;
-                        uint8_t fl = 0x01u | (selected ? 0x02u : 0x00u);
-                        if (!(ctrl & DEDIC_OUT_MPD))    fl |= 0x04u;
-                        if (!(ctrl & DEDIC_OUT_EXTSEL)) fl |= 0x08u;
-                        log_send(EVT_LATCH, off8, data, fl);
-                    }
-                }
-#if VERA_TRACE_REGS
-                else if (is_vera_range)
-                {
-                    uint8_t fl = 0x01u;  /* write */
-                    if (!(ctrl & DEDIC_OUT_MPD))    fl |= 0x04u;
-                    if (!(ctrl & DEDIC_OUT_EXTSEL)) fl |= 0x08u;
-                    log_send(EVT_REG, off8, data, fl);
-                }
-#endif
-            }
-            else
-            {
-                if (is_cctl_latch)
-                {
-                    bool new_sel = ((data & PBI_DEV_ID) != 0u);
-                    if (new_sel != selected)
-                    {
-                        selected = new_sel;
-                        uint8_t fl = 0x01u | (selected ? 0x02u : 0x00u);
-                        if (!(ctrl & DEDIC_OUT_MPD))    fl |= 0x04u;
-                        if (!(ctrl & DEDIC_OUT_EXTSEL)) fl |= 0x08u;
-                        log_send(EVT_LATCH, off8, data, fl);
-                    }
-                }
-            }
-            /*
-             * RAMbo PIA emulation: snoop PBCTL ($D303) and PORTB ($D301).
-             *
-             * $D303 must be intercepted first: it controls which register
-             * is accessible at $D301. Only update PORTB when PBCTL bit 2 = 1
-             * (output register mode). When bit 2 = 0, $D301 addresses the
-             * Data Direction Register — those writes must be silently discarded,
-             * otherwise the DDR value would corrupt the bank-selection state.
-             *
-             * Typical OS init sequence:
-             *   write 0x00 → $D303  (PBCTL bit2=0 → DDR selected at $D301)
-             *   write 0xFF → $D301  (set all PORTB pins as outputs — DDR write)
-             *   write 0x34 → $D303  (PBCTL bit2=1 → output register at $D301)
-             *   write 0xNN → $D301  (bank-selection write — now captured here)
-             */
-            if (addr == 0xD303u)
-                PBCTL = data;
-            /* Update bank-selection register only when PBCTL bit 2 (CRB-2) = 1. */
-            if (addr == 0xD301u && (PBCTL & 0x04u))
-                PORTB = data;
-            /* RAMbo write: store data into the active bank */
-            if (rambo_active && is_rambo_window)
-            {
-                uint8_t bank = ((PORTB >> 2) & 0x03u) | ((PORTB >> 3) & 0x0Cu);
-                extended_rambo_256k[((uint32_t)bank << 14) | (addr & 0x3FFFu)] = data;
-            }
+            /* 5a. Wait for PHI2 falling edge, then release bus and controls. */
+            while (cpu_ll_read_dedic_gpio_in() & DEDIC_IN_PHI2);
+            if (c & CT_DRIVE)
+                bus_release();
+            cpu_ll_write_dedic_gpio_mask(DEDIC_OUT_CTRL_MASK, DEDIC_OUT_CTRL_IDLE);
+            continue;
         }
 
-        /* 5. Wait for PHI2 falling edge (1 cycle/iteration via TIE instruction). */
-        while (cpu_ll_read_dedic_gpio_in() & DEDIC_IN_PHI2);
-
-        /* 6. End of cycle: release data bus, deassert all controls in 1 instruction. */
-        bus_release();
+        /* 4b. Write cycle: the 6502 data is valid only ~100-150 ns after PHI2
+         *     rise and held ~10-30 ns after PHI2 fall.  Keep re-reading GPIO.in
+         *     (PHI2 is in the same register) and use the last snapshot taken
+         *     with PHI2 still high. */
+        uint32_t last = g_lo, now;
+        while ((now = GPIO.in) & (1UL << PIN_PHI2))
+            last = now;
         cpu_ll_write_dedic_gpio_mask(DEDIC_OUT_CTRL_MASK, DEDIC_OUT_CTRL_IDLE);
+
+        /* 5b. Side effects, during PHI1 (bus already released). */
+        uint8_t data = decode_data(last);
+
+        if (c & CT_WR_MEM)
+        {
+            uint8_t *p = (uint8_t *)bus_rd_base[idx];
+            if (c & CT_RAMBO)
+                p += rambo_off;
+            p[off8] = data;
+        }
+
+        if (c & CT_WR_REG)
+        {
+            uint8_t page = bus_idx_to_page(idx);
+            bool    state_changed = false;
+
+            if (off8 == 0xFFu && page == (is_pbi ? 0xD1u : 0xD5u))
+            {
+                /* PBI: each device latches only its own data bit.
+                 * CCTL: write $80 selects, $00 deselects. */
+                bool new_sel = ((data & PBI_DEV_ID) != 0u);
+                if (new_sel != selected)
+                {
+                    selected      = new_sel;
+                    state_changed = true;
+                    uint8_t fl = 0x01u | (selected ? 0x02u : 0x00u);
+                    if (!(c & DEDIC_OUT_MPD))    fl |= 0x04u;
+                    if (!(c & DEDIC_OUT_EXTSEL)) fl |= 0x08u;
+                    log_send(EVT_LATCH, (uint8_t)off8, data, fl);
+                }
+            }
+            else if (page == 0xD3u)
+            {
+                /*
+                 * RAMbo PIA emulation: snoop PBCTL ($D303) and PORTB ($D301).
+                 *
+                 * $D303 must be intercepted first: it controls which register
+                 * is accessible at $D301. Only update PORTB when PBCTL bit 2 = 1
+                 * (output register mode). When bit 2 = 0, $D301 addresses the
+                 * Data Direction Register — those writes must be silently discarded,
+                 * otherwise the DDR value would corrupt the bank-selection state.
+                 *
+                 * Typical OS init sequence:
+                 *   write 0x00 → $D303  (PBCTL bit2=0 → DDR selected at $D301)
+                 *   write 0xFF → $D301  (set all PORTB pins as outputs — DDR write)
+                 *   write 0x34 → $D303  (PBCTL bit2=1 → output register at $D301)
+                 *   write 0xNN → $D301  (bank-selection write — now captured here)
+                 */
+                if (off8 == 0x03u)
+                {
+                    pbctl = data;
+                    PBCTL = data;
+                }
+                else if (off8 == 0x01u && (pbctl & 0x04u))
+                {
+                    portb         = data;
+                    PORTB         = data;
+                    rambo_off     = bus_rambo_bank(portb) << 14;
+                    rambo_on      = rambo_hw_enabled && !(portb & 0x10u);
+                    state_changed = true;
+                }
+            }
+#if VERA_TRACE_REGS
+            else if (is_pbi && page == 0xD1u && off8 <= 0x1Fu)
+            {
+                uint8_t fl = 0x01u;  /* write */
+                if (!(c & DEDIC_OUT_MPD))    fl |= 0x04u;
+                if (!(c & DEDIC_OUT_EXTSEL)) fl |= 0x08u;
+                log_send(EVT_REG, (uint8_t)off8, data, fl);
+            }
+#endif
+            if (state_changed)
+                ctrl_cur = bus_ctrl[bus_state(selected, rambo_on)];
+        }
     }
 }
 
@@ -628,7 +592,8 @@ void setup(void)
 
     Serial.printf("[VeraX16] RAMbo 256K: %s\n", rambo_hw_enabled ? "ENABLED" : "DISABLED");
 
-    log_queue = xQueueCreate(LOG_QUEUE_SIZE, sizeof(LogEvt));
+    bus_build_tables(bus_ctrl, bus_rd_base, VERA_BOARD_IS_PBI, rambo_hw_enabled,
+                     pbi_driver, ram_pbi, extended_rambo_256k);
 
     /* Configure GPIO Modes */
     gpio_config_t cfg = {};
@@ -659,19 +624,22 @@ void setup(void)
     pinMode(PIN_MPD, OUTPUT);
     digitalWrite(PIN_MPD, HIGH);
 
-    /* Start High-Priority Monitor Task on Core 1 (dedicated bus management) */
+    /* Start High-Priority Monitor Task on Core 0 (dedicated bus management).
+     * It never yields, so the Core 0 idle task must leave the task watchdog.
+     * setup()/loop() stay on Core 1 (ARDUINO_RUNNING_CORE) with Serial. */
+    disableCore0WDT();
     xTaskCreatePinnedToCore(
         MonitorTask, "BusMonitor",
         4096, NULL,
         configMAX_PRIORITIES - 1,
-        NULL, 1
+        NULL, 0
     );
 
-    Serial.println("[VeraX16] Bus Monitor active on Core 1");
+    Serial.println("[VeraX16] Bus Monitor active on Core 0");
 }
 
 /* ---------------------------------------------------------------------------
- * VERA register name lookup — Core 0 only, not IRAM-resident.
+ * VERA register name lookup — Core 1 only (loop()), not IRAM-resident.
  * Registers $09-$0C are muxed by DCSEL (bits [2:1] of VERA_CTRL, offset $05).
  * --------------------------------------------------------------------------- */
 static const char *vera_reg_name(uint8_t offset, uint8_t dcsel)
@@ -745,23 +713,32 @@ static const char *vera_reg_name(uint8_t offset, uint8_t dcsel)
 }
 
 /* ===========================================================================
- * Main Loop -- Core 0: drain log queue and print
+ * Main Loop -- Core 1: drain log_ring (filled by Core 0) and print
  * =========================================================================== */
 void loop(void)
 {
     /* Shadow of VERA_CTRL DCSEL bits [2:1]; updated on every write to $D105. */
-    static uint8_t dcsel = 0;
+    static uint8_t  dcsel = 0;
+    static uint32_t dropped_seen = 0;
 
-    LogEvt evt;
-    while (xQueueReceive(log_queue, &evt, pdMS_TO_TICKS(10)) == pdTRUE)
+    uint32_t t = log_tail;
+    if (t == __atomic_load_n(&log_head, __ATOMIC_ACQUIRE))
     {
-        uint32_t sec = (uint32_t)(evt.ts_us / 1000000ULL);
-        uint32_t us  = (uint32_t)(evt.ts_us % 1000000ULL);
+        vTaskDelay(pdMS_TO_TICKS(10));
+        return;
+    }
+    while (t != __atomic_load_n(&log_head, __ATOMIC_ACQUIRE))
+    {
+        LogEvt evt = log_ring[t & (LOG_RING_SIZE - 1u)];
+        __atomic_store_n(&log_tail, ++t, __ATOMIC_RELEASE);
+
+        uint32_t sec = evt.ts_ms / 1000u;
+        uint32_t ms  = evt.ts_ms % 1000u;
         if (evt.type == EVT_LATCH)
         {
             bool enabled = (evt.flags & 0x02) != 0;
-            Serial.printf("[%5lu.%06lu] [VCS ] Latch %s ($%02X written to %s) MPD=%s EXTSEL=%s\n",
-                          sec, us,
+            Serial.printf("[%5lu.%03lu] [VCS ] Latch %s ($%02X written to %s) MPD=%s EXTSEL=%s\n",
+                          sec, ms,
                           enabled ? "ENABLED " : "DISABLED", evt.data,
                           VERA_BOARD_IS_PBI ? "$D1FF" : "$D5FF",
                           (evt.flags & 0x04) ? "LO" : "HI",
@@ -773,8 +750,8 @@ void loop(void)
             if (evt.offset == 0x05 && (evt.flags & 0x01))
                 dcsel = (evt.data >> 1) & 0x07;
 
-            Serial.printf("[%5lu.%06lu] [D1%02X - %-20s] %c $%02X  MPD=%s EXTSEL=%s\n",
-                          sec, us,
+            Serial.printf("[%5lu.%03lu] [D1%02X - %-20s] %c $%02X  MPD=%s EXTSEL=%s\n",
+                          sec, ms,
                           evt.offset,
                           vera_reg_name(evt.offset, dcsel),
                           (evt.flags & 0x01) ? 'W' : 'R',
@@ -782,5 +759,13 @@ void loop(void)
                           (evt.flags & 0x04) ? "LO" : "HI",
                           (evt.flags & 0x08) ? "LO" : "HI");
         }
+    }
+
+    uint32_t dropped = log_dropped;
+    if (dropped != dropped_seen)
+    {
+        Serial.printf("[VeraX16] log: %lu events dropped (ring full)\n",
+                      (unsigned long)(dropped - dropped_seen));
+        dropped_seen = dropped;
     }
 }

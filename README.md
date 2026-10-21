@@ -150,7 +150,7 @@ Commander X16 computer but has been adapted for ATARI systems. It provides:
 - **Package**: QFN-56 (7×7 mm)
 - **Crystal**: requires an external **40 MHz crystal** on dedicated analog pins XTAL\_P (QFN56 pin 56) and XTAL\_N (pin 55) — mandatory for PLL startup; see PIN-MAPPING.md § 5
 - **Role**: Full software 6502-bus controller — reads A0–A15, PHI2, R/W every cycle and drives EXTSEL\_N, DEV\_SEL\_N, MPD in real time; handles PBI ($D1xx) and CCTL ($D5xx) in a single unified firmware
-- **Timing**: hot loop on Core 1 at max FreeRTOS priority; control signals asserted via **Dedicated GPIO** Xtensa TIE instructions (`ee.get_gpio_in` / `ee.wr_mask_gpio_out`, 1 CPU cycle) within the 279 ns PHI2-high window of the 1.79 MHz 6502 clock
+- **Timing**: hot loop on Core 0 at max FreeRTOS priority (Core 1 only prints the log on Serial), table-driven page decode; control signals asserted via **Dedicated GPIO** Xtensa TIE instructions (`ee.get_gpio_in` / `ee.wr_mask_gpio_out`, 1 CPU cycle) within the 279 ns PHI2-high window of the 1.79 MHz 6502 clock
 
 ### Interface Components
 
@@ -415,7 +415,7 @@ iceprog -c
 ### ESP32 Configuration
 
 #### ESP32 Firmware
-The ESP32-S3FN8 (Core 1 hot loop) handles:
+The ESP32-S3FN8 (Core 0 hot loop, Core 1 serial log) handles:
 - **Startup sync**: ARESET and CRESET asserted LOW immediately in `setup()` (before `Serial.begin`). `MonitorTask` releases CRESET, polls CDONE until the ICE40UP5K bitstream is loaded (< 100 ms typical, 5 s timeout), then releases ARESET — Atari starts with bus and FPGA already ready
 - **Bus Decoding**: Full software decode of A0–A15 sampled on every PHI2 rising edge — no page ambiguity
 - **Dedicated GPIO**: Control signals (EXTSEL\_N, DEV\_SEL\_N, MPD) asserted in a single Xtensa TIE instruction (`ee.wr_mask_gpio_out`, 1 CPU cycle) within the 279 ns PHI2-high window
@@ -1025,7 +1025,7 @@ iceprog -c
 ### Configurazione ESP32
 
 #### Firmware ESP32
-L'ESP32-S3FN8 (hot loop sul Core 1) gestisce:
+L'ESP32-S3FN8 (hot loop sul Core 0, log seriale sul Core 1) gestisce:
 - **Sincronizzazione startup**: ARESET e CRESET abbassati subito in `setup()` (prima di `Serial.begin`). `MonitorTask` rilascia CRESET, attende CDONE = HIGH (bitstream ICE40UP5K caricato, tipicamente < 100 ms, timeout 5 s), poi rilascia ARESET — l'Atari parte con bus e FPGA già operativi
 - **Decodifica Bus**: Decodifica software completa di A0–A15 campionati ad ogni fronte di salita di PHI2 — nessuna ambiguità di pagina, nessun hardware decoder esterno
 - **Dedicated GPIO**: I segnali di controllo (EXTSEL\_N, DEV\_SEL\_N, MPD) vengono affermati in una singola istruzione Xtensa TIE (`ee.wr_mask_gpio_out`, 1 ciclo CPU) nella finestra PHI2-high di 279 ns
