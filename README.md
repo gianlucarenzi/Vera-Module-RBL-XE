@@ -111,7 +111,7 @@ Commander X16 computer but has been adapted for ATARI systems. It provides:
 | **USB Interface** | CH340T |
 | **Power Regulators** | AMS1117-3.3V, AMS1117-1.2V, L7805 |
 | **Crystal (VERA board)** | 25 MHz ECS-2033-250-BN (ICE40UP5K reference clock) |
-| **Crystal (ESP32-S3)** | 40 MHz external — required; XTAL\_P (QFN56 pin 56) / XTAL\_N (pin 55) |
+| **Crystal (ESP32-S3)** | 40 MHz external — required; XTAL\_P (QFN56 pin 54) / XTAL\_N (pin 53) |
 | **PCB Layers** | 4-layer (Signal/Power/GND/Signal) |
 | **Board Size** | TBD mm x TBD mm |
 
@@ -148,7 +148,7 @@ Commander X16 computer but has been adapted for ATARI systems. It provides:
 - **Connectivity**: Wi-Fi 802.11 b/g/n, Bluetooth 5 LE
 - **GPIO**: 45 total (38 usable), all bidirectional
 - **Package**: QFN-56 (7×7 mm)
-- **Crystal**: requires an external **40 MHz crystal** on dedicated analog pins XTAL\_P (QFN56 pin 56) and XTAL\_N (pin 55) — mandatory for PLL startup; see PIN-MAPPING.md § 5
+- **Crystal**: requires an external **40 MHz crystal** on dedicated analog pins XTAL\_P (QFN56 pin 54) and XTAL\_N (pin 53) — mandatory for PLL startup; see PIN-MAPPING.md § 5
 - **Role**: Full software 6502-bus controller — reads A0–A15, PHI2, R/W every cycle and drives EXTSEL\_N, DEV\_SEL\_N, MPD in real time; handles PBI ($D1xx) and CCTL ($D5xx) in a single unified firmware
 - **Timing**: hot loop on Core 0 at max FreeRTOS priority (Core 1 only prints the log on Serial), table-driven page decode; control signals asserted via **Dedicated GPIO** Xtensa TIE instructions (`ee.get_gpio_in` / `ee.wr_mask_gpio_out`, 1 CPU cycle) within the 279 ns PHI2-high window of the 1.79 MHz 6502 clock
 
@@ -722,7 +722,7 @@ computer Commander X16 ma è stato adattato per i sistemi ATARI. Fornisce:
 | **Interfaccia USB** | CH340T |
 | **Regolatori Alimentazione** | AMS1117-3.3V, AMS1117-1.2V, L7805 |
 | **Cristallo (scheda VERA)** | 25 MHz ECS-2033-250-BN (clock di riferimento ICE40UP5K) |
-| **Cristallo (ESP32-S3)** | 40 MHz esterno — obbligatorio; XTAL\_P (QFN56 pin 56) / XTAL\_N (pin 55) |
+| **Cristallo (ESP32-S3)** | 40 MHz esterno — obbligatorio; XTAL\_P (QFN56 pin 54) / XTAL\_N (pin 53) |
 | **Layer PCB** | 4 layer (Segnale/Alimentazione/GND/Segnale) |
 | **Dimensioni Scheda** | TBD mm x TBD mm |
 
@@ -759,7 +759,7 @@ computer Commander X16 ma è stato adattato per i sistemi ATARI. Fornisce:
 - **Connettività**: Wi-Fi 802.11 b/g/n, Bluetooth 5 LE
 - **GPIO**: 45 totali (38 usabili), tutti bidirezionali
 - **Package**: QFN-56 (7×7 mm)
-- **Quarzo**: richiede un **quarzo esterno 40 MHz** sui pin analogici dedicati XTAL\_P (QFN56 pin 56) e XTAL\_N (pin 55) — obbligatorio per il PLL di avvio; vedere PIN-MAPPING.md § 5
+- **Quarzo**: richiede un **quarzo esterno 40 MHz** sui pin analogici dedicati XTAL\_P (QFN56 pin 54) e XTAL\_N (pin 53) — obbligatorio per il PLL di avvio; vedere PIN-MAPPING.md § 5
 - **Ruolo**: Controllore bus 6502 completamente software — campiona A0–A15, PHI2, R/W ad ogni ciclo e pilota EXTSEL\_N, DEV\_SEL\_N, MPD tramite istruzioni **Dedicated GPIO** Xtensa TIE (1 ciclo CPU) nella finestra PHI2-high di 279 ns; gestisce PBI ($D1xx) e CCTL ($D5xx) con un unico firmware unificato
 
 ### Componenti Interfaccia
