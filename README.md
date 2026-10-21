@@ -4,12 +4,19 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![KiCad](https://img.shields.io/badge/KiCad-5.1.9-blue.svg)](https://www.kicad.org/)
-[![ATARI Ready](https://img.shields.io/badge/ATARI-Ready-red.svg)](https://atari.com)
+[![Status: Work in progress](https://img.shields.io/badge/status-WORK_IN_PROGRESS_%E2%80%94_NOT_WORKING-red.svg)](#)
+[![ATARI XL/XE](https://img.shields.io/badge/ATARI-XL%2FXE-red.svg)](https://atari.com)
 [![ESP32](https://img.shields.io/badge/ESP32--S3-FN8-yellow.svg)](https://www.espressif.com/)
 
 *🌐 English | [🌐 Italiano](#vera-module-rbl-xe-italiano)*
 
 </div>
+
+> [!WARNING]
+> **WORK IN PROGRESS — NOT WORKING.**
+> This project is under development and does **not** work yet. The board has not been built or
+> tested; firmware (ESP32, FPGA) and documentation have only been checked in simulation or on
+> paper and may contain errors. Do not manufacture the PCB or rely on this design yet.
 
 ---
 
@@ -621,6 +628,12 @@ If you find this project useful, please consider:
 *[🌐 English](#vera-module-rbl-xe) | 🌐 Italiano*
 
 </div>
+
+> [!WARNING]
+> **LAVORO IN CORSO — NON FUNZIONANTE.**
+> Il progetto è in fase di sviluppo e **non** funziona ancora. La scheda non è stata realizzata né
+> provata; firmware (ESP32, FPGA) e documentazione sono stati verificati solo in simulazione o sulla
+> carta e possono contenere errori. Non produrre il PCB e non fare affidamento su questo progetto.
 
 ---
 
