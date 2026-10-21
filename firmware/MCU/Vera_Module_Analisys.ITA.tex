@@ -252,9 +252,9 @@ UART RX & 44 & 50 & U0RXD & IN  & non utilizzato in firmware \\
 
 \subsection*{GPIO disponibili}
 
-Con A12--A15 aggiunti e \texttt{RAMBO\_EN} (GPIO\,3), tutti i GPIO utilizzabili sono ora assegnati. Non rimangono GPIO liberi per usi futuri.
+Con A12--A15 aggiunti e \texttt{RAMBO\_EN} (GPIO\,3) restano liberi solo \textbf{GPIO\,47} (pin\,37, \texttt{SPICLK\_P}) e \textbf{GPIO\,48} (pin\,36, \texttt{SPICLK\_N}): sulla FN8 la memoria li usa solo in modalità Octal SPI, e sono alimentati da VDD\_SPI (3.3\,V sulla FN8, datasheet Table~1-1).
 
-\noindent\textbf{Attenzione:} I pin QFN56 28 e 30--35 (GPIO\,26--32) sono collegati internamente alla flash Quad SPI in-package (variante FN8) e non devono mai essere connessi esternamente. GPIO\,45 (pin\,51) e GPIO\,46 (pin\,52) sono pin di strapping del chip: vengono usati come ingressi A14 e A15 (vedere sezione~\ref{sec:strapping}). I pin\,53 (\texttt{XTAL\_N}) e\,54 (\texttt{XTAL\_P}) sono pad analogici dedicati al quarzo 40\,MHz: riservati, non usabili come GPIO (vedere sezione~\ref{sec:xtal}).
+\noindent\textbf{Attenzione:} I pin QFN56 30--35 (GPIO\,27--32) sono collegati internamente alla flash Quad SPI in-package (variante FN8) e non devono mai essere connessi esternamente; il pin\,28 (GPIO\,26, \texttt{SPICS1}) è il chip select della PSRAM in-package, assente sulla FN8, e resta comunque sconsigliato (datasheet Table~2-14). GPIO\,45 (pin\,51) e GPIO\,46 (pin\,52) sono pin di strapping del chip: vengono usati come ingressi A14 e A15 (vedere sezione~\ref{sec:strapping}). I pin\,53 (\texttt{XTAL\_N}) e\,54 (\texttt{XTAL\_P}) sono pad analogici dedicati al quarzo 40\,MHz: riservati, non usabili come GPIO (vedere sezione~\ref{sec:xtal}).
 
 \subsection{Pin di strapping — comportamento al boot con bus ATARI connesso}
 \label{sec:strapping}
@@ -310,16 +310,16 @@ lato ESP32 su GPIO\,45 e GPIO\,46.
     $\rightarrow$ il pin A14 lato Atari è in alta impedenza; l'uscita lato ESP32 di U3
     non è pilotata in modo garantito (vedere sopra) e il pull-down interno porta
     GPIO\,45 a LOW.\\
-    Valore campionato: \textbf{LOW $\rightarrow$ VDD\_SPI alimentato dal LDO interno
-    ($\approx$1.8\,V)}.
-    Per la variante FN8 (flash integrata on-package) il rail VDD\_SPI è instradato
-    internamente e indipendente dallo strapping; entrambi i valori LOW e HIGH sono
-    elettricamente sicuri. Il pull-down è coerente con lo stato idle del bus.\,$\checkmark$
+    Valore campionato: \textbf{LOW $\rightarrow$ VDD\_SPI = 3.3\,V da VDD3P3\_RTC}
+    (datasheet v2.2, Table~3-4, con gli eFuse di default). È il valore richiesto dalla
+    FN8, la cui flash in-package è alimentata da VDD\_SPI a 3.3\,V (Table~1-1).
 
-    \noindent\textbf{Rischio residuo:} se un accoppiamento parassita o una salita
-    particolarmente rapida del rail 5\,V Atari porta A14 HIGH durante la finestra di
-    campionamento, il risultato è VDD\_SPI = 3.3\,V (VDD3P3\_RTC) — anch'esso sicuro
-    per FN8.
+    \noindent\textbf{Rischio:} se A14 è HIGH durante la finestra di campionamento,
+    VDD\_SPI = 1.8\,V dal regolatore della flash e la flash in-package è
+    sottoalimentata: il chip \textbf{non si avvia}. A14 deve essere LOW al power-on
+    (da verificare sulla scheda), oppure si possono programmare gli eFuse
+    \texttt{EFUSE\_VDD\_SPI\_FORCE}\,=\,1 e \texttt{EFUSE\_VDD\_SPI\_TIEH}\,=\,1
+    (operazione irreversibile) per fissare VDD\_SPI a 3.3\,V e ignorare GPIO\,45.
 
   \item \textbf{GPIO\,46 — Pin\,52 \quad|\quad ROM messages (UART0) \quad|\quad Pull-DOWN
         interno $\approx$5\,k$\Omega$}\\

@@ -18,8 +18,8 @@ Target MCU: **ESP32-S3FN8** — QFN56 package, 45 GPIOs, 8 MB in-package Quad SP
 |------|-----------|--------|------|
 | **GPIO 0** | 5 | BOOT0 | Strapping pin (boot mode) — **non è NC**: rete `BOOT0` con `R33` 4,7 kΩ → 3V3, pulsante `SW3`, `C61` 100 nF e `R54` 220 Ω verso `Q4` (auto-reset del programmatore). LOW al reset = modalità download. |
 | **GPIO 3** | 8 | RAMBO\_EN | Strapping pin (JTAG source, no internal pull) — usato come **RAMbo hardware enable**: pull-up 10 kΩ → VCC = RAMbo presente; pull-down 10 kΩ → GND = assente. Letto una volta in `setup()`. |
-| **GPIO 26–32** | 28, 30–35 | — | Hard-wired to in-package Quad SPI flash (FN8 variant). **Never connect externally**. |
-| **GPIO 45** | 51 | A14 | Strapping pin (VDD_SPI select) — internal weak pull-down (~5 kΩ). Connesso ad A14 via 74LVC4245APW_118 U3. Al power-on il 6502 è in reset → A14 alta impedenza → U3 flotta → pull-down → **LOW → VDD_SPI da LDO interno (~1.8 V)**. Sicuro per variante FN8 (flash on-package). |
+| **GPIO 26–32** | 28, 30–35 | — | SPI0/1 pins of the in-package memory (datasheet Table 2-14). On the FN8 the Quad SPI flash uses GPIO 27–32 (pins 30–35): **never connect externally**. GPIO 26 (pin 28, SPICS1) is the in-package PSRAM chip select, absent on the FN8; Espressif still advises against other uses. |
+| **GPIO 45** | 51 | A14 | Strapping pin (VDD_SPI select) — internal weak pull-down (~5 kΩ). Connesso ad A14 via 74LVC4245APW_118 U3. Al power-on il 6502 è in reset → A14 alta impedenza → U3 flotta → pull-down → **LOW → VDD_SPI = 3.3 V da VDD3P3_RTC** (datasheet v2.2 Table 3-4), il valore richiesto dalla flash in-package della FN8 (Table 1-1). **Con A14 HIGH al reset VDD_SPI = 1.8 V e il chip non si avvia**: A14 deve essere LOW al power-on (da verificare), oppure programmare `EFUSE_VDD_SPI_FORCE` = 1 e `EFUSE_VDD_SPI_TIEH` = 1 (irreversibile) per fissare 3.3 V. |
 | **GPIO 46** | 52 | A15 | Strapping pin (ROM messages on UART0) — internal weak pull-down (~5 kΩ). Connesso ad A15 via 74LVC4245APW_118 U3. Stesso scenario di GPIO 45 → **LOW → messaggi ROM disabilitati** (corretto per produzione). |
 
 > **JTAG pins reclaimed (GPIO 39–42):** il firmware chiama `gpio_reset_pin()` su GPIO 39, 40,
@@ -137,10 +137,9 @@ L'ESP32 legge A0–A15, PHI2, R/W\_ ogni ciclo e asserisce i segnali di uscita d
 tramite il **Dedicated GPIO** (istruzioni TIE Xtensa `ee.get_gpio_in` / `ee.wr_mask_gpio_out`).
 Con A0–A15 completi il decode è esatto: nessuna ambiguità di pagina.
 
-> **Perché non i chip-select hardware:** sull'ESP32-S3FN8 non ci sono GPIO liberi da
-> dedicare a ingressi per i chip-select hardware disponibili sui connettori Atari
-> (`/D1XX`, `/S4`, `/S5`, `/CCTL` — vedere § 7, tutti i GPIO non riservati sono già
-> assegnati). Inoltre l'emulazione RAMbo 256 KB richiede comunque di leggere l'intero
+> **Perché non i chip-select hardware:** sull'ESP32-S3FN8 restano liberi solo due GPIO
+> (GPIO 47 e 48, § 7), non abbastanza per i quattro chip-select hardware disponibili sui
+> connettori Atari (`/D1XX`, `/S4`, `/S5`, `/CCTL`). Inoltre l'emulazione RAMbo 256 KB richiede comunque di leggere l'intero
 > bus indirizzi A0–A15 (per decodificare la finestra $4000–$7FFF) e di intercettare le
 > scritture su PORTB ($D301), quindi anche con GPIO disponibili i chip-select hardware
 > non risparmierebbero pin sul bus indirizzi: la decodifica software è l'unica strada.
@@ -338,15 +337,18 @@ Pin non assegnati al progetto, esclusi strapping e flash in-package.
 
 | GPIO | QFN56 pin | IO MUX | Note |
 |---|---|---|---|
+| 47 | 37 | SPICLK\_P | Libero. Dominio VDD\_SPI (3.3 V sulla FN8, datasheet Table 1-1); usato dalla memoria solo in Octal SPI |
+| 48 | 36 | SPICLK\_N | Libero. Come GPIO 47 |
 | 22–25 | — | — | Non esistono su ESP32-S3 |
 
-> Tutti i GPIO non riservati sono ora assegnati: GPIO 3 = RAMBO\_EN; GPIO 33, 34, 45, 46 = A12–A15.
+> Restano liberi solo GPIO 47 e GPIO 48 (pin 37 e 36); tutti gli altri GPIO non riservati sono
+> assegnati: GPIO 3 = RAMBO\_EN; GPIO 33, 34, 45, 46 = A12–A15.
 
 **Pin esclusi (non utilizzabili):**
 
 | GPIO / Funzione | QFN56 pin | Motivo |
 |---|---|---|
-| GPIO 26–32 | 28, 30–35 | Flash in-package — mai connettere esternamente |
+| GPIO 26–32 | 28, 30–35 | Pin SPI0/1 della memoria in-package: GPIO 27–32 = flash della FN8, mai connettere esternamente; GPIO 26 = CS# PSRAM (assente sulla FN8), sconsigliato da Espressif |
 | XTAL\_N / XTAL\_P | 53, 54 | Dedicated analog — quarzo 40 MHz. Vedere § 5. |
 | VDDA1 / VDDA2 | 55, 56 | Alimentazione analogica — non GPIO, non connettere a segnali digitali |
 
@@ -354,14 +356,16 @@ Pin non assegnati al progetto, esclusi strapping e flash in-package.
 
 ## 8. QFN56 — Pinout completo
 
-Riferimento rapido ESP32-S3FN8 QFN56 (56 pin segnale + pad GND centrale).
+Riferimento rapido ESP32-S3FN8 QFN56 (56 pin + pad centrale 57 = GND). Nomi e numeri da
+*ESP32-S3 Series Datasheet* v2.2, Table 2-1 "Pin Overview" (pag. 17); funzioni dei pin della
+memoria da Table 2-14 "Pin Mapping Between Chip and Flash or PSRAM" (pag. 31).
 
 | Pin | GPIO / Funzione | Uso in questo progetto |
 |-----|-----------------|------------------------|
-| 1   | GND | GND |
-| 2   | 3V3 | 3.3 V |
-| 3   | EN (CHIP\_EN) | Pull-up 10 kΩ a 3.3 V |
-| 4   | — | (riservato / NC) |
+| 1   | LNA\_IN | Ingresso RF (Wi-Fi/Bluetooth) — non usato dal firmware |
+| 2   | VDD3P3 | Alimentazione analogica 3.3 V |
+| 3   | VDD3P3 | Alimentazione analogica 3.3 V |
+| 4   | CHIP\_PU (EN) | Pull-up 10 kΩ a 3.3 V |
 | 5   | GPIO 0 | BOOT0 (pulsante BOOT / auto-reset, pull-up `R33`) — strapping |
 | 6   | GPIO 1 | PHI2 input (via U6) |
 | 7   | GPIO 2 | R/W\_ input (via U6) |
@@ -385,16 +389,16 @@ Riferimento rapido ESP32-S3FN8 QFN56 (56 pin segnale + pad GND centrale).
 | 25  | GPIO 19 / USB\_D− | A7 (via U4) — USB disabilitato |
 | 26  | GPIO 20 / USB\_D+ | A8 (via U3) — USB disabilitato |
 | 27  | GPIO 21 | A9 (via U3) |
-| 28  | GPIO 26 (FLASH SPICS0) | **Flash in-package — NC esterno** |
+| 28  | GPIO 26 (SPICS1) | CS# della PSRAM in-package (assente sulla FN8) — non usato |
 | 29  | VDD\_SPI | Alimentazione flash — **non GPIO** |
-| 30  | GPIO 27 (FLASH SPIQ)  | **Flash in-package — NC esterno** |
-| 31  | GPIO 28 (FLASH SPIWP) | **Flash in-package — NC esterno** |
-| 32  | GPIO 29 (FLASH SPICLK)| **Flash in-package — NC esterno** |
-| 33  | GPIO 30 (FLASH SPID)  | **Flash in-package — NC esterno** |
-| 34  | GPIO 31 (FLASH SPIHD) | **Flash in-package — NC esterno** |
-| 35  | GPIO 32 (FLASH SPICS1)| **Flash in-package — NC esterno** |
-| 36  | — | (riservato / NC) |
-| 37  | — | (riservato / NC) |
+| 30  | GPIO 27 (SPIHD)  | **Flash in-package (HOLD#) — NC esterno** |
+| 31  | GPIO 28 (SPIWP)  | **Flash in-package (WP#) — NC esterno** |
+| 32  | GPIO 29 (SPICS0) | **Flash in-package (CS#) — NC esterno** |
+| 33  | GPIO 30 (SPICLK) | **Flash in-package (CLK) — NC esterno** |
+| 34  | GPIO 31 (SPIQ)   | **Flash in-package (DO) — NC esterno** |
+| 35  | GPIO 32 (SPID)   | **Flash in-package (DI) — NC esterno** |
+| 36  | GPIO 48 (SPICLK\_N) | GPIO libero — usato dalla memoria solo in Octal SPI; non usato in questo progetto |
+| 37  | GPIO 47 (SPICLK\_P) | GPIO libero — usato dalla memoria solo in Octal SPI; non usato in questo progetto |
 | 38  | GPIO 33 | A12 (via U3) |
 | 39  | GPIO 34 | A13 (via U3) |
 | 40  | GPIO 35 | A10 (via U3) |

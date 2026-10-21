@@ -113,13 +113,13 @@ static const uint8_t DBUS_PINS[8] = { 4, 5, 6, 7, 8, 9, 10, 11 };
  *   Wired to address bit A14 via TXS0108E U4 (Atari 5 V → ESP32 3.3 V).
  *   At power-on the 6502 RESET# is LOW → A14 pin is high-Z on the Atari side
  *   → U4 output floats → internal pull-down drives GPIO45 LOW.
- *   Sampled value: LOW → VDD_SPI sourced from internal LDO (~1.8 V).
- *   For the FN8 variant the embedded flash VDD rail is supplied on-package and
- *   is independent of the VDD_SPI strapping; both LOW and HIGH are electrically
- *   safe.  The pull-down direction is consistent with the idle bus state. ✓
- *   Risk: if stray coupling or an abnormally fast Atari power rail drives A14
- *   HIGH during the sampling window, VDD_SPI = 3.3 V (VDD3P3_RTC) — still safe
- *   for FN8.
+ *   Sampled value: LOW → VDD_SPI = 3.3 V from VDD3P3_RTC (datasheet v2.2,
+ *   Table 3-4, default eFuses).  This is the value the FN8 needs: its in-package
+ *   flash runs from VDD_SPI at 3.3 V (Table 1-1).
+ *   Risk: if A14 is HIGH during the sampling window, VDD_SPI = 1.8 V from the
+ *   flash regulator and the in-package flash is under-powered: the chip does
+ *   not boot.  A14 must be LOW at power-on, or burn EFUSE_VDD_SPI_FORCE = 1 and
+ *   EFUSE_VDD_SPI_TIEH = 1 (one-time) to fix VDD_SPI at 3.3 V and ignore GPIO45.
  *
  * GPIO46 —  Pin 52  |  ROM messages on UART |  Internal weak PULL-DOWN ~5 kΩ
  *   Wired to address bit A15 via TXS0108E U4.  Identical power-on scenario:

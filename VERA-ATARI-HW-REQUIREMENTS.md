@@ -173,9 +173,8 @@ chiamare. Con la scheda attuale non è realizzabile:
   lascerebbe D0-D6 del lato scheda non pilotati, e `U19` li porterebbe sul bus Atari a un livello
   casuale, in contesa con i bit di eventuali altri device PBI. Con la regola di §2.1 `U19` non viene
   nemmeno abilitato per `$D1FF`.
-- Tutti i GPIO dell'ESP32 sono assegnati (`PIN-MAPPING.md` §7): `~mVIRQ` non arriva all'ESP32, salvo
-  un filo su GPIO0 (rete `BOOT0`, pin di strapping), che richiederebbe comunque un buffer tri-state
-  separato per D7. Per questo il filo `~mVIRQ`→GPIO0 e l'opzione firmware `VERA_HAS_VIRQ_SENSE` sono
+- `~mVIRQ` non arriva all'ESP32. I soli GPIO liberi sono GPIO 47 e 48 (`PIN-MAPPING.md` §7); anche
+  portando lì `~mVIRQ`, servirebbe comunque un buffer tri-state separato per pilotare solo D7. Per questo il filo `~mVIRQ`→GPIO0 e l'opzione firmware `VERA_HAS_VIRQ_SENSE` sono
   stati **eliminati** (il documento `HW-MOD-GPIO0-VIRQ.md` non esiste più).
 
 **Soluzione adottata: gancio software sul vettore IRQ.** I registri VERA sono sempre leggibili
