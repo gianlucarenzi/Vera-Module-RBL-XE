@@ -148,7 +148,12 @@ used in the previous design.
     \item \textbf{PHI2 synchronisation}: PHI2 is treated as a data input
           and synchronised to the 25\,MHz FPGA clock via a two-stage
           flip-flop chain, producing a single-cycle \cmd{phi2\_rise}
-          pulse used to trigger all registered logic.
+          pulse that triggers the BRAM reads; register and BRAM writes
+          use \cmd{wr\_strobe}, four clocks later, when the 6502 write
+          data is valid (see Section~\ref{sec:timing}).
+    \item \textbf{Data bus pads}: \sig{D[7:0]} uses explicitly
+          instantiated \cmd{SB\_IO} primitives.  The GHDL/Yosys flow
+          does not infer tri-states from \texttt{'Z'}.
     \item \textbf{Two bitstreams -- \cmd{VERA\_IS\_PBI} generic}: the
           top-level entity exposes a VHDL-2008 boolean generic that
           selects the bus interface at synthesis time.
@@ -157,14 +162,14 @@ used in the previous design.
           for PBI RAM and RAMbo, MPD for PBI ROM reads.
           \emph{CCTL mode} (\cmd{VERA\_IS\_PBI=false}): latch at
           \hex{D5FF} (write \texttt{\$80} to select, \texttt{\$00}
-          to deselect), no BRAM (Yosys eliminates dead code: 0 EBR),
+          to deselect), no BRAM (Yosys removes the PBI RAM/ROM: 0 EBR),
           EXTSEL for RAMbo only, MPD always inactive.
     \item \textbf{Hardware configuration pins}: \sig{PBI\_ID\_SEL}
           (pin~27) is wired via PCB jumper to one of D[0..7]; the
           sampled bit value latches VERA\_CS in PBI mode
           (\cmd{vera\_cs\_latch <= not PBI\_ID\_SEL}).
           \sig{RAMBO\_EN} (pin~28) with pullup (VCC) enables RAMbo;
-          with pulldown (GND) disables it regardless of PBCTL[2].
+          with pulldown (GND) disables it regardless of PORTB[4].
 \end{itemize}
 
 \subsection{Memory map}
@@ -176,8 +181,8 @@ used in the previous design.
 \midrule
 \hex{4000}--\hex{7FFF} & 16\,KB window & RAMbo (256\,KB banked) & External SRAM \\
 \hex{D1FF}            & 1\,B          & VERA\_CS latch (write) & Register \\
-\hex{D301}            & 1\,B          & PIA PORTB snoop        & Register \\
-\hex{D303}            & 1\,B          & PIA PBCTL snoop        & Register \\
+\hex{D301}            & 1\,B          & PIA PORTB snoop (bank, RAME) & Register \\
+\hex{D303}            & 1\,B          & PIA PBCTL snoop (PORTB/DDR)  & Register \\
 \hex{D600}--\hex{D7FF} & 512\,B        & PBI RAM                & BRAM (1 EBR) \\
 \hex{D800}--\hex{DFFF} & 2\,KB         & PBI ROM                & BRAM (4 EBR) \\
 \bottomrule
@@ -361,25 +366,20 @@ yosys -m ghdl -p \
 
 The \cmd{-m ghdl} flag loads the GHDL plugin into Yosys, which handles
 VHDL analysis and elaboration.  When \cmd{VERA\_IS\_PBI=false}, Yosys
-eliminates all PBI RAM/ROM dead code, reducing resource usage
-dramatically.  Measured values after place-and-route with nextpnr-ice40:
+eliminates the PBI RAM/ROM logic (0 EBR).  Measured values after place-and-route with nextpnr-ice40:
 
 \begin{center}
 \begin{tabular}{lrrrr}
 \toprule
 \textbf{Resource} & \textbf{PBI} & \textbf{CCTL} & \textbf{Available} & \textbf{\% (PBI)} \\
 \midrule
-ICESTORM\_LC (total)     &  87 &  1 & 5280 &  1\% \\
-\quad of which LUT4 only &  52 &  1 &      &     \\
-\quad of which LUT4+DFF  &   5 &  0 &      &     \\
-\quad of which DFF only  &   5 &  0 &      &     \\
-\quad of which CARRY only&  21 &  0 &      &     \\
+ICESTORM\_LC (total)     &  77 & 45 & 5280 &  1\% \\
 \midrule
 ICESTORM\_RAM (EBR)      &   5 &  0 &   30 & 16\% \\
 SB\_IO (I/O buffers)     &  39 & 39 &   39 & 100\% \\
 ICESTORM\_SPRAM          &   0 &  0 &    4 &  0\% \\
 \midrule
-\textbf{Fmax (CLK)}      & \multicolumn{4}{l}{\textbf{62.72\,MHz} (PBI, PASS at 25\,MHz)} \\
+\textbf{Fmax (CLK)}      & \multicolumn{4}{l}{\textbf{72.88\,MHz} PBI, \textbf{95.56\,MHz} CCTL (PASS at 25\,MHz)} \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -416,17 +416,17 @@ nextpnr reports timing after routing.  Measured results:
 \toprule
 \textbf{Path type} & \textbf{Description} & \textbf{Worst delay} \\
 \midrule
-CLK $\to$ CLK   & Registered path (Fmax) & 15.94\,ns (62.72\,MHz) \\
-async $\to$ async & Combinational (PHI2 gate) & 28.12\,ns \\
-async $\to$ CLK  & Input setup time        & 26.89\,ns \\
-CLK $\to$ async  & Clock-to-output         & 17.17\,ns \\
+CLK $\to$ CLK   & Registered path (Fmax) & 13.72\,ns (72.88\,MHz) \\
+async $\to$ async & Combinational (PHI2 gate) & 23.06\,ns \\
+async $\to$ CLK  & Input setup time        & 20.20\,ns \\
+CLK $\to$ async  & Clock-to-output         & 18.98\,ns \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-The 25\,MHz system clock (period 40\,ns) has \textbf{24.06\,ns of slack}
+The 25\,MHz system clock (period 40\,ns) has \textbf{26.28\,ns of slack}
 on the registered path.  The combinational PHI2-gated outputs settle in
-at most 28.12\,ns after address/control inputs change --- well within the
+at most 23.06\,ns after address/control inputs change --- well within the
 6502 PHI2-high window of $\approx$279\,ns at 1.79\,MHz.
 
 \subsection{Step 4 -- Pack the bitstream}
@@ -730,8 +730,8 @@ error.
     Ignored in CCTL build. \\
 \sig{RAMBO\_EN}     & In    & 28* & LVCMOS33 &
     Tie to VCC (pullup) to enable RAMbo hardware; tie to GND (pulldown)
-    to disable RAMbo completely, overriding PBCTL[2].  Both
-    \sig{RAMBO\_EN} and PBCTL[2] must be high for RAMbo to respond. \\[2pt]
+    to disable RAMbo completely, overriding PORTB[4].  RAMbo responds
+    only with \sig{RAMBO\_EN} high and PORTB[4] low. \\[2pt]
 
 % --- External SRAM ---
 \sig{SRAM\_A\_BANK[0]} & Out & 19* & LVCMOS33 &
@@ -783,18 +783,24 @@ The FPGA snoops writes to the Atari PIA to derive the active bank:
 
 \begin{lstlisting}[style=shell]
 PORTB at $D301  -- bank bits
-PBCTL at $D303  -- bit 2 enables RAMbo
+PORTB bit 4      -- RAME: 0 = extended bank, 1 = internal RAM
+PBCTL at $D303  -- bit 2: 1 = $D301 is PORTB, 0 = $D301 is the DDR
 
 bank[1:0] = PORTB[3:2]
 bank[3:2] = PORTB[6:5]
 => SRAM A[17:14] = { PORTB[6], PORTB[5], PORTB[3], PORTB[2] }
 \end{lstlisting}
 
-RAMbo is active only when both \sig{RAMBO\_EN} (pin~28 tied to VCC)
-and \sig{PBCTL[2] = 1} (software enable written by the Atari OS).
+RAMbo is active only when \sig{RAMBO\_EN} (pin~28 tied to VCC) is high
+and PORTB[4] is low; with PORTB[4] high (OS default \texttt{\$FF}) the
+Atari internal RAM responds at \hex{4000}--\hex{7FFF}.  Writes to
+\hex{D301} update the snooped PORTB only when PBCTL[2] is 1; with
+PBCTL[2] at 0 the address is the PIA data direction register and the
+write is ignored (RAMBO manual p.~14, Altirra Hardware Reference \S8).
 
 % ===========================================================================
 \section{Timing}
+\label{sec:timing}
 % ===========================================================================
 
 \subsection{Read cycle (SRAM)}
@@ -813,16 +819,19 @@ SRAM data valid (tAA=55\,ns) & $+$55\,ns & AS6C4008-55 \\
 \end{tabular}
 \end{center}
 
-\subsection{Write cycle (SRAM)}
+\subsection{Write cycle (SRAM and snooped registers)}
 
-WE\# is asserted combinationally when PHI2 is high and the address is
-in the RAMbo window.  The pulse width equals the PHI2-high time:
+The 6502 write data becomes valid only $\approx$100--150\,ns after PHI2
+rise, while \cmd{phi2\_rise} is registered 40--80\,ns after the edge.
+All writes (VERA\_CS latch, PORTB, PBCTL, PBI RAM) therefore happen on
+\cmd{wr\_strobe}, four clocks after \cmd{phi2\_rise}: 200--240\,ns
+after PHI2 rise, $\approx$40\,ns before PHI2 falls.
 
-\[
-t_{WC} = t_{\text{PHI2-high}} \approx 279\,\text{ns}
-\quad \gg \quad
-t_{WC(\text{SRAM})} = 55\,\text{ns}
-\]
+WE\# is a registered pulse from \cmd{phi2\_rise} to \cmd{wr\_strobe}
+(160\,ns $\geq$ t\textsubscript{WP} = 45\,ns).  The SRAM latches the data
+on the WE\# rising edge, before PHI2 falls, so the 6502 data hold time
+after PHI2 fall is irrelevant.  In simulation the write data may arrive
+up to 180\,ns after PHI2 rise (t\textsubscript{DW} = 25\,ns).
 
 \subsection{PBI RAM / ROM (BRAM)}
 
@@ -860,6 +869,10 @@ $\approx$199\,ns of margin before the 6502 samples the bus.
     Targets: \cmd{pbi}, \cmd{cctl}, \cmd{all}, \cmd{flash-pbi},
     \cmd{flash-cctl}, \cmd{flash-pbi-iceprog}, \cmd{flash-cctl-iceprog},
     \cmd{doc}, \cmd{clean}. \\
+\file{sim/} &
+    AS6C4008-55 model with timing checks, GHDL RTL testbench
+    (\cmd{sim/run.sh}) and post-synthesis testbench on the Yosys
+    iCE40 netlist (\cmd{sim/post.sh}, Icarus Verilog). \\
 \bottomrule
 \end{tabular}
 \end{center}

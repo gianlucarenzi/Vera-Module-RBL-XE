@@ -4,8 +4,8 @@
 PBI ROM (BRAM), RAMbo 256 KB bank-switched memory via external SRAM, and all
 associated control signals.  A VHDL boolean generic (`VERA_IS_PBI`) produces
 two separate bitstreams: **PBI mode** (latch `$D1FF`, PBI RAM/ROM in BRAM) and
-**CCTL mode** (latch `$D5FF`, D[7]=1 selects, 0 EBR — Yosys eliminates dead
-code).
+**CCTL mode** (latch `$D5FF`, D[7]=1 selects, 0 EBR — Yosys eliminates the
+PBI RAM/ROM logic).
 
 ## Memory map
 
@@ -13,8 +13,8 @@ code).
 |-------|------|----------|----------------|
 | `$4000–$7FFF` | 16 KB window | RAMbo (bank-switched, 256 KB total) | External SRAM |
 | `$D1FF` | 1 B | VERA_CS latch (write only) | Register |
-| `$D301` | 1 B | PIA PORTB snoop (bank select) | Register |
-| `$D303` | 1 B | PIA PBCTL snoop (RAMbo enable) | Register |
+| `$D301` | 1 B | PIA PORTB snoop (bank select, bit 4 = RAMbo enable) | Register |
+| `$D303` | 1 B | PIA PBCTL snoop (bit 2: `$D301` is PORTB or DDR) | Register |
 | `$D600–$D7FF` | 512 B | PBI RAM | BRAM (1 EBR block) |
 | `$D800–$DFFF` | 2 KB | PBI ROM (6502 driver) | BRAM (4 EBR blocks) |
 
@@ -267,13 +267,20 @@ make clean      # removes .json, .asc, .bin and LaTeX intermediates
 
 | Resource | PBI | CCTL | Available |
 |----------|-----|------|-----------|
-| ICESTORM\_LC | 87 | 1 | 5280 |
+| ICESTORM\_LC | 77 | 45 | 5280 |
 | EBR (BRAM) | 5 | 0 | 30 |
 | User I/O | 39 | 39 | 39 |
-| Fmax (CLK) | **62.72 MHz** | — | target 25 MHz |
+| Fmax (CLK) | **72.88 MHz** | **95.56 MHz** | target 25 MHz |
 | Bitstream size | ~104 KB | ~104 KB | — |
 
-In CCTL mode Yosys eliminates all PBI RAM/ROM dead code (0 EBR, 1 LC).
+In CCTL mode Yosys eliminates the PBI RAM/ROM logic (0 EBR).
+
+> **Data bus pads.** `D[7:0]` uses explicitly instantiated `SB_IO` primitives
+> (`PIN_TYPE 101001`).  The GHDL/Yosys flow does not infer tri-states: with a
+> plain `D <= ... else 'Z'` the PBI build drove the Atari data bus in *every*
+> cycle and read back its own output, and the CCTL build collapsed to
+> constants (1 LC).  Check that the netlist port is `inout [7:0] D` with
+> 8 `SB_IO` cells after any change to the bus logic.
 
 ---
 
@@ -333,14 +340,14 @@ dedicated hardware functions: `PBI_ID_SEL` and `RAMBO_EN`.
 | `MPD` | Out | 31 | Machine Program Data — blocks Atari from driving D bus for `$D800–$DFFF` reads |
 | `EXTSEL` | Out | 37 | External Select — blocks Atari internal RAM for PBI RAM and RAMbo accesses |
 | `PBI_ID_SEL` | In | 27 | Hardware jumper to one of D[0..7]; sampled at `$D1FF` write (PBI mode only); `1` selects VERA, `0` deselects. Ignored in CCTL build. |
-| `RAMBO_EN` | In | 28 | Pullup (VCC) = RAMbo enabled (follows PBCTL[2]); pulldown (GND) = RAMbo disabled hardware override |
+| `RAMBO_EN` | In | 28 | Pullup (VCC) = RAMbo enabled (follows PORTB[4]); pulldown (GND) = RAMbo disabled hardware override |
 | `SRAM_A_BANK[0]` | Out | 19 | SRAM A[14] — bank bit 0 = PORTB[2] |
 | `SRAM_A_BANK[1]` | Out | 20 | SRAM A[15] — bank bit 1 = PORTB[3] |
 | `SRAM_A_BANK[2]` | Out | 21 | SRAM A[16] — bank bit 2 = PORTB[5] |
 | `SRAM_A_BANK[3]` | Out | 38 | SRAM A[17] — bank bit 3 = PORTB[6] |
 | `SRAM_CE_N` | Out | 23 | SRAM chip enable (active low) |
 | `SRAM_OE_N` | Out | 39 | SRAM output enable (active low) — read cycles only |
-| `SRAM_WE_N` | Out | 25 | SRAM write enable (active low) — write cycles only |
+| `SRAM_WE_N` | Out | 25 | SRAM write enable (active low) — write cycles only, registered (see [Bus timing](#bus-timing)) |
 
 \* Placeholder numbers — replace with actual schematic pad numbers.
 
@@ -356,6 +363,7 @@ dedicated hardware functions: `PBI_ID_SEL` and `RAMBO_EN`.
 | `gen_pbi_rom_pkg.py` | Script: converts `.bin` → `pbi_rom_pkg.vhd` |
 | `board-pin-mapping.pcf` | Pin constraints for iCE40UP5K SG48 (edit before use) |
 | `Makefile` | Build and flash targets |
+| `sim/` | Simulation: AS6C4008 model, RTL and post-synthesis testbenches (see [Simulation](#simulation)) |
 
 ---
 
@@ -364,8 +372,8 @@ dedicated hardware functions: `PBI_ID_SEL` and `RAMBO_EN`.
 The FPGA snoops writes to the Atari PIA registers to track the active bank:
 
 ```
-PORTB  at $D301  — bank bits
-PBCTL  at $D303  — bit 2 enables RAMbo
+PORTB  at $D301  — bank bits + bit 4 (RAME, active low)
+PBCTL  at $D303  — bit 2: 1 = $D301 is PORTB, 0 = $D301 is the PIA DDR
 
 bank[1:0] = PORTB[3:2]
 bank[3:2] = PORTB[6:5]
@@ -373,4 +381,47 @@ bank[3:2] = PORTB[6:5]
 ```
 
 RAMbo is active only when `RAMBO_EN` (pin 28, hardware pullup to VCC)
-**and** `PBCTL[2] = 1` (software enable via Atari OS).
+**and** `PORTB[4] = 0`.  With `PORTB[4] = 1` (OS default `PORTB = $FF`) the
+Atari internal RAM responds at `$4000–$7FFF` as usual.
+
+Writes to `$D301` update the snooped PORTB **only when** `PBCTL[2] = 1`: with
+`PBCTL[2] = 0` the same address is the PIA data direction register, and those
+writes are ignored.  This matches the RAMBO manual (p. 14), the Altirra
+Hardware Reference (§8) and the ESP32 implementation in `firmware/MCU`.
+
+## Bus timing
+
+`PHI2` is brought into the 25 MHz domain by a two-stage synchroniser, so
+`phi2_rise` is registered 40–80 ns after the real edge.
+
+| Action | When (from PHI2 rise) | Why |
+|--------|-----------------------|-----|
+| PBI RAM/ROM BRAM read | 40–80 ns (`phi2_rise`) | address is already valid; data ready long before PHI2 falls |
+| Snoop `$D1FF`/`$D5FF`, `$D301`, `$D303`, PBI RAM write | 200–240 ns (`wr_strobe`, 4 clocks after `phi2_rise`) | the 6502 write data is valid only ~100–150 ns after PHI2 rise |
+| `SRAM_WE_N` low | 40–80 ns → 200–240 ns | registered pulse (160 ns ≥ tWP 45 ns); the SRAM latches the data ~40 ns before PHI2 falls, so the 6502 data hold time after PHI2 fall does not matter |
+| `SRAM_CE_N`, `SRAM_OE_N`, `EXTSEL`, `MPD` | combinational on PHI2 | |
+
+Simulated limits (AS6C4008-55): write data may arrive up to **180 ns** after
+PHI2 rise (fails at 190 ns, tDW); SRAM read data is valid ~185 ns before the
+6502 samples it.
+
+## Simulation
+
+`sim/` holds a GHDL testbench with a behavioural AS6C4008-55 model (timing
+checks on tAA/tACE/tOE/tOH/tOHZ/tWP/tAW/tDW and address stability during
+write) and an Atari bus model (6502 at 1.79 MHz, internal RAM gated by
+`EXTSEL`, configurable tMDS/tHW/FPGA pad delay).
+
+Tests: PIA init with internal RAM at `$4000–$7FFF` (T1), DDR writes ignored
+(T2), signature in all 16 banks with physical-address check (T3), read-back
+with no aliasing (T4), internal RAM untouched (T5), `RAMBO_EN=0` override
+(T6), VERA_CS latch and PBI RAM/ROM (T7).
+
+```bash
+export PATH="$HOME/oss-cad-suite/bin:$PATH"
+sim/run.sh     # RTL: PBI + CCTL, tMDS sweep 40–150 ns, tHW=10 ns / pad delay 12 ns
+sim/post.sh    # post-synthesis: Yosys iCE40 netlist + cells_sim.v under Icarus Verilog
+```
+
+The post-synthesis run matters: RTL simulation treats `'Z'` correctly and
+cannot see a missing tri-state in the synthesised netlist.

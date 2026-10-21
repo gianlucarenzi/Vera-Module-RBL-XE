@@ -30,20 +30,30 @@ use work.pbi_rom_pkg.all;
 --
 -- Hardware pins (common to both modes):
 --   PBI_ID_SEL  FPGA pin wired via jumper to chosen D[n] on PCB.
---               Sampled at phi2_rise when $D1FF is written (PBI mode only).
+--               Sampled on wr_strobe when $D1FF is written (PBI mode only).
 --   RAMBO_EN    Pullup = RAMbo active, pulldown = RAMbo completely disabled.
---               Gates RAMbo independently from the PBCTL[2] software enable.
---               Both must be true for RAMbo to respond.
+--               Gates RAMbo independently from the PORTB[4] software enable.
+--               RAMBO_EN=1 and PORTB[4]=0 are both needed for RAMbo to respond.
 --
 -- PCB wiring (no extra FPGA pins needed):
 --   6502 A[13:0] -> SRAM A[13:0]  (same net, 16 KB window)
 --   6502 D[7:0]  -> SRAM DQ[7:0]  (same net, bidirectional)
 --   SRAM A18     -> GND            (use lower 256 KB of 512 KB device)
 --
--- RAMbo bank formula:
+-- RAMbo (RAMBO manual p.14, Altirra HW reference sec. 8):
+--   PBCTL[2] = 1 -> $D301 is PORTB (snooped); 0 -> $D301 is the DDR (ignored)
+--   PORTB[4] = 0 -> extended bank visible at $4000-$7FFF (EXTSEL asserted)
+--            = 1 -> Atari internal RAM visible
 --   bank[1:0] = PORTB[3:2]
 --   bank[3:2] = PORTB[6:5]
 --   SRAM A[17:14] = { PORTB[6], PORTB[5], PORTB[3], PORTB[2] }
+--
+-- Write data sampling:
+--   The 6502 write data is valid only ~100-150 ns after PHI2 rise, so all
+--   register/BRAM writes happen on wr_strobe, C_WR_SAMPLE clocks after
+--   phi2_rise (200-240 ns after the real PHI2 edge, ~40 ns before PHI2 fall).
+--   SRAM_WE_N is registered: low from phi2_rise to wr_strobe, so the SRAM
+--   latches the data before PHI2 falls and the 6502 hold time is irrelevant.
 --
 -- BRAM usage (iCE40UP5K: 30 EBR blocks):
 --   PBI mode : 5 / 30 (ROM: 4, RAM: 1)
@@ -105,6 +115,17 @@ architecture Behavioral of C6502_Interface is
     signal phi2_rise : std_logic;
 
     -- -------------------------------------------------------------------------
+    -- Write strobe: C_WR_SAMPLE CLK cycles after phi2_rise.
+    -- phi2_rise is registered 40-80 ns after the real edge, so the strobe
+    -- edge falls at 40-80 ns + C_WR_SAMPLE * 40 ns = 200-240 ns, inside the
+    -- PHI2-high window (~279 ns) and after the 6502 write data is valid.
+    -- -------------------------------------------------------------------------
+    constant C_WR_SAMPLE : natural := 4;
+    signal phase     : natural range 0 to C_WR_SAMPLE + 1 := C_WR_SAMPLE + 1;
+    signal wr_strobe : std_logic;
+    signal sram_we   : std_logic := '0';
+
+    -- -------------------------------------------------------------------------
     -- Internal registers
     -- -------------------------------------------------------------------------
     signal vera_cs_latch : std_logic := '1';              -- active low
@@ -135,8 +156,31 @@ architecture Behavioral of C6502_Interface is
     -- RAMbo
     -- -------------------------------------------------------------------------
     signal rambo_bank   : std_logic_vector(3 downto 0);
-    signal rambo_sw     : std_logic;   -- software enable from PBCTL[2]
+    signal rambo_sw     : std_logic;   -- software enable: PORTB[4] = 0
     signal rambo_active : std_logic;   -- RAMBO_EN AND rambo_sw
+
+    -- -------------------------------------------------------------------------
+    -- Data bus pads.  Instantiated explicitly: the GHDL/Yosys flow does not
+    -- infer tri-states, so `D <= ... else 'Z'` would synthesise as an
+    -- always-driven output (PBI) or a constant (CCTL), and reads of D would
+    -- see the FPGA's own output instead of the pad.
+    -- -------------------------------------------------------------------------
+    component SB_IO is
+        generic (
+            PIN_TYPE : std_logic_vector(5 downto 0) := "000000";
+            PULLUP   : std_logic := '0'
+        );
+        port (
+            PACKAGE_PIN   : inout std_logic;
+            OUTPUT_ENABLE : in    std_logic;
+            D_OUT_0       : in    std_logic;
+            D_IN_0        : out   std_logic
+        );
+    end component SB_IO;
+
+    signal d_in  : std_logic_vector(7 downto 0);   -- pad -> fabric
+    signal d_out : std_logic_vector(7 downto 0);   -- fabric -> pad
+    signal d_oe  : std_logic;
 
 begin
 
@@ -144,11 +188,11 @@ begin
 
     -- =========================================================================
     -- RAMbo bank and enable
-    -- Both the hardware jumper (RAMBO_EN) and the software bit (PBCTL[2])
+    -- Both the hardware jumper (RAMBO_EN=1) and the software bit (PORTB[4]=0)
     -- must be asserted for RAMbo to respond.
     -- =========================================================================
     rambo_bank   <= portb_reg(6) & portb_reg(5) & portb_reg(3) & portb_reg(2);
-    rambo_sw     <= pbctl_reg(2);
+    rambo_sw     <= not portb_reg(4);
     rambo_active <= RAMBO_EN and rambo_sw;
 
     sel_rambo <= '1' when A(15)='0' and A(14)='1' and rambo_active='1' else '0';
@@ -185,15 +229,40 @@ begin
 
     phi2_rise <= phi2_s and not phi2_ss;
 
+    p_phase : process (CLK)
+    begin
+        if rising_edge(CLK) then
+            if phi2_rise = '1' then
+                phase <= 0;
+            elsif phase /= C_WR_SAMPLE + 1 then
+                phase <= phase + 1;
+            end if;
+        end if;
+    end process p_phase;
+
+    wr_strobe <= '1' when phase = C_WR_SAMPLE - 1 else '0';
+
+    -- SRAM write pulse: phi2_rise .. wr_strobe (forced off if PHI2 falls)
+    p_sram_we : process (CLK)
+    begin
+        if rising_edge(CLK) then
+            if phi2_rise = '1' and sel_rambo = '1' and RNW = '0' then
+                sram_we <= '1';
+            elsif wr_strobe = '1' or phi2_ss = '0' then
+                sram_we <= '0';
+            end if;
+        end if;
+    end process p_sram_we;
+
     -- =========================================================================
-    -- Main process -- clocked, active on phi2_rise only.
+    -- Main process -- clocked; reads on phi2_rise, writes on wr_strobe.
     --
     -- PBI mode:
     --   1. VERA_CS latch at $D1FF: vera_cs_latch <= NOT PBI_ID_SEL
     --      (PBI_ID_SEL is the data bit chosen by the hardware jumper;
     --       writing '1' in that bit selects VERA, '0' deselects)
-    --   2. Snoop PORTB ($D301) for RAMbo bank
-    --   3. Snoop PBCTL ($D303) for RAMbo software enable
+    --   2. Snoop PORTB ($D301) for RAMbo bank/enable (only if PBCTL[2]=1)
+    --   3. Snoop PBCTL ($D303): bit 2 tells PORTB from DDR at $D301
     --   4. PBI RAM read: latch BRAM output ($D600-$D7FF)
     --   5. PBI RAM write
     --   6. PBI ROM read: latch BRAM output ($D800-$DFFF)
@@ -209,7 +278,7 @@ begin
         variable rom_offs : integer range 0 to 2047;
     begin
         if rising_edge(CLK) then
-            if phi2_rise = '1' then
+            if wr_strobe = '1' then
 
                 -- 1. VERA_CS latch
                 if sel_latch='1' and RNW='0' then
@@ -219,33 +288,38 @@ begin
                         vera_cs_latch <= not PBI_ID_SEL;
                     else
                         -- CCTL: D[7]=1 selects ($80), D[7]=0 deselects ($00).
-                        vera_cs_latch <= not D(7);
+                        vera_cs_latch <= not d_in(7);
                     end if;
                 end if;
 
-                -- 2. Snoop PORTB (RAMbo bank select)
-                if sel_portb='1' then
-                    portb_reg <= D;
+                -- 2. Snoop PORTB (RAMbo bank select + enable); a write to
+                --    $D301 with PBCTL[2]=0 goes to the PIA DDR: ignore it
+                if sel_portb='1' and pbctl_reg(2)='1' then
+                    portb_reg <= d_in;
                 end if;
 
-                -- 3. Snoop PBCTL (RAMbo software enable)
+                -- 3. Snoop PBCTL (PORTB/DDR select)
                 if sel_pbctl='1' then
-                    pbctl_reg <= D;
+                    pbctl_reg <= d_in;
                 end if;
 
-                -- 4-6. PBI RAM/ROM -- only in PBI mode
+                -- 5. PBI RAM write -- only in PBI mode
+                if VERA_IS_PBI and sel_pbi_ram='1' and RNW='0' then
+                    ram_offs          := to_integer(addr - C_PBI_RAM_LO);
+                    pbi_ram(ram_offs) <= d_in;
+                end if;
+
+            end if;
+
+            if phi2_rise = '1' then
+
+                -- 4, 6. PBI RAM/ROM reads -- only in PBI mode
                 if VERA_IS_PBI then
 
                     -- 4. PBI RAM read
                     if sel_pbi_ram='1' and RNW='1' then
                         ram_offs := to_integer(addr - C_PBI_RAM_LO);
                         d_pbi    <= pbi_ram(ram_offs);
-                    end if;
-
-                    -- 5. PBI RAM write
-                    if sel_pbi_ram='1' and RNW='0' then
-                        ram_offs          := to_integer(addr - C_PBI_RAM_LO);
-                        pbi_ram(ram_offs) <= D;
                     end if;
 
                     -- 6. PBI ROM read (ROM is read-only; writes silently ignored)
@@ -278,9 +352,20 @@ begin
 
     -- Data bus: FPGA drives D[7:0] for PBI RAM/ROM reads.
     -- In CCTL mode and for RAMbo reads: FPGA stays high-Z (VERA or SRAM drives bus).
-    D <= d_pbi when VERA_IS_PBI and sel_pbi_ram='1' and RNW='1' and PHI2='1' else
-         d_rom when VERA_IS_PBI and sel_pbi_rom='1' and RNW='1' and PHI2='1' else
-         (others => 'Z');
+    d_out <= d_pbi when sel_pbi_ram='1' else d_rom;
+    d_oe  <= '1' when VERA_IS_PBI and (sel_pbi_ram='1' or sel_pbi_rom='1') and
+                      RNW='1' and PHI2='1' else '0';
+
+    -- PIN_TYPE 101001: output with combinational OE, simple input
+    g_dbus : for i in 0 to 7 generate
+        u_dio : SB_IO
+            generic map (PIN_TYPE => "101001", PULLUP => '0')
+            port map (
+                PACKAGE_PIN   => D(i),
+                OUTPUT_ENABLE => d_oe,
+                D_OUT_0       => d_out(i),
+                D_IN_0        => d_in(i));
+    end generate g_dbus;
 
     -- =========================================================================
     -- External SRAM control (combinational, gated by PHI2)
@@ -290,12 +375,14 @@ begin
     --   CE# low   -> data valid    <=55 ns
     --   PHI2 high -> 6502 samples  ~249 ns (279 ns - 30 ns tDSR)
     --   Read margin                ~194 ns (ok)
-    --   Write: WE# pulse = PHI2-high ~279 ns >> tWC=55 ns (ok)
+    --   Write: WE# low 40-80 ns .. 200-240 ns after PHI2 rise (registered)
+    --          pulse 160 ns >= tWP=45 ns; data latched ~40 ns before PHI2
+    --          falls, so tDH=0 holds regardless of the 6502 tHW (ok)
     -- =========================================================================
     SRAM_A_BANK <= rambo_bank;
 
     SRAM_CE_N <= '0' when sel_rambo='1' and PHI2='1'              else '1';
     SRAM_OE_N <= '0' when sel_rambo='1' and PHI2='1' and RNW='1'  else '1';
-    SRAM_WE_N <= '0' when sel_rambo='1' and PHI2='1' and RNW='0'  else '1';
+    SRAM_WE_N <= not sram_we;
 
 end architecture Behavioral;
