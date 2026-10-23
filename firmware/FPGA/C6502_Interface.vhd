@@ -12,18 +12,25 @@ use work.pbi_rom_pkg.all;
 --   make pbi   ->  C6502_Interface_PBI.bin   (PBI connector,       $D1xx)
 --   make cctl  ->  C6502_Interface_CCTL.bin  (cartridge port CCTL, $D5xx)
 --
+-- Same decode as the ESP32 firmware (firmware/MCU/include/bus_decode.h).
+-- Atari PBI rule: a card not selected through its latch bit must not answer.
+--
 -- PBI mode  (VERA_IS_PBI = true):
---   VERA_CS latch at $D1FF: any write; new state = PBI_ID_SEL
+--   Select latch at $D1FF: any write; new state = PBI_ID_SEL
 --     PBI_ID_SEL is an FPGA pin wired via hardware jumper to one of D[0..7].
 --     The jumper selects the PBI device-ID bit entirely in hardware;
 --     no VHDL change needed when the jumper position changes.
---   PBI RAM  $D600-$D7FF : 512 B in BRAM  (1 EBR block)
---   PBI ROM  $D800-$DFFF : 2 KB in BRAM   (4 EBR blocks, pre-loaded from binary)
---   EXTSEL asserted for PBI RAM + RAMbo accesses
---   MPD    asserted for PBI ROM reads (blocks Atari from driving D bus)
+--   Card selected only:
+--     VERA_CS  $D100-$D11F : VERA registers (with PHI2 high)
+--     EXTSEL   $D100-$D1FE, $D600-$D7FF
+--     PBI RAM  $D600-$D7FF : 512 B in BRAM  (1 EBR block)
+--     PBI ROM  $D800-$DFFF : 2 KB in BRAM   (4 EBR blocks, pre-loaded from binary)
+--     MPD      $D800-$DFFF (disables the Atari Math Pack ROM)
+--   EXTSEL also for RAMbo accesses (independent of the card selection)
 --
 -- CCTL mode (VERA_IS_PBI = false):
---   VERA_CS latch at $D5FF: write $80 (D[7]=1) selects, write $00 deselects.
+--   Select latch at $D5FF: write $80 (D[7]=1) selects, write $00 deselects.
+--   VERA_CS for $D500-$D5FE when selected (with PHI2 high).
 --   PBI_ID_SEL pin ignored.  No PBI RAM, no PBI ROM (saves 5 EBR blocks).
 --   EXTSEL asserted for RAMbo only.
 --   MPD    always inactive (high).
@@ -98,6 +105,13 @@ architecture Behavioral of C6502_Interface is
     constant C_LATCH_PBI   : unsigned(15 downto 0) := x"D1FF";  -- PBI latch
     constant C_LATCH_CCTL  : unsigned(15 downto 0) := x"D5FF";  -- CCTL latch
 
+    constant C_VERA_LO     : unsigned(15 downto 0) := x"D100";  -- VERA registers
+    constant C_VERA_HI     : unsigned(15 downto 0) := x"D11F";
+    constant C_PBI_IO_LO   : unsigned(15 downto 0) := x"D100";  -- PBI I/O page
+    constant C_PBI_IO_HI   : unsigned(15 downto 0) := x"D1FE";  -- (latch excluded)
+    constant C_CCTL_LO     : unsigned(15 downto 0) := x"D500";
+    constant C_CCTL_HI     : unsigned(15 downto 0) := x"D5FE";
+
     constant C_PORTB_ADDR  : unsigned(15 downto 0) := x"D301";
     constant C_PBCTL_ADDR  : unsigned(15 downto 0) := x"D303";
     constant C_PBI_RAM_LO  : unsigned(15 downto 0) := x"D600";
@@ -128,7 +142,7 @@ architecture Behavioral of C6502_Interface is
     -- -------------------------------------------------------------------------
     -- Internal registers
     -- -------------------------------------------------------------------------
-    signal vera_cs_latch : std_logic := '1';              -- active low
+    signal card_sel_n    : std_logic := '1';              -- latch, active low
     signal portb_reg     : std_logic_vector(7 downto 0) := x"FF";
     signal pbctl_reg     : std_logic_vector(7 downto 0) := x"00";
 
@@ -146,6 +160,8 @@ architecture Behavioral of C6502_Interface is
     signal addr        : unsigned(15 downto 0);
 
     signal sel_latch   : std_logic;
+    signal sel_vera    : std_logic;
+    signal sel_pbi_io  : std_logic;
     signal sel_portb   : std_logic;
     signal sel_pbctl   : std_logic;
     signal sel_pbi_ram : std_logic;
@@ -208,13 +224,23 @@ begin
     sel_portb <= '1' when addr = C_PORTB_ADDR and RNW='0' else '0';
     sel_pbctl <= '1' when addr = C_PBCTL_ADDR and RNW='0' else '0';
 
-    -- PBI RAM and ROM exist only in PBI mode.
+    -- VERA registers: $D100-$D11F (PBI) or $D500-$D5FE (CCTL), card selected.
+    sel_vera <= '1' when card_sel_n='0' and
+                         ((    VERA_IS_PBI and addr >= C_VERA_LO and addr <= C_VERA_HI) or
+                          (not VERA_IS_PBI and addr >= C_CCTL_LO and addr <= C_CCTL_HI)) else '0';
+
+    -- PBI I/O page $D100-$D1FE (EXTSEL), card selected; PBI mode only.
+    sel_pbi_io <= '1' when VERA_IS_PBI and card_sel_n='0' and
+                           addr >= C_PBI_IO_LO and addr <= C_PBI_IO_HI else '0';
+
+    -- PBI RAM and ROM exist only in PBI mode, and only with the card selected.
     -- When VERA_IS_PBI=false these are constant '0'; synthesiser removes the logic.
     sel_pbi_ram <= '1' when VERA_IS_PBI and
                             addr >= C_PBI_RAM_LO and addr <= C_PBI_RAM_HI and
-                            vera_cs_latch='0' else '0';
+                            card_sel_n='0' else '0';
     sel_pbi_rom <= '1' when VERA_IS_PBI and
-                            addr >= C_PBI_ROM_LO and addr <= C_PBI_ROM_HI else '0';
+                            addr >= C_PBI_ROM_LO and addr <= C_PBI_ROM_HI and
+                            card_sel_n='0' else '0';
 
     -- =========================================================================
     -- PHI2 synchroniser
@@ -258,7 +284,7 @@ begin
     -- Main process -- clocked; reads on phi2_rise, writes on wr_strobe.
     --
     -- PBI mode:
-    --   1. VERA_CS latch at $D1FF: vera_cs_latch <= NOT PBI_ID_SEL
+    --   1. Select latch at $D1FF: card_sel_n <= NOT PBI_ID_SEL
     --      (PBI_ID_SEL is the data bit chosen by the hardware jumper;
     --       writing '1' in that bit selects VERA, '0' deselects)
     --   2. Snoop PORTB ($D301) for RAMbo bank/enable (only if PBCTL[2]=1)
@@ -268,7 +294,7 @@ begin
     --   6. PBI ROM read: latch BRAM output ($D800-$DFFF)
     --
     -- CCTL mode:
-    --   1. VERA_CS latch at $D5FF: vera_cs_latch <= NOT D(7)
+    --   1. Select latch at $D5FF: card_sel_n <= NOT D(7)
     --      (write $80 to select VERA, write $00 to deselect)
     --   2-3. Snoop PORTB/PBCTL (same as PBI mode)
     --   4-6. Not present (VERA_IS_PBI=false -> dead code removed by synthesiser)
@@ -280,15 +306,15 @@ begin
         if rising_edge(CLK) then
             if wr_strobe = '1' then
 
-                -- 1. VERA_CS latch
+                -- 1. Select latch
                 if sel_latch='1' and RNW='0' then
                     if VERA_IS_PBI then
                         -- PBI: PBI_ID_SEL carries the ID bit value (set by jumper).
                         -- Active-low latch: selected when bit=1.
-                        vera_cs_latch <= not PBI_ID_SEL;
+                        card_sel_n <= not PBI_ID_SEL;
                     else
                         -- CCTL: D[7]=1 selects ($80), D[7]=0 deselects ($00).
-                        vera_cs_latch <= not d_in(7);
+                        card_sel_n <= not d_in(7);
                     end if;
                 end if;
 
@@ -338,15 +364,17 @@ begin
     -- Bus control outputs (combinational, gated by PHI2)
     -- =========================================================================
 
-    VERA_CS <= vera_cs_latch;
+    -- VERA_CS: per-cycle chip select, only for the VERA register range with
+    -- the card selected.  PHI2 gating hides the address decode glitches of PHI1.
+    VERA_CS <= '0' when sel_vera='1' and PHI2='1' else '1';
 
     -- MPD: PBI mode only -- blocks Atari from driving D for PBI ROM reads.
     MPD <= '0' when VERA_IS_PBI and sel_pbi_rom='1' and PHI2='1' else '1';
 
     -- EXTSEL: blocks Atari internal RAM from responding.
-    --   PBI mode : PBI RAM range + RAMbo
+    --   PBI mode : PBI I/O page + PBI RAM range (card selected) + RAMbo
     --   CCTL mode: RAMbo only (no PBI RAM in cartridge mode)
-    EXTSEL <= '0' when VERA_IS_PBI  and (sel_pbi_ram='1' or sel_rambo='1') and PHI2='1' else
+    EXTSEL <= '0' when VERA_IS_PBI  and (sel_pbi_io='1' or sel_pbi_ram='1' or sel_rambo='1') and PHI2='1' else
               '0' when not VERA_IS_PBI and sel_rambo='1'                    and PHI2='1' else
               '1';
 

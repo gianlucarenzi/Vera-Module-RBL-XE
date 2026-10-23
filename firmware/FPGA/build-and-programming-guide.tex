@@ -158,16 +158,20 @@ used in the previous design.
           top-level entity exposes a VHDL-2008 boolean generic that
           selects the bus interface at synthesis time.
           \emph{PBI mode} (\cmd{VERA\_IS\_PBI=true}): latch at
-          \hex{D1FF}, PBI RAM and ROM in BRAM (5 EBR blocks), EXTSEL
-          for PBI RAM and RAMbo, MPD for PBI ROM reads.
+          \hex{D1FF}, PBI RAM and ROM in BRAM (5 EBR blocks).  With the
+          card selected: VERA\_CS for \hex{D100}--\hex{D11F}, EXTSEL for
+          \hex{D100}--\hex{D1FE} and PBI RAM, MPD for PBI ROM reads.
+          With the card deselected nothing answers except RAMbo (Atari
+          PBI rule), as in the ESP32 firmware.
           \emph{CCTL mode} (\cmd{VERA\_IS\_PBI=false}): latch at
           \hex{D5FF} (write \texttt{\$80} to select, \texttt{\$00}
-          to deselect), no BRAM (Yosys removes the PBI RAM/ROM: 0 EBR),
+          to deselect), VERA\_CS for \hex{D500}--\hex{D5FE} when
+          selected, no BRAM (Yosys removes the PBI RAM/ROM: 0 EBR),
           EXTSEL for RAMbo only, MPD always inactive.
     \item \textbf{Hardware configuration pins}: \sig{PBI\_ID\_SEL}
           (pin~27) is wired via PCB jumper to one of D[0..7]; the
-          sampled bit value latches VERA\_CS in PBI mode
-          (\cmd{vera\_cs\_latch <= not PBI\_ID\_SEL}).
+          sampled bit value sets the card select latch in PBI mode
+          (\cmd{card\_sel\_n <= not PBI\_ID\_SEL}).
           \sig{RAMBO\_EN} (pin~28) with pullup (VCC) enables RAMbo;
           with pulldown (GND) disables it regardless of PORTB[4].
 \end{itemize}
@@ -180,7 +184,8 @@ used in the previous design.
 \textbf{Range} & \textbf{Size} & \textbf{Function} & \textbf{Implementation} \\
 \midrule
 \hex{4000}--\hex{7FFF} & 16\,KB window & RAMbo (256\,KB banked) & External SRAM \\
-\hex{D1FF}            & 1\,B          & VERA\_CS latch (write) & Register \\
+\hex{D100}--\hex{D11F} & 32\,B         & VERA registers (selected) & VERA FPGA \\
+\hex{D1FF}            & 1\,B          & PBI select latch (write) & Register \\
 \hex{D301}            & 1\,B          & PIA PORTB snoop (bank, RAME) & Register \\
 \hex{D303}            & 1\,B          & PIA PBCTL snoop (PORTB/DDR)  & Register \\
 \hex{D600}--\hex{D7FF} & 512\,B        & PBI RAM                & BRAM (1 EBR) \\
@@ -190,7 +195,7 @@ used in the previous design.
 \end{center}
 
 \noindent\textbf{Note (CCTL mode):} when built with \cmd{VERA\_IS\_PBI=false}
-the VERA\_CS latch address changes to \hex{D5FF} (write \texttt{\$80} to
+the select latch address changes to \hex{D5FF} (write \texttt{\$80} to
 select, \texttt{\$00} to deselect), and PBI RAM/ROM are absent (0~EBR\@).
 
 % ===========================================================================
@@ -711,21 +716,25 @@ error.
 
 % --- PBI control ---
 \sig{VERA\_CS}      & Out   & 32* & LVCMOS33 &
-    VERA chip-select latch output (active low). \\
+    VERA chip select (active low), per cycle: card selected, PHI2 high
+    and address in \hex{D100}--\hex{D11F} (PBI) or \hex{D500}--\hex{D5FE}
+    (CCTL). \\
 \sig{MPD}           & Out   & 31* & LVCMOS33 &
     Machine Program Data (active low, \textbf{PBI mode only}).
-    Asserted during PBI ROM (\hex{D800}--\hex{DFFF}) reads; blocks
-    Atari from driving D[7:0].  Always inactive (high) in CCTL mode. \\
+    Asserted during PBI ROM (\hex{D800}--\hex{DFFF}) reads with the card
+    selected; blocks the Atari Math Pack from driving D[7:0].  Always
+    inactive (high) in CCTL mode. \\
 \sig{EXTSEL}        & Out   & 37* & LVCMOS33 &
     External Select (active low).  \textbf{PBI mode:} asserted for
-    PBI RAM (\hex{D600}--\hex{D7FF}) and RAMbo (\hex{4000}--\hex{7FFF}).
+    \hex{D100}--\hex{D1FE} and PBI RAM (\hex{D600}--\hex{D7FF}) with the
+    card selected, and for RAMbo (\hex{4000}--\hex{7FFF}).
     \textbf{CCTL mode:} asserted for RAMbo only.  Blocks Atari
     internal RAM from responding. \\[2pt]
 
 % --- Hardware configuration inputs ---
 \sig{PBI\_ID\_SEL}  & In    & 27* & LVCMOS33 &
     Hardware jumper to one of D[0..7] on PCB.  Sampled when \hex{D1FF}
-    is written (PBI mode only); \texttt{vera\_cs\_latch <= not PBI\_ID\_SEL}.
+    is written (PBI mode only); \texttt{card\_sel\_n <= not PBI\_ID\_SEL}.
     Logic~1 on the chosen bit selects VERA, logic~0 deselects.
     Ignored in CCTL build. \\
 \sig{RAMBO\_EN}     & In    & 28* & LVCMOS33 &
@@ -823,7 +832,7 @@ SRAM data valid (tAA=55\,ns) & $+$55\,ns & AS6C4008-55 \\
 
 The 6502 write data becomes valid only $\approx$100--150\,ns after PHI2
 rise, while \cmd{phi2\_rise} is registered 40--80\,ns after the edge.
-All writes (VERA\_CS latch, PORTB, PBCTL, PBI RAM) therefore happen on
+All writes (select latch, PORTB, PBCTL, PBI RAM) therefore happen on
 \cmd{wr\_strobe}, four clocks after \cmd{phi2\_rise}: 200--240\,ns
 after PHI2 rise, $\approx$40\,ns before PHI2 falls.
 

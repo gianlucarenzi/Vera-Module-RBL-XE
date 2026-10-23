@@ -66,6 +66,8 @@ architecture sim of tb_rambo is
     signal sram_last_wr                     : std_logic_vector(18 downto 0);
     signal sram_ce_count                    : natural := 0;
     signal done                             : boolean := false;
+    -- control levels of the last bus cycle, sampled at PHI2 fall
+    signal cs_seen, mpd_seen, ext_seen      : std_logic := '1';
 
 begin
 
@@ -113,6 +115,15 @@ begin
     begin
         if falling_edge(SRAM_CE_N) then
             sram_ce_count <= sram_ce_count + 1;
+        end if;
+    end process;
+
+    p_ctrl_seen : process (PHI2)
+    begin
+        if falling_edge(PHI2) then
+            cs_seen  <= VERA_CS;
+            mpd_seen <= MPD;
+            ext_seen <= EXTSEL;
         end if;
     end process;
 
@@ -216,6 +227,18 @@ begin
                   to_hstring(v) & ", expected " & to_hstring(exp));
         end procedure;
 
+        -- one read cycle, then check the control levels seen during it
+        procedure ctl_chk (addr : std_logic_vector(15 downto 0);
+                           cs, mpd_e, ext : std_logic; msg : string) is
+            variable v : std_logic_vector(7 downto 0);
+        begin
+            cyc(addr, '1', x"00", v);
+            check(cs_seen = cs and mpd_seen = mpd_e and ext_seen = ext,
+                  msg & ": $" & to_hstring(addr) & " VERA_CS/MPD/EXTSEL = " &
+                  to_string(cs_seen) & to_string(mpd_seen) & to_string(ext_seen) &
+                  ", expected " & to_string(cs) & to_string(mpd_e) & to_string(ext));
+        end procedure;
+
         -- PORTB value selecting extended bank `b` with RAME (bit 4) = 0
         function portb_ext (b : natural) return std_logic_vector is
             variable v : std_logic_vector(3 downto 0);
@@ -315,27 +338,44 @@ begin
         rd_chk(x"4000", sig(5, 0), "T6 bank 5 intact after override");
         wr(x"D301", x"FF");
 
-        -- ----------------------------------------------- VERA_CS latch / PBI RAM
+        -- ------------------------------------------ select latch / chip selects
+        -- VERA_CS only for the VERA registers with the card selected, never
+        -- for other addresses (ESP32 bus_decode.h, Atari PBI rule).
         if VERA_IS_PBI then
-            report "--- T7: PBI latch $D1FF (PBI_ID_SEL on D7) + PBI RAM";
+            report "--- T7: PBI latch $D1FF (PBI_ID_SEL on D7), VERA_CS, MPD, EXTSEL";
+            ctl_chk(x"D100", '1', '1', '1', "T7 not selected");
+            ctl_chk(x"D11F", '1', '1', '1', "T7 not selected");
+            ctl_chk(x"D600", '1', '1', '1', "T7 not selected");
+            ctl_chk(x"D803", '1', '1', '1', "T7 not selected (Math Pack)");
             wr(x"D1FF", x"80");
-            wait for tFPGA;
-            check(VERA_CS = '0', "T7: VERA_CS after writing $80 to $D1FF = " & to_string(VERA_CS));
+            ctl_chk(x"D100", '0', '1', '0', "T7 selected");
+            ctl_chk(x"D11F", '0', '1', '0', "T7 selected");
+            ctl_chk(x"D120", '1', '1', '0', "T7 selected");
+            ctl_chk(x"D1FE", '1', '1', '0', "T7 selected");
+            ctl_chk(x"401F", '1', '1', '1', "T7 selected");
+            ctl_chk(x"A010", '1', '1', '1', "T7 selected");
+            ctl_chk(x"D010", '1', '1', '1', "T7 selected");
+            ctl_chk(x"D803", '1', '0', '1', "T7 selected (PBI ROM)");
             wr(x"D600", x"5A");
             wr(x"D7FF", x"A5");
             rd_chk(x"D600", x"5A", "T7 PBI RAM");
             rd_chk(x"D7FF", x"A5", "T7 PBI RAM");
             wr(x"D1FF", x"00");
-            wait for tFPGA;
-            check(VERA_CS = '1', "T7: VERA_CS after writing $00 to $D1FF = " & to_string(VERA_CS));
+            ctl_chk(x"D100", '1', '1', '1', "T7 deselected");
+            ctl_chk(x"D600", '1', '1', '1', "T7 deselected");
+            ctl_chk(x"D803", '1', '1', '1', "T7 deselected (Math Pack)");
         else
-            report "--- T7: CCTL latch $D5FF";
+            report "--- T7: CCTL latch $D5FF, VERA_CS";
+            ctl_chk(x"D500", '1', '1', '1', "T7 not selected");
             wr(x"D5FF", x"80");
-            wait for tFPGA;
-            check(VERA_CS = '0', "T7: VERA_CS after writing $80 to $D5FF = " & to_string(VERA_CS));
+            ctl_chk(x"D500", '0', '1', '1', "T7 selected");
+            ctl_chk(x"D5FE", '0', '1', '1', "T7 selected");
+            ctl_chk(x"D5FF", '1', '1', '1', "T7 selected (latch)");
+            ctl_chk(x"D100", '1', '1', '1', "T7 selected");
+            ctl_chk(x"401F", '1', '1', '1', "T7 selected");
+            ctl_chk(x"A010", '1', '1', '1', "T7 selected");
             wr(x"D5FF", x"00");
-            wait for tFPGA;
-            check(VERA_CS = '1', "T7: VERA_CS after writing $00 to $D5FF = " & to_string(VERA_CS));
+            ctl_chk(x"D500", '1', '1', '1', "T7 deselected");
         end if;
 
         rd_chk(x"0100", x"00", "idle");

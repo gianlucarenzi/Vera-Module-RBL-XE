@@ -12,17 +12,25 @@ PBI RAM/ROM logic).
 | Range | Size | Function | Implementation |
 |-------|------|----------|----------------|
 | `$4000–$7FFF` | 16 KB window | RAMbo (bank-switched, 256 KB total) | External SRAM |
-| `$D1FF` | 1 B | VERA_CS latch (write only) | Register |
+| `$D100–$D11F` | 32 B | VERA registers: `VERA_CS` + `EXTSEL` (card selected) | VERA FPGA |
+| `$D120–$D1FE` | — | `EXTSEL` (card selected), not decoded | — |
+| `$D1FF` | 1 B | PBI select latch (write only) | Register |
 | `$D301` | 1 B | PIA PORTB snoop (bank select, bit 4 = RAMbo enable) | Register |
 | `$D303` | 1 B | PIA PBCTL snoop (bit 2: `$D301` is PORTB or DDR) | Register |
-| `$D600–$D7FF` | 512 B | PBI RAM | BRAM (1 EBR block) |
-| `$D800–$DFFF` | 2 KB | PBI ROM (6502 driver) | BRAM (4 EBR blocks) |
+| `$D600–$D7FF` | 512 B | PBI RAM, `EXTSEL` (card selected) | BRAM (1 EBR block) |
+| `$D800–$DFFF` | 2 KB | PBI ROM (6502 driver), `MPD` (card selected) | BRAM (4 EBR blocks) |
 
 **BRAM usage (PBI mode)**: 5 of 30 EBR blocks on the iCE40UP5K.
 **BRAM usage (CCTL mode)**: 0 EBR — no PBI RAM/ROM (`$D5FF` latch uses a register only).
 
-> In CCTL mode the VERA_CS latch address changes to `$D5FF`: write `$80`
-> (D[7]=1) to select VERA, write `$00` to deselect.
+> **Atari PBI rule**: with its latch bit at 0 the card does not answer at
+> all (no `VERA_CS`, `MPD`, `EXTSEL` except for RAMbo), so it can share
+> `$D1xx` with other PBI devices and the Math Pack stays visible.
+> `VERA_CS` is a per-cycle signal (address in range, card selected, PHI2
+> high), the same decode as the ESP32 firmware (`firmware/MCU/include/bus_decode.h`).
+
+> In CCTL mode the select latch address changes to `$D5FF`: write `$80`
+> (D[7]=1) to select, write `$00` to deselect; `VERA_CS` covers `$D500–$D5FE`.
 
 ## Hardware
 
@@ -336,9 +344,9 @@ dedicated hardware functions: `PBI_ID_SEL` and `RAMBO_EN`.
 | `D[7]` | InOut | 18 | 6502 data bit 7 — shared net with SRAM DQ[7] |
 | `PHI2` | In | 34 | 6502 phase-2 clock — synchronised internally, not used as FPGA clock |
 | `RNW` | In | 36 | Read/Not-Write: high = read, low = write |
-| `VERA_CS` | Out | 32 | VERA chip-select latch (active low) |
-| `MPD` | Out | 31 | Machine Program Data — blocks Atari from driving D bus for `$D800–$DFFF` reads |
-| `EXTSEL` | Out | 37 | External Select — blocks Atari internal RAM for PBI RAM and RAMbo accesses |
+| `VERA_CS` | Out | 32 | VERA chip select (active low), per cycle: `$D100–$D11F` (PBI) / `$D500–$D5FE` (CCTL), card selected, PHI2 high |
+| `MPD` | Out | 31 | Machine Program Data — blocks Atari from driving D bus for `$D800–$DFFF` reads (card selected) |
+| `EXTSEL` | Out | 37 | External Select — blocks Atari internal RAM for `$D100–$D1FE` and PBI RAM (card selected) and RAMbo accesses |
 | `PBI_ID_SEL` | In | 27 | Hardware jumper to one of D[0..7]; sampled at `$D1FF` write (PBI mode only); `1` selects VERA, `0` deselects. Ignored in CCTL build. |
 | `RAMBO_EN` | In | 28 | Pullup (VCC) = RAMbo enabled (follows PORTB[4]); pulldown (GND) = RAMbo disabled hardware override |
 | `SRAM_A_BANK[0]` | Out | 19 | SRAM A[14] — bank bit 0 = PORTB[2] |
@@ -399,7 +407,7 @@ Hardware Reference (§8) and the ESP32 implementation in `firmware/MCU`.
 | PBI RAM/ROM BRAM read | 40–80 ns (`phi2_rise`) | address is already valid; data ready long before PHI2 falls |
 | Snoop `$D1FF`/`$D5FF`, `$D301`, `$D303`, PBI RAM write | 200–240 ns (`wr_strobe`, 4 clocks after `phi2_rise`) | the 6502 write data is valid only ~100–150 ns after PHI2 rise |
 | `SRAM_WE_N` low | 40–80 ns → 200–240 ns | registered pulse (160 ns ≥ tWP 45 ns); the SRAM latches the data ~40 ns before PHI2 falls, so the 6502 data hold time after PHI2 fall does not matter |
-| `SRAM_CE_N`, `SRAM_OE_N`, `EXTSEL`, `MPD` | combinational on PHI2 | |
+| `SRAM_CE_N`, `SRAM_OE_N`, `VERA_CS`, `EXTSEL`, `MPD` | combinational on PHI2 | |
 
 Simulated limits (AS6C4008-55): write data may arrive up to **180 ns** after
 PHI2 rise (fails at 190 ns, tDW); SRAM read data is valid ~185 ns before the
@@ -415,7 +423,8 @@ write) and an Atari bus model (6502 at 1.79 MHz, internal RAM gated by
 Tests: PIA init with internal RAM at `$4000–$7FFF` (T1), DDR writes ignored
 (T2), signature in all 16 banks with physical-address check (T3), read-back
 with no aliasing (T4), internal RAM untouched (T5), `RAMBO_EN=0` override
-(T6), VERA_CS latch and PBI RAM/ROM (T7).
+(T6), select latch, `VERA_CS`/`MPD`/`EXTSEL` per address with the card
+selected and deselected, PBI RAM/ROM (T7).
 
 ```bash
 export PATH="$HOME/oss-cad-suite/bin:$PATH"

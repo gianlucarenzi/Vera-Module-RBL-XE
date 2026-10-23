@@ -70,6 +70,7 @@ module tb_rambo_post;
     // ----------------------------------------------------------------- CPU
     integer errors = 0, checks = 0;
     reg [7:0] rd;
+    reg [2:0] ctl;                              // {VERA_CS, MPD, EXTSEL} seen in the cycle
 
     // entered 20 ns after PHI2 fall, returns 20 ns after the next PHI2 fall
     task cyc(input [15:0] addr, input rw, input [7:0] wdata);
@@ -84,6 +85,7 @@ module tb_rambo_post;
                 #250;
             end
             rd = D;
+            ctl = {VERA_CS, MPD, EXTSEL};
             @(negedge PHI2);
             #20 cpu_oe = 0;
         end
@@ -110,6 +112,18 @@ module tb_rambo_post;
             if (rd !== exp) begin
                 errors = errors + 1;
                 $display("FAIL @%0t: %0s: read $%h = %h, expected %h", $time, msg, addr, rd, exp);
+            end
+        end
+    endtask
+
+    // one read cycle, then check {VERA_CS, MPD, EXTSEL} seen during it
+    task ctl_chk(input [15:0] addr, input [2:0] exp, input [8*48-1:0] msg);
+        begin
+            cyc(addr, 1'b1, 8'h00);
+            checks = checks + 1;
+            if (ctl !== exp) begin
+                errors = errors + 1;
+                $display("FAIL @%0t: %0s: $%h VERA_CS/MPD/EXTSEL = %b, expected %b", $time, msg, addr, ctl, exp);
             end
         end
     endtask
@@ -178,21 +192,40 @@ module tb_rambo_post;
         rd_chk(16'h4000, sig(5, 0), "T6 bank 5 intact");
         wr(16'hD301, 8'hFF);
 
-        // T7: VERA_CS latch (+ PBI RAM / ROM in PBI mode)
+        // T7: select latch, VERA_CS / MPD / EXTSEL (+ PBI RAM / ROM in PBI mode)
         if (PBI) begin
-            wr(16'hD1FF, 8'h80); #20;
-            chk(VERA_CS === 1'b0, "T7 VERA_CS after $80 -> $D1FF");
+            ctl_chk(16'hD100, 3'b111, "T7 not selected");
+            ctl_chk(16'hD11F, 3'b111, "T7 not selected");
+            ctl_chk(16'hD600, 3'b111, "T7 not selected");
+            ctl_chk(16'hD803, 3'b111, "T7 not selected (Math Pack)");
+            wr(16'hD1FF, 8'h80);
+            ctl_chk(16'hD100, 3'b010, "T7 selected");
+            ctl_chk(16'hD11F, 3'b010, "T7 selected");
+            ctl_chk(16'hD120, 3'b110, "T7 selected");
+            ctl_chk(16'hD1FE, 3'b110, "T7 selected");
+            ctl_chk(16'h401F, 3'b111, "T7 selected");
+            ctl_chk(16'hA010, 3'b111, "T7 selected");
+            ctl_chk(16'hD010, 3'b111, "T7 selected");
+            ctl_chk(16'hD803, 3'b101, "T7 selected (PBI ROM)");
             wr(16'hD600, 8'h5A); wr(16'hD7FF, 8'hA5);
             rd_chk(16'hD600, 8'h5A, "T7 PBI RAM");
             rd_chk(16'hD7FF, 8'hA5, "T7 PBI RAM");
             rd_chk(16'hD803, 8'h80, "T7 PBI ROM ID byte");
-            wr(16'hD1FF, 8'h00); #20;
-            chk(VERA_CS === 1'b1, "T7 VERA_CS after $00 -> $D1FF");
+            wr(16'hD1FF, 8'h00);
+            ctl_chk(16'hD100, 3'b111, "T7 deselected");
+            ctl_chk(16'hD600, 3'b111, "T7 deselected");
+            ctl_chk(16'hD803, 3'b111, "T7 deselected (Math Pack)");
         end else begin
-            wr(16'hD5FF, 8'h80); #20;
-            chk(VERA_CS === 1'b0, "T7 VERA_CS after $80 -> $D5FF");
-            wr(16'hD5FF, 8'h00); #20;
-            chk(VERA_CS === 1'b1, "T7 VERA_CS after $00 -> $D5FF");
+            ctl_chk(16'hD500, 3'b111, "T7 not selected");
+            wr(16'hD5FF, 8'h80);
+            ctl_chk(16'hD500, 3'b011, "T7 selected");
+            ctl_chk(16'hD5FE, 3'b011, "T7 selected");
+            ctl_chk(16'hD5FF, 3'b111, "T7 selected (latch)");
+            ctl_chk(16'hD100, 3'b111, "T7 selected");
+            ctl_chk(16'h401F, 3'b111, "T7 selected");
+            ctl_chk(16'hA010, 3'b111, "T7 selected");
+            wr(16'hD5FF, 8'h00);
+            ctl_chk(16'hD500, 3'b111, "T7 deselected");
         end
 
         $display("=== POST-SYNTH RESULT (PBI=%0d, tMDS=%0dns): %0d checks, %0d functional errors, %0d invalid SRAM writes",
