@@ -117,7 +117,7 @@ Il firmware supporta due modalità operative, selezionate a compile-time tramite
         \item \textbf{VCS latch (\$D1FF):} in scrittura il dispositivo usa solo il \emph{proprio} bit dati (D7): D7\,=\,1 seleziona, D7\,=\,0 deseleziona (\texttt{data \& 0x80}). In lettura \$D1FF non è pilotato: l'identificazione dell'IRQ via \$D1FF non è realizzabile con \texttt{U19} (vedere sezione~\ref{sec:hwverif}).
         \item \textbf{ROM \$D800--\$DFFF (2\,KB, 11 bit A0--A10):} \texttt{MPD} (Math Pack Disable, GPIO42) viene asserito basso per ogni ciclo ROM con device selezionato, disabilitando la ROM Math Pack interna all'Atari.
         \item \textbf{RAM \$D600--\$D7FF (512\,B, 9 bit A0--A8):} buffer IRAM esposto al 6502. \texttt{EXTSEL\_N} viene asserito per-ciclo.
-        \item \textbf{Registri VERA \$D100--\$D11F} (32 registri): \texttt{DEV\_SEL\_N} e \texttt{EXTSEL\_N} affermati \emph{sempre}, indipendentemente dal latch; la FPGA VERA guida il bus dati. L'OS deseleziona la scheda (\$D1FF\,=\,0) subito dopo l'\texttt{INIT} e il driver non la riseleziona mai (selezionarla mapperebbe la ROM e disattiverebbe il Math Pack, rompendo la virgola mobile del BASIC): i registri devono quindi restare raggiungibili con il latch a 0.
+        \item \textbf{Registri VERA \$D100--\$D11F} (32 registri): \texttt{DEV\_SEL\_N} e \texttt{EXTSEL\_N} affermati \emph{solo con la scheda selezionata}, come richiede la specifica PBI Atari (un device non selezionato non deve rispondere, così più device possono condividere \$D1xx); la FPGA VERA guida il bus dati. I registri sono quindi accessibili dal driver in ROM (l'OS seleziona la scheda prima di \texttt{INIT}, dell'handler IRQ e delle chiamate CIO) o da codice utente che seleziona la scheda via \$D1FF, accede e la deseleziona. Mentre la scheda è selezionata il Math Pack è sostituito dalla ROM PBI.
         \item \textbf{Intervallo \$D120--\$D1FE}: \texttt{EXTSEL\_N} asserito solo con scheda selezionata; nessun dato guidato dall'ESP32 (non implementato nel firmware corrente).
         \item \textbf{EXTSEL\_N (GPIO41):} segnale \emph{per-ciclo} che disabilita MMU/Freddie dell'Atari per accessi D1xx e D6xx. Non è un segnale persistente.
     \end{itemize}
@@ -634,7 +634,7 @@ Il firmware già tiene \texttt{ARESET} e \texttt{CRESET} bassi in \texttt{setup(
 
 \subsection*{Modifiche al firmware ESP32}
 \begin{itemize}
-  \item I \textbf{registri VERA} (\$D100--\$D11F) rispondono con il latch a 0 (vedere sezione~2): prima il firmware asseriva \texttt{DEV\_SEL\_N} solo con la scheda selezionata, quindi dopo l'\texttt{INIT} i registri non erano più raggiungibili.
+  \item I \textbf{registri VERA} (\$D100--\$D11F) rispondono solo con la scheda selezionata (vedere sezione~2), secondo la regola PBI Atari: con il latch a 0 la scheda non tocca il bus e non entra in conflitto con altri device PBI.
   \item Il \textbf{latch} usa solo il proprio bit (\texttt{data \& 0x80}).
   \item Il \textbf{trace per registro} è compilato solo con \texttt{VERA\_TRACE\_REGS=1}: \texttt{log\_send()} nel loop del bus costa $\approx$1\,\textmu s, più di un ciclo 6502 (559\,ns).
   \item La \textbf{ROM 6502} (\texttt{6502/src/vera\_pbi\_handler.s}) è l'handler corrente: \texttt{IRQVECTOR} conferma gli IRQ, \texttt{WAIT\_VERA} attende fino a $\approx$0.7\,s il byte \texttt{'V'} del DCSEL\,63 e l'\texttt{INIT} salta lo schermo se la VERA non risponde.
@@ -648,7 +648,7 @@ L'analisi conferma che l'architettura hardware e software del progetto è solida
 La revisione del firmware e della mappatura hardware ha chiarito e corretto i seguenti aspetti:
 
 \begin{itemize}
-  \item \textbf{EXTSEL\_N} (GPIO\,41, Dedicated GPIO output ch\,1) è un segnale \emph{per-ciclo}: viene asserito basso per gli accessi ai registri VERA \$D100--\$D11F (sempre), quando il device è selezionato (\texttt{selected=true}) e l'accesso ricade in \$D100--\$D1FE (escluso \$D1FF) oppure in \$D600--\$D7FF, e quando RAMbo è attivo e l'accesso è nella finestra \$4000--\$7FFF (indipendentemente da \texttt{selected}). Viene sempre deassertato al termine del ciclo. Non è un segnale persistente legato allo stato del latch VCS.
+  \item \textbf{EXTSEL\_N} (GPIO\,41, Dedicated GPIO output ch\,1) è un segnale \emph{per-ciclo}: viene asserito basso quando il device è selezionato (\texttt{selected=true}) e l'accesso ricade in \$D100--\$D1FE (escluso \$D1FF) oppure in \$D600--\$D7FF, e quando RAMbo è attivo e l'accesso è nella finestra \$4000--\$7FFF (indipendentemente da \texttt{selected}). Viene sempre deassertato al termine del ciclo. Non è un segnale persistente legato allo stato del latch VCS.
 
   \item \textbf{MPD (Math Pack Disable)} (GPIO\,42, Dedicated GPIO output ch\,2) viene asserito basso esclusivamente quando il device è selezionato e l'accesso riguarda la ROM interna \$D800--\$DFFF. Non viene asserito per accessi alla RAM, a VERA o alla finestra RAMbo. Viene asserito insieme a EXTSEL\_N e DEV\_SEL\_N in un'unica istruzione TIE (\texttt{cpu\_ll\_write\_dedic\_gpio\_mask}).
 

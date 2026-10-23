@@ -209,14 +209,17 @@ del pin **GPIO 3** (`PIN_RAMBO_EN`, QFN56 pin 8) letto una volta in `setup()`.
 
 ### Modalità PBI (`VERA_BOARD_IS_PBI = 1`)
 
-> **Registri sempre presenti.** I registri VERA (`$D100–$D11F`) rispondono anche con il latch a
-> 0: l'OS deseleziona la scheda (`$D1FF` = 0) subito dopo l'`INIT` e il driver non la
-> riseleziona mai (selezionarla mappa la ROM e disattiva il Math Pack). Solo `MPD`, `EXTSEL_N`
-> per `$D600–$DFFF` e il servizio della ROM/RAM PBI dipendono dalla selezione.
+> **Regola PBI Atari.** La scheda risponde solo se selezionata tramite il proprio bit in
+> `$D1FF`; da deselezionata non tocca il bus, così può convivere con altri device PBI che
+> usano gli stessi indirizzi `$D1xx`. I registri VERA (`$D100–$D11F`) sono quindi
+> raggiungibili solo con la scheda selezionata: dal driver in ROM (l'OS seleziona la scheda
+> prima di `INIT`, dell'handler IRQ e delle chiamate CIO) oppure da codice utente che scrive
+> il bit in `$D1FF`, accede ai registri e la deseleziona. Mentre la scheda è selezionata il
+> Math Pack (`$D800–$DFFF`) è sostituito dalla ROM PBI: niente floating point in quella finestra.
 
 | Range         | Segnali affermati                       | Dati bus               |
 |---------------|-----------------------------------------|------------------------|
-| $D100–$D11F   | EXTSEL\_N + DEV\_SEL\_N (**sempre**, indipendente dal latch) | VERA FPGA risponde     |
+| $D100–$D11F   | EXTSEL\_N + DEV\_SEL\_N (se selezionato) | VERA FPGA risponde     |
 | $D120–$D1FE   | EXTSEL\_N (se selezionato)               | non decodificato       |
 | $D1FF         | latch VCS — **scrittura**: D7 = 1 seleziona, D7 = 0 deseleziona (si usa solo il proprio bit). **Lettura**: non pilotata (l'identificazione IRQ via `$D1FF` non è realizzabile con `U19`, vedere `VERA-ATARI-HW-REQUIREMENTS.md` §2.4) | —                      |
 | $D600–$D7FF   | EXTSEL\_N (se selezionato)               | ESP32 → `ram_pbi[]`    |

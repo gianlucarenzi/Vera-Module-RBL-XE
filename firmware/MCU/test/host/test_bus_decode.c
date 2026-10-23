@@ -10,6 +10,8 @@
  *
  * Expected difference from the old firmware: PBI RAM writes ($D600-$D7FF,
  * card selected) are now stored (CT_WR_MEM); the old loop never wrote ram_pbi.
+ * The VERA registers ($D100-$D11F) answer only when the card is selected,
+ * as the Atari PBI rules require.
  */
 
 #include <stdio.h>
@@ -57,10 +59,10 @@ static uint32_t ref_ctrl(uint16_t addr, bool is_pbi, bool selected, bool rambo_a
     uint32_t ctrl = DEDIC_OUT_CTRL_IDLE;
     if (is_pbi)
     {
-        if (is_vera_range)
-            ctrl &= ~(DEDIC_OUT_DEVSELN | DEDIC_OUT_EXTSEL);
         if (selected)
         {
+            if (is_vera_range)
+                ctrl &= ~DEDIC_OUT_DEVSELN;
             if ((is_d1xx && !is_vcs_latch) || is_d6xx)
                 ctrl &= ~DEDIC_OUT_EXTSEL;
             if (is_d8xx)

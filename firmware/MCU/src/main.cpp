@@ -445,7 +445,7 @@ static void IRAM_ATTR MonitorTask(void *arg)
                 bus_drive(p[off8]);
             }
 #if VERA_TRACE_REGS
-            if ((c & CT_SLOW) && is_pbi && off8 <= 0x1Fu)
+            if ((c & CT_SLOW) && is_pbi && !(c & DEDIC_OUT_DEVSELN))
             {
                 /* VERA drives the bus: sample it just before PHI2 falls. */
                 uint32_t last = g_lo, now;
@@ -537,7 +537,7 @@ static void IRAM_ATTR MonitorTask(void *arg)
                 }
             }
 #if VERA_TRACE_REGS
-            else if (is_pbi && page == 0xD1u && off8 <= 0x1Fu)
+            else if (is_pbi && page == 0xD1u && !(c & DEDIC_OUT_DEVSELN))
             {
                 uint8_t fl = 0x01u;  /* write */
                 if (!(c & DEDIC_OUT_MPD))    fl |= 0x04u;

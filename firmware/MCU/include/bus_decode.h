@@ -69,9 +69,10 @@ static inline uint32_t bus_state(bool selected, bool rambo_active)
 
 /*
  * Control levels for the CT_SLOW pages, which also depend on A0-A7:
- *   PBI  $D1xx: VERA registers $D100-$D11F always (DEV_SEL_N + EXTSEL_N);
- *               EXTSEL_N for the rest of $D1xx except the $D1FF latch when
- *               the card is selected.
+ *   PBI  $D1xx: only when the card is selected (Atari PBI rule: a device
+ *               not selected through $D1FF must not answer): DEV_SEL_N for
+ *               the VERA registers $D100-$D11F, EXTSEL_N for $D100-$D1FE.
+ *               The $D1FF latch itself is never claimed.
  *   CCTL $D5xx: DEV_SEL_N for $D500-$D5FE when selected.
  * Flag bits above bit 2 are preserved.
  */
@@ -79,8 +80,8 @@ static inline uint32_t bus_slow_ctrl(uint32_t c, uint32_t off8, bool selected, b
 {
     if (is_pbi)
     {
-        if (off8 <= 0x1Fu)
-            c &= ~(DEDIC_OUT_DEVSELN | DEDIC_OUT_EXTSEL);
+        if (selected && off8 <= 0x1Fu)
+            c &= ~DEDIC_OUT_DEVSELN;
         if (selected && off8 != 0xFFu)
             c &= ~DEDIC_OUT_EXTSEL;
     }
