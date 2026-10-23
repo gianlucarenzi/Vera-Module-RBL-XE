@@ -5,7 +5,7 @@ $Descr A3 16535 11693
 encoding utf-8
 Sheet 3 7
 Title "BUS DECODER"
-Date "2026-09-01"
+Date "2026-10-23"
 Rev "1.0"
 Comp "RetroBit Lab"
 Comment1 "Gianluca Renzi"

@@ -5,7 +5,7 @@ $Descr A4 11693 8268
 encoding utf-8
 Sheet 6 7
 Title "POWERSUPPLY and USB"
-Date "2026-09-01"
+Date "2026-10-23"
 Rev "1.0"
 Comp "RetroBit Lab"
 Comment1 "Gianluca Renzi"

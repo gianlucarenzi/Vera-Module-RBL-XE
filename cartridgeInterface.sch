@@ -5,7 +5,7 @@ $Descr A3 16535 11693
 encoding utf-8
 Sheet 4 7
 Title "CARTRIDGE INTEFACE AND BUS LEVEL SHIFTERS"
-Date "2026-09-01"
+Date "2026-10-23"
 Rev "1.0"
 Comp "RetroBit Lab"
 Comment1 "Gianluca Renzi"
@@ -109,36 +109,15 @@ Text Notes 1605 985  0    197  ~ 39
 ATARI 130XE ECI & CARTRIDGE INTERFACE
 Text GLabel 5285 3145 0    39   Output ~ 0
 ~CCTL
-Text GLabel 2370 3815 0    39   Output ~ 0
-AUDIOL
-Text GLabel 2370 3915 0    39   Output ~ 0
-AUDIOR
-Wire Wire Line
-	3120 3815 3120 3865
-Wire Wire Line
-	3120 3865 3245 3865
-Connection ~ 3120 3865
-Wire Wire Line
-	3120 3865 3120 3915
-Text GLabel 3245 3865 2    50   Output ~ 0
+Text GLabel 1800 3560 0    39   Input ~ 0
+AUD1L
+Text GLabel 1805 3735 0    39   Input ~ 0
+AUD1R
+Text GLabel 2975 3645 2    50   Output ~ 0
 AUDIO
 Wire Notes Line
-	4245 3390 4245 4165
-Wire Notes Line
-	4245 4165 1620 4165
-Wire Notes Line
-	1620 4165 1620 3390
-Wire Notes Line
-	1620 3390 4245 3390
-Wire Wire Line
-	2915 3815 3120 3815
-Wire Wire Line
-	2915 3915 3120 3915
-Wire Wire Line
-	2370 3915 2715 3915
-Wire Wire Line
-	2715 3815 2370 3815
-Text Notes 1720 3640 0    118  Italic 24
+	1050 3135 3675 3135
+Text Notes 1150 3385 0    118  Italic 24
 AUDIO MIXER INSIDE ATARI
 Text GLabel 1835 2320 0    39   Output ~ 0
 ~D1XX
@@ -154,8 +133,6 @@ Text GLabel 3985 2320 2    39   Output ~ 0
 ~HALT
 Text GLabel 2035 2620 0    39   Output ~ 0
 ~REFRESH
-Text GLabel 9980 7335 0    33   Output ~ 0
-~IRQ
 Text Notes 6730 1180 2    79   ~ 16
 All 8-Bit signals must be shifted from 5V to 3.3V and vice versa
 Text GLabel 3885 7435 0    39   Input ~ 0
@@ -182,9 +159,9 @@ Wire Wire Line
 	13650 7645 13545 7645
 Wire Wire Line
 	13545 7745 13650 7745
-Text GLabel 9980 7635 0    33   Output ~ 0
-~RST
 Text GLabel 9980 7535 0    33   Output ~ 0
+~RST
+Text GLabel 9980 7435 0    33   Output ~ 0
 ~MPD
 Text GLabel 3890 7535 0    39   Input ~ 0
 A5
@@ -202,7 +179,7 @@ Wire Wire Line
 	3890 7735 4060 7735
 Wire Wire Line
 	1290 7000 1460 7000
-Text GLabel 9980 7435 0    33   Output ~ 0
+Text GLabel 9980 7335 0    33   Output ~ 0
 ~EXSEL
 Wire Wire Line
 	1460 7100 1290 7100
@@ -396,34 +373,6 @@ Wire Notes Line
 	7970 1340 730  1340
 Wire Notes Line
 	730  1340 730  4480
-$Comp
-L CRES0805:10K R?
-U 1 1 68D05FD9
-P 2820 3815
-AR Path="/68821B60/68D05FD9" Ref="R?"  Part="1" 
-AR Path="/68821C2E/68D05FD9" Ref="R35"  Part="1" 
-F 0 "R35" V 2745 3730 50  0000 L CNN
-F 1 "10K" V 2765 3895 50  0000 L CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" H 2820 3815 50  0001 C CNN
-F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2506161110_YAGEO-RC0805FR-0710KL_C84376.pdf" H 2820 3815 50  0001 C CNN
-F 4 "C84376" H 2820 3815 50  0001 C CNN "LCSC"
-	1    2820 3815
-	0    1    1    0   
-$EndComp
-$Comp
-L CRES0805:10K R?
-U 1 1 68D08794
-P 2820 3915
-AR Path="/68821B60/68D08794" Ref="R?"  Part="1" 
-AR Path="/68821C2E/68D08794" Ref="R36"  Part="1" 
-F 0 "R36" V 2890 3830 50  0000 L CNN
-F 1 "10K" V 2875 4000 50  0000 L CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" H 2820 3915 50  0001 C CNN
-F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2506161110_YAGEO-RC0805FR-0710KL_C84376.pdf" H 2820 3915 50  0001 C CNN
-F 4 "C84376" H 2820 3915 50  0001 C CNN "LCSC"
-	1    2820 3915
-	0    1    1    0   
-$EndComp
 Text Notes 5985 5335 0    197  ~ 39
 BUS LOGIC LEVEL SHIFTERS
 Text GLabel 8565 3345 0    33   Input ~ 0
@@ -761,13 +710,11 @@ Text GLabel 8940 6935 2    33   Output ~ 0
 mREFRESH
 Wire Wire Line
 	8780 6935 8940 6935
-Text GLabel 11680 6635 2    33   Input ~ 0
-~mVIRQ
-Text GLabel 11680 6935 2    33   Input ~ 0
-~ATARI_RESET
 Text GLabel 11680 6835 2    33   Input ~ 0
-~mMPD
+~ATARI_RESET
 Text GLabel 11680 6735 2    33   Input ~ 0
+~mMPD
+Text GLabel 11680 6635 2    33   Input ~ 0
 ~mEXSEL
 Text GLabel 11680 6435 2    39   Input ~ 0
 mRD4
@@ -1684,4 +1631,87 @@ Wire Wire Line
 	13300 3250 13375 3250
 Wire Wire Line
 	7380 7635 7205 7635
+NoConn ~ 11680 6935
+NoConn ~ 9980 7635
+Wire Notes Line
+	1050 4170 3675 4170
+Wire Notes Line
+	3675 3135 3675 4170
+Wire Notes Line
+	1050 3135 1050 4170
+Text GLabel 4315 1595 2    39   Output ~ 0
+~IRQ
+Text GLabel 3735 1595 0    39   Input ~ 0
+~mVIRQ
+$Comp
+L RetroBitLab:BAT43W D1
+U 1 1 6AF8D65C
+P 4010 1595
+F 0 "D1" H 4015 1490 50  0000 C CNN
+F 1 "BAT43W" H 4000 1710 50  0000 C CNN
+F 2 "Diode_SMD:D_SOD-123" H 4010 1595 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C22466358.pdf?spm=wm.sxq.inf.ggs___wm.fly.bg.1.xh&lcsc_vid=EQINBVNfRwJZUQAETgVbVwBQQFZaU1ZQQQIKBlMDEQIxVlNfRVZbUVZTTlVbUDsOAxUeFF5JWBYZEEoKFBINSQcJGk4dAgUUFAk%3D" H 4010 1595 50  0001 C CNN
+F 4 "C22466358" H 4010 1595 50  0001 C CNN "LCSC"
+F 5 "R+O" H 4010 1595 50  0001 C CNN "Manufacturer"
+F 6 "BAT43W" H 4010 1595 50  0001 C CNN "Man_PN"
+	1    4010 1595
+	-1   0    0    1   
+$EndComp
+Wire Wire Line
+	4160 1595 4315 1595
+Wire Wire Line
+	3860 1595 3735 1595
+$Comp
+L CRES0805:1K R2
+U 1 1 6B02146F
+P 2020 3560
+F 0 "R2" V 1940 3565 50  0000 C CNN
+F 1 "1K" V 1945 3450 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" H 2020 3560 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2411221126_UNI-ROYAL-0805W8F1001T5E_C17513.pdf" H 2020 3560 50  0001 C CNN
+F 4 "C17513" H 2020 3560 50  0001 C CNN "LCSC"
+	1    2020 3560
+	0    1    1    0   
+$EndComp
+$Comp
+L CRES0805:1K R6
+U 1 1 6B02335D
+P 2015 3735
+F 0 "R6" V 1935 3740 50  0000 C CNN
+F 1 "1K" V 1940 3625 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" H 2015 3735 50  0001 C CNN
+F 3 "https://lcsc.com/datasheet/lcsc_datasheet_2411221126_UNI-ROYAL-0805W8F1001T5E_C17513.pdf" H 2015 3735 50  0001 C CNN
+F 4 "C17513" H 2015 3735 50  0001 C CNN "LCSC"
+	1    2015 3735
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	1800 3560 1915 3560
+Wire Wire Line
+	1805 3735 1910 3735
+Wire Wire Line
+	2110 3735 2280 3735
+Wire Wire Line
+	2280 3735 2280 3645
+Wire Wire Line
+	2280 3560 2115 3560
+Wire Wire Line
+	2280 3645 2545 3645
+Connection ~ 2280 3645
+Wire Wire Line
+	2280 3645 2280 3560
+$Comp
+L CCAP0805:1uF C66
+U 1 1 6B090F0B
+P 2645 3645
+F 0 "C66" V 2530 3645 50  0000 C CNN
+F 1 "1uF" V 2750 3645 50  0000 C CNN
+F 2 "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder" H 2645 3645 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C2798196.pdf" H 2645 3645 50  0001 C CNN
+F 4 "C2798196" H 2645 3645 50  0001 C CNN "LCSC"
+	1    2645 3645
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	2745 3645 2975 3645
 $EndSCHEMATC
