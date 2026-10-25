@@ -207,3 +207,31 @@ primo errore (commit `34d2a01`, `e6e3afe`, `b05ac19`). Da provare su scheda.
   assembly, cap. 6 verifica, cap. 7 evoluzione dalla prima versione, cap. 8 questioni
   aperte, cap. 9 piano di misure. Risultati dichiarati come analitici, non misurati.
 - Frontespizio ancora con segnaposto (università, relatore, matricola).
+
+---
+
+## 7. Memoria di lavoro (copia di quella salvata da Claude su questo PC)
+
+La memoria di Claude Code sta in `~/.claude/projects/…/memory/` e non passa da un PC
+all'altro: questa sezione ne riporta il contenuto.
+
+- **Stato del lavoro sul bus (2026-10-26).** Il firmware decodifica in φ1 con il percorso
+  critico in assembly (commit `0a2e665` → `3d7f75f`). Secondo il modello rispetta il setup
+  del 6502 nel caso peggiore solo se un accesso APB ai registri GPIO dura al massimo ~14
+  cicli CPU (NTSC 14,1, PAL 14,5). La latenza non è mai stata misurata e nulla è stato
+  provato su hardware: prima di altre ottimizzazioni servono la misura della latenza APB e
+  le misure con l'oscilloscopio. Tenere le uscite dati sempre abilitate dopo il gating
+  **non** estende il limite nel caso peggiore (vincolo di spegnimento nei cicli di
+  scrittura a ~13–14 cicli): non riproporlo come guadagno.
+- **Hardware in corso.** Montaggio del gating di `~OE` di U19 (74LVC20 + tre pull-up da
+  10 kΩ, requisiti §2.1), VCCB pin 23 dei cinque 74LVC4245 (§2.7), ingressi liberi di U23
+  (§2.8), resistenza di strapping su GPIO3. La RAMbo 320K è sempre attiva: non esiste un pin
+  RAMBO_EN.
+- **Metodo di lavoro tra i due PC.** Alla fine di ogni blocco di lavoro aggiornare questo
+  file (stato, file non committati, prossimi passi, correzioni ad affermazioni precedenti)
+  prima del commit. Commit e push solo su richiesta, direttamente su `master`.
+- **Riferimento.** Manuale Altirra in locale:
+  `~/Progetti/ATARI/AT2019/documents/Altirra-Hardware-Reference-Manual.pdf` (versione
+  07/05/15): §2.2 clock (NTSC 1,789773 / PAL 1,773447 MHz), §3.4–3.5 banking di PORTB e
+  schema "320K Rambo" (bit 2, 3, 5, 6 per il banco, bit 4 per CPU+ANTIC), cap. 10 PBI
+  (`$D1FF`, MPD, EXTSEL). Per leggerlo: `pdftotext -layout`.
