@@ -121,6 +121,23 @@ dopo l'attesa invece di ~30. Il percorso del dato ROM/RAM/RAMbo è invariato (li
 ~13–14 cicli APB). Provato lo srotolamento del loop di attesa: nel caso peggiore non
 guadagna (salto all'indietro e uscita su salto preso), quindi è rimasto il loop semplice.
 
+Terzo giro (valutata la riscrittura completa in assembly: il percorso critico è già
+assembly con gli operandi in registro, il guadagno sarebbe 1–3 cicli a fronte di
+centinaia di righe non verificabili senza scheda, quindi non fatta):
+- tolto il `memw` prima della lettura di `GPIO.in` (l'ultimo store è di ≥150 ns prima):
+  decodifica 10 cicli + 1 lettura APB (`CYC_P_DECODE = 10` nel modello);
+- effetti delle scritture (RAM, RAMbo, latch, PORTB/PBCTL) spostati **nella coda di φ2
+  dello stesso ciclo di scrittura**, subito dopo il campionamento del dato: φ1 contiene
+  solo rilascio del bus e preparazione (~12 istruzioni), sempre dentro l'attesa;
+- confronti sull'indirizzo a 16 bit (`$D1FF`, `$D301/$D303` con mirror) invece che
+  pagina + offset; tabella `bus_pb_state[PORTB]` (`bus_portb_state()` in
+  `bus_decode.h`, verificata dal test host) per lo stato RAMbo/autotest;
+- log del cambio di latch differito (`card.log_evt`) e inviato nel successivo ciclo di
+  lettura, durante l'attesa della discesa di φ2.
+
+Margine del dato nel caso peggiore: NTSC +27 ns a 12 cicli APB, +2 ns a 14 cicli;
+PAL +32 / +7 ns. **Conforme fino a 14 cicli di latenza APB.**
+
 Limiti rimasti, non risolvibili solo nel firmware:
 - i 3 accessi APB per ciclo letto dall'ESP32 (1 lettura indirizzo + 2 scritture dato);
   con il gating di `~OE` di U19 (§2.1 requisiti HW) le uscite potrebbero restare
@@ -129,9 +146,8 @@ Limiti rimasti, non risolvibili solo nel firmware:
 - anticipare `EXTSEL`/`MPD` usando solo A10–A15 (canali Dedicated GPIO, prima della
   lettura APB) è possibile per RAMbo e `$D800`, ma costa ~5 cicli sul percorso del dato:
   non fatto, da valutare dopo le misure;
-- dopo una scrittura su `$D1FF` (cambio di latch, con log) gli effetti in φ1 superano
-  l'attesa di ~14 cicli: ritarda solo il ciclo seguente, che in pratica è un fetch dalla
-  ROM del sistema operativo.
+- gli effetti più lunghi (scrittura su PORTB ~45 cicli) possono superare la coda di φ2
+  di qualche decina di ns e ritardare il campionamento del ciclo seguente di altrettanto.
 Il paragrafo "Dal disassemblato" di `firmware/MCU/README.md` riporta ancora i conteggi
 vecchi: da correggere con il resto della documentazione a fine ottimizzazione.
 

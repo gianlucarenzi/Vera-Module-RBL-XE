@@ -139,6 +139,12 @@ int main(void)
     expect(bus_selftest_visible(0x7F) && !bus_selftest_visible(0xFF) &&
            !bus_selftest_visible(0x7E), "self-test", 0);
 
+    for (uint32_t pb = 0; pb < 256u; pb++)
+        for (uint32_t sel = 0; sel < 2u; sel++)
+            expect(((sel << 1) | bus_portb_state((uint8_t)pb)) ==
+                   bus_state(sel != 0, !(pb & 0x10u), bus_selftest_visible((uint8_t)pb)),
+                   "portb state", pb);
+
     for (int pbi = 0; pbi <= 1; pbi++)
     {
         static uint8_t slow[2][256];

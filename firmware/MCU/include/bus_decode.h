@@ -188,4 +188,11 @@ BUS_INLINE bool bus_selftest_visible(uint8_t portb)
     return (portb & 0x81u) == 0x01u;
 }
 
+/* State bits that depend on PORTB (RAMbo active, self-test visible), to be
+ * or-ed with the selected bit: bus_state(sel, ...) == (sel << 1) | this. */
+BUS_INLINE uint8_t bus_portb_state(uint8_t portb)
+{
+    return (uint8_t)bus_state(false, !(portb & 0x10u), bus_selftest_visible(portb));
+}
+
 #endif /* BUS_DECODE_H */

@@ -228,6 +228,7 @@ static DRAM_ATTR uint8_t  ram_pbi[512];     /* 512B RAM at $D600-$D7FF */
 /* Bus decode tables (see bus_decode.h), built in setup(). */
 static DRAM_ATTR uint8_t        bus_ctrl[BUS_STATES][256];
 static DRAM_ATTR uint8_t        bus_slow[2][256];   /* $D1xx / $D5xx by A0-A7, [selected] */
+static DRAM_ATTR uint8_t        bus_pb_state[256];  /* bus_portb_state() for each PORTB */
 static DRAM_ATTR const uint8_t *bus_rd_base[256];
 
 /*
@@ -300,9 +301,11 @@ typedef struct
     uint8_t pbctl;      /* PIA reset: DDR exposed at $D301 */
     uint8_t orb;        /* PIA reset: output register 0 */
     uint8_t ddrb;       /* PIA reset: all inputs (pins read 1) */
+    uint8_t pstate;     /* state bits from the Port B pins (bus_pb_state) */
+    uint32_t log_evt;   /* event waiting for an idle PHI2-high phase, 0 = none */
 } BusCard;
 
-static DRAM_ATTR BusCard card = { 0, 0x00u, 0x00u, 0x00u };
+static DRAM_ATTR BusCard card = { 0, 0x00u, 0x00u, 0x00u, 0x00u, 0u };
 
 /* Bit positions hard-coded in the MonitorTask assembly. */
 static_assert(CT_SLOW == (1u << 3) && CT_DRIVE == (1u << 4) && CT_RAMBO == (1u << 5),
@@ -311,10 +314,9 @@ static_assert(DEDIC_IN_RW == (1u << 1) && DEDIC_IN_A10_A15 == 0xFCu &&
               DEDIC_OUT_CTRL_MASK == 7u, "dedicated GPIO channels used by the bus loop assembly");
 
 /* Control table for the current card state. */
-static inline __attribute__((always_inline)) const uint8_t *card_ctrl(uint8_t portb)
+static inline __attribute__((always_inline)) const uint8_t *card_ctrl(void)
 {
-    return bus_ctrl[bus_state(card.selected != 0, !(portb & 0x10u),
-                              bus_selftest_visible(portb))];
+    return bus_ctrl[card.pstate | (card.selected << 1)];
 }
 
 /* ===========================================================================
@@ -384,6 +386,32 @@ static inline __attribute__((always_inline)) void log_send(uint8_t type, uint8_t
     e->data   = data;
     e->flags  = flags;
     __atomic_store_n(&log_head, h + 1u, __ATOMIC_RELEASE);
+}
+
+/*
+ * A latch change is only recorded here; the event is built and pushed into
+ * log_ring during the next read cycle, while the bus loop waits for PHI2 to
+ * fall, so that the write's side effects stay short.
+ * Layout: valid << 31 | offset << 16 | data << 8 | table entry of the write.
+ */
+static inline __attribute__((always_inline)) void log_defer_latch(uint32_t offset,
+                                                                  uint32_t data, uint32_t c)
+{
+    card.log_evt = (1u << 31) | (offset << 16) | (data << 8) | (c & 0xFFu);
+}
+
+static inline __attribute__((always_inline)) void log_flush_deferred(void)
+{
+    const uint32_t e = card.log_evt;
+    if (e)
+    {
+        card.log_evt = 0;
+        const uint8_t data = (uint8_t)(e >> 8);
+        uint8_t fl = 0x01u | ((data & PBI_DEV_ID) ? 0x02u : 0x00u);
+        if (!(e & DEDIC_OUT_MPD))    fl |= 0x04u;
+        if (!(e & DEDIC_OUT_EXTSEL)) fl |= 0x08u;
+        log_send(EVT_LATCH, (uint8_t)(e >> 16), data, fl);
+    }
 }
 
 /*
@@ -457,14 +485,11 @@ static void IRAM_ATTR MonitorTask(void *arg)
     const uint32_t wr_sample = NS_TO_CYCLES(BUS_WR_SAMPLE_NS);
 
     /* Decode state, kept in registers; the tables are switched by pointer. */
-    uint8_t        portb     = bus_portb_pins(card.orb, card.ddrb);
-    const uint8_t *ctrl_cur  = card_ctrl(portb);
+    const uint8_t  pins      = bus_portb_pins(card.orb, card.ddrb);
+    card.pstate              = bus_pb_state[pins];
+    const uint8_t *ctrl_cur  = card_ctrl();
     const uint8_t *slow_cur  = bus_slow[card.selected];
-    uint32_t       rambo_off = bus_rambo_bank(portb) << 14;
-
-    /* Previous write cycle, applied during the next PHI1:
-     * wr_c = table entry (0 = none), wr_info = page << 16 | A0-A7 << 8 | data. */
-    uint32_t wr_c = 0, wr_info = 0;
+    uint32_t       rambo_off = bus_rambo_bank(pins) << 14;
 
     /* From here on Core 1 belongs to the bus: no tick, no interrupts. */
     bus_int_wdt_disable();
@@ -482,89 +507,18 @@ static void IRAM_ATTR MonitorTask(void *arg)
         /* ---- PHI1: PHI2 has just fallen ----------------------------------- */
         const uint32_t t_sample = cpu_ll_get_cycle_count() + settle;
 
-        /* 1. Close the previous cycle (releasing an idle bus is harmless). */
+        /* 1-2. Close the previous cycle (releasing an idle bus is harmless). */
         bus_release();
         cpu_ll_write_dedic_gpio_mask(DEDIC_OUT_CTRL_MASK, DEDIC_OUT_CTRL_IDLE);
 
-        /* 2. Side effects of the previous write, while the 6502 sets up the
-         *    next address. */
-        if (wr_c)
-        {
-            const uint32_t wr_page = wr_info >> 16;
-            const uint32_t wr_off  = (wr_info >> 8) & 0xFFu;
-            const uint8_t  wr_data = (uint8_t)wr_info;
-
-            if (wr_c & CT_WR_MEM)
-            {
-                const uint32_t bank_off = rambo_off & (0u - ((wr_c / CT_RAMBO) & 1u));
-                ((uint8_t *)bus_rd_base[wr_page])[bank_off + wr_off] = wr_data;
-            }
-
-            if (wr_c & CT_WR_REG)
-            {
-                if (wr_off == 0xFFu && wr_page == (is_pbi ? 0xD1u : 0xD5u))
-                {
-                    /* PBI: each device latches only its own data bit.
-                     * CCTL: write $80 selects, $00 deselects. */
-                    const uint8_t new_sel = (wr_data & PBI_DEV_ID) ? 1u : 0u;
-                    if (new_sel != card.selected)
-                    {
-                        card.selected = new_sel;
-                        ctrl_cur = card_ctrl(portb);
-                        slow_cur = bus_slow[new_sel];
-                        uint8_t fl = 0x01u | (new_sel ? 0x02u : 0x00u);
-                        if (!(wr_c & DEDIC_OUT_MPD))    fl |= 0x04u;
-                        if (!(wr_c & DEDIC_OUT_EXTSEL)) fl |= 0x08u;
-                        log_send(EVT_LATCH, (uint8_t)wr_off, wr_data, fl);
-                    }
-                }
-                else if (wr_page == 0xD3u)
-                {
-                    /*
-                     * RAMbo PIA snoop: PBCTL ($D303) selects whether $D301 is
-                     * the output register or the DDR; both decide the pins.
-                     *
-                     * Typical OS init sequence:
-                     *   write 0x00 → $D303  (PBCTL bit2=0 → DDR selected at $D301)
-                     *   write 0xFF → $D301  (all PORTB pins outputs — DDR write)
-                     *   write 0x34 → $D303  (PBCTL bit2=1 → output register at $D301)
-                     *   write 0xNN → $D301  (memory configuration)
-                     */
-                    const uint32_t reg = wr_off & 0x03u;
-                    if (reg == 0x03u)
-                    {
-                        card.pbctl = wr_data;
-                    }
-                    else if (reg == 0x01u)
-                    {
-                        if (card.pbctl & 0x04u)
-                            card.orb = wr_data;
-                        else
-                            card.ddrb = wr_data;
-                        portb     = bus_portb_pins(card.orb, card.ddrb);
-                        rambo_off = bus_rambo_bank(portb) << 14;
-                        ctrl_cur  = card_ctrl(portb);
-                    }
-                }
-#if VERA_TRACE_REGS
-                else if (is_pbi && wr_page == 0xD1u && !(wr_c & DEDIC_OUT_DEVSELN))
-                {
-                    uint8_t fl = 0x01u;  /* write */
-                    if (!(wr_c & DEDIC_OUT_MPD))    fl |= 0x04u;
-                    if (!(wr_c & DEDIC_OUT_EXTSEL)) fl |= 0x08u;
-                    log_send(EVT_REG, (uint8_t)wr_off, wr_data, fl);
-                }
-#endif
-            }
-            wr_c = 0;
-        }
 
         /*
          * 3-6. Critical path, in assembly so that every operand stays in a
          * register and the constants are loaded before the wait:
          *   3. wait until address and R/W are guaranteed stable (one check
          *      every 5 cycles, leaving the loop without a taken branch);
-         *   4. one dedicated read (PHI2, R/W, A10-A15) and one APB read (A0-A9),
+         *   4. one dedicated read (PHI2, R/W, A10-A15) and one APB read (A0-A9;
+         *      no memw: the last store, the bus release, left >= 150 ns ago),
          *      page = A15..A8, c = ctrl_cur[page]; on the CT_SLOW page
          *      ($D1xx / $D5xx) c = slow_cur[A0-A7] instead;
          *   5. control signals for this cycle, around the PHI2 rising edge
@@ -581,8 +535,7 @@ static void IRAM_ATTR MonitorTask(void *arg)
             "   sub    %[t1], %[t1], %[ts]       \n\t"
             "   bltz   %[t1], 1b                 \n\t"
             "   ee.get_gpio_in %[din]            \n\t"
-            "   memw                             \n\t"
-            "   l32i   %[lo], %[gpio], %[o_in]   \n\t"
+            "   l32i   %[lo], %[gpio], %[o_in]   \n\t"   /* GPIO.in */
             "   and    %[page], %[din], %[c]     \n\t"
             "   extui  %[t1], %[lo], 20, 2       \n\t"   /* A8, A9 */
             "   or     %[page], %[page], %[t1]   \n\t"
@@ -623,6 +576,7 @@ static void IRAM_ATTR MonitorTask(void *arg)
         if (din & DEDIC_IN_RW)
         {
             wait_phi2_high();
+            log_flush_deferred();
 #if VERA_TRACE_REGS
             if ((c & CT_SLOW) && is_pbi && !(c & DEDIC_OUT_DEVSELN))
             {
@@ -646,10 +600,73 @@ static void IRAM_ATTR MonitorTask(void *arg)
             const uint32_t t_wr = cpu_ll_get_cycle_count() + wr_sample;
             while ((int32_t)(cpu_ll_get_cycle_count() - t_wr) < 0);
             const uint32_t sample = GPIO.in;
+
+            /* 7. Side effects, in the rest of PHI2 (and the start of the next
+             *    PHI1 if they need it): this cycle's control signals are
+             *    already out, the new state applies from the next cycle. */
             if (c & (CT_WR_MEM | CT_WR_REG))
             {
-                wr_c    = c;
-                wr_info = (page << 16) | (off8 << 8) | decode_data(sample);
+                const uint32_t wr_addr = (page << 8) | off8;    /* A15..A0 */
+                const uint32_t wr_off  = off8;
+                const uint8_t  wr_data = decode_data(sample);
+
+                if (c & CT_WR_MEM)
+                {
+                    const uint32_t bank_off = rambo_off & (0u - ((c / CT_RAMBO) & 1u));
+                    ((uint8_t *)bus_rd_base[page])[bank_off + wr_off] = wr_data;
+                }
+
+                if (c & CT_WR_REG)
+                {
+                    if (wr_addr == (is_pbi ? 0xD1FFu : 0xD5FFu))
+                    {
+                        /* PBI: each device latches only its own data bit.
+                         * CCTL: write $80 selects, $00 deselects. */
+                        const uint8_t new_sel = wr_data >> 7;   /* PBI_DEV_ID = bit 7 */
+                        if (new_sel != card.selected)
+                        {
+                            card.selected = new_sel;
+                            ctrl_cur = card_ctrl();
+                            slow_cur = bus_slow[new_sel];
+                            log_defer_latch(wr_off, wr_data, c);
+                        }
+                    }
+                    /*
+                     * RAMbo PIA snoop: PBCTL ($D303) selects whether $D301 is
+                     * the output register or the DDR; both decide the pins.  The
+                     * PIA decodes A0-A1 only: $D300-$D3FF mirrors its registers.
+                     *
+                     * Typical OS init sequence:
+                     *   write 0x00 → $D303  (PBCTL bit2=0 → DDR selected at $D301)
+                     *   write 0xFF → $D301  (all PORTB pins outputs — DDR write)
+                     *   write 0x34 → $D303  (PBCTL bit2=1 → output register at $D301)
+                     *   write 0xNN → $D301  (memory configuration)
+                     */
+                    else if ((wr_addr & 0xFF03u) == 0xD303u)
+                    {
+                        card.pbctl = wr_data;
+                    }
+                    else if ((wr_addr & 0xFF03u) == 0xD301u)
+                    {
+                        if (card.pbctl & 0x04u)
+                            card.orb = wr_data;
+                        else
+                            card.ddrb = wr_data;
+                        const uint8_t pb = bus_portb_pins(card.orb, card.ddrb);
+                        card.pstate = bus_pb_state[pb];
+                        rambo_off   = bus_rambo_bank(pb) << 14;
+                        ctrl_cur    = card_ctrl();
+                    }
+#if VERA_TRACE_REGS
+                    else if (is_pbi && (wr_addr >> 8) == 0xD1u && !(c & DEDIC_OUT_DEVSELN))
+                    {
+                        uint8_t fl = 0x01u;  /* write */
+                        if (!(c & DEDIC_OUT_MPD))    fl |= 0x04u;
+                        if (!(c & DEDIC_OUT_EXTSEL)) fl |= 0x08u;
+                        log_send(EVT_REG, (uint8_t)wr_off, wr_data, fl);
+                    }
+#endif
+                }
             }
             wait_phi2_low();
         }
@@ -834,6 +851,8 @@ void setup(void)
     bus_build_tables(bus_ctrl, bus_rd_base, VERA_BOARD_IS_PBI,
                      vera_pbi_handler, ram_pbi, extended_rambo_256k);
     bus_build_slow_tables(bus_slow, bus_ctrl, VERA_BOARD_IS_PBI);
+    for (uint32_t pb = 0; pb < 256u; pb++)
+        bus_pb_state[pb] = bus_portb_state((uint8_t)pb);
 
     /* Configure GPIO Modes */
     gpio_config_t cfg = {};

@@ -105,12 +105,12 @@ def vera_write_hold():
 # --- new loop (firmware with PHI1 decode), counts from its disassembly ------
 # Settle is counted from the detection of PHI2 falling; the wait loop
 # (rsr.ccount, sub, bltz) overshoots by up to 5 cycles.  Then the assembly
-# block: dedicated read + memw + APB read of GPIO.in, decode, ctrl write
-# (11 cycles + 1 APB read); data drive 14 cycles, two posted APB writes
+# block: dedicated read + APB read of GPIO.in, decode, ctrl write
+# (10 cycles + 1 APB read, no memw); data drive 14 cycles, two posted APB writes
 # (counted as sequential at the pins).
 SETTLE_NS = 150.0
 SETTLE_OVERSHOOT = {"min": 0, "typ": 2.5, "max": 5}
-CYC_P_DECODE = 11
+CYC_P_DECODE = 10
 CYC_P_DRIVE = 14
 
 
