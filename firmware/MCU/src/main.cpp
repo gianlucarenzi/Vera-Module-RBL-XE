@@ -22,6 +22,7 @@
 #include <soc/gpio_struct.h>
 #include <soc/timer_group_struct.h>
 #include <hal/wdt_hal.h>
+#include <stddef.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -290,33 +291,80 @@ static DRAM_ATTR uint32_t log_dropped = 0;  /* written by the bus loop only */
 
 static volatile bool log_ready = false;     /* Serial started by LogTask */
 
+/* Card state that the critical path never reads: kept in memory so that the
+ * bus loop's registers stay free for the decode. */
+typedef struct
+{
+    uint8_t selected;   /* $D1FF / $D5FF latch */
+    uint8_t pbctl;      /* PIA reset: DDR exposed at $D301 */
+    uint8_t orb;        /* PIA reset: output register 0 */
+    uint8_t ddrb;       /* PIA reset: all inputs (pins read 1) */
+} BusCard;
+
+static DRAM_ATTR BusCard card = { 0, 0x00u, 0x00u, 0x00u };
+
+/* Bit positions hard-coded in the MonitorTask assembly. */
+static_assert(CT_SLOW == (1u << 3) && CT_DRIVE == (1u << 4) && CT_RAMBO == (1u << 5),
+              "CT_* bits used by the bus loop assembly");
+static_assert(DEDIC_IN_RW == (1u << 1) && DEDIC_IN_A10_A15 == 0xFCu &&
+              DEDIC_OUT_CTRL_MASK == 7u, "dedicated GPIO channels used by the bus loop assembly");
+
+/* Control table for the current card state. */
+static inline __attribute__((always_inline)) const uint8_t *card_ctrl(uint8_t portb)
+{
+    return bus_ctrl[bus_state(card.selected != 0, !(portb & 0x10u),
+                              bus_selftest_visible(portb))];
+}
+
 /* ===========================================================================
  * Bus Drive/Release Logic
  * =========================================================================== */
 
-/**
- * Drive the data bus with a byte value.
- * GPIO.out covers Bank 0 entirely; writing the byte shifted onto D0-D7
- * (bits 4-11) zeros the remaining bits, which are all input-configured and
- * ignore GPIO.out.  This saves one APB write compared to the w1tc+w1ts pattern.
+/*
+ * Data bus drive (in the MonitorTask assembly): GPIO.out covers Bank 0
+ * entirely, so writing the byte shifted onto D0-D7 (bits 4-11) zeros the
+ * remaining bits, which are all input-configured and ignore GPIO.out; then
+ * GPIO.enable_w1ts turns the outputs on.  The stores are issued back to back,
+ * without the memw that the compiler puts before every volatile access:
+ * Xtensa keeps stores in program order, so the value still reaches GPIO.out
+ * before the outputs are enabled, but the CPU does not wait for each APB
+ * write to complete.
  */
-static inline __attribute__((always_inline)) void bus_drive(uint8_t val)
-{
-    GPIO.out = (uint32_t)val << DBUS_SHIFT;
-    GPIO.enable_w1ts = DBUS_MASK;
-}
 
 /**
- * Release the data bus (set to High-Z).
+ * Release the data bus (set to High-Z).  Posted store, as above.
  */
 static inline __attribute__((always_inline)) void bus_release(void)
 {
-    GPIO.enable_w1tc = DBUS_MASK;
+    asm volatile("s32i  %0, %1, %2"
+                 :
+                 : "r"(DBUS_MASK), "r"(&GPIO), "n"(offsetof(gpio_dev_t, enable_w1tc))
+                 : "memory");
 }
 
 static inline __attribute__((always_inline)) uint32_t dedic_in(void)
 {
     return cpu_ll_read_dedic_gpio_in();
+}
+
+/*
+ * PHI2 edge waits: one ee.get_gpio_in and one bit branch per sample
+ * (3 cycles), the shortest polling loop.  They return the last sample.
+ */
+static inline __attribute__((always_inline)) void wait_phi2_high(void)
+{
+    uint32_t t;
+    asm volatile("1: ee.get_gpio_in %0\n\t"
+                 "   bbci %0, 0, 1b"
+                 : "=&r"(t));
+}
+
+static inline __attribute__((always_inline)) void wait_phi2_low(void)
+{
+    uint32_t t;
+    asm volatile("1: ee.get_gpio_in %0\n\t"
+                 "   bbsi %0, 0, 1b"
+                 : "=&r"(t));
 }
 
 /* Push a log event into the ring without blocking (drops if full). */
@@ -407,21 +455,14 @@ static void IRAM_ATTR MonitorTask(void *arg)
     const uint32_t settle    = NS_TO_CYCLES(BUS_ADDR_SETTLE_NS);
     const uint32_t wr_sample = NS_TO_CYCLES(BUS_WR_SAMPLE_NS);
 
-    /* Card state, kept in registers; the tables are switched by pointer. */
-    bool           selected  = false;
-    uint8_t        pbctl     = 0x00u;   /* PIA reset: DDR exposed at $D301 */
-    uint8_t        orb       = 0x00u;   /* PIA reset: output register 0 */
-    uint8_t        ddrb      = 0x00u;   /* PIA reset: all inputs (pins read 1) */
-    uint8_t        portb     = bus_portb_pins(orb, ddrb);
-    bool           rambo_on  = !(portb & 0x10u);
-    const uint8_t *ctrl_cur  = bus_ctrl[bus_state(selected, rambo_on, bus_selftest_visible(portb))];
+    /* Decode state, kept in registers; the tables are switched by pointer. */
+    uint8_t        portb     = bus_portb_pins(card.orb, card.ddrb);
+    const uint8_t *ctrl_cur  = card_ctrl(portb);
     uint32_t       rambo_off = bus_rambo_bank(portb) << 14;
 
-    /* Previous cycle, closed during the next PHI1. */
-    bool     drv        = false;
-    bool     wr_pending = false;
-    uint32_t wr_c = 0, wr_page = 0, wr_off = 0;
-    uint8_t  wr_data = 0;
+    /* Previous write cycle, applied during the next PHI1:
+     * wr_c = table entry (0 = none), wr_info = page << 16 | A0-A7 << 8 | data. */
+    uint32_t wr_c = 0, wr_info = 0;
 
     /* From here on Core 1 belongs to the bus: no tick, no interrupts. */
     bus_int_wdt_disable();
@@ -431,50 +472,44 @@ static void IRAM_ATTR MonitorTask(void *arg)
     GPIO.out1_w1ts.val = (1UL << (PIN_ARESET - 32));
 
     /* Align to the end of a PHI2-high phase. */
-    while (!(dedic_in() & DEDIC_IN_PHI2));
-    while (dedic_in() & DEDIC_IN_PHI2);
+    wait_phi2_high();
+    wait_phi2_low();
 
     for (;;)
     {
         /* ---- PHI1: PHI2 has just fallen ----------------------------------- */
-        const uint32_t t_fall = cpu_ll_get_cycle_count();
+        const uint32_t t_sample = cpu_ll_get_cycle_count() + settle;
 
-        /* 1. Close the previous cycle. */
-        if (drv)
-        {
-            bus_release();
-            drv = false;
-        }
+        /* 1. Close the previous cycle (releasing an idle bus is harmless). */
+        bus_release();
         cpu_ll_write_dedic_gpio_mask(DEDIC_OUT_CTRL_MASK, DEDIC_OUT_CTRL_IDLE);
 
         /* 2. Side effects of the previous write, while the 6502 sets up the
          *    next address. */
-        if (wr_pending)
+        if (wr_c)
         {
-            wr_pending = false;
+            const uint32_t wr_page = wr_info >> 16;
+            const uint32_t wr_off  = (wr_info >> 8) & 0xFFu;
+            const uint8_t  wr_data = (uint8_t)wr_info;
 
             if (wr_c & CT_WR_MEM)
             {
-                uint8_t *p = (uint8_t *)bus_rd_base[wr_page];
-                if (wr_c & CT_RAMBO)
-                    p += rambo_off;
-                p[wr_off] = wr_data;
+                const uint32_t bank_off = rambo_off & (0u - ((wr_c / CT_RAMBO) & 1u));
+                ((uint8_t *)bus_rd_base[wr_page])[bank_off + wr_off] = wr_data;
             }
 
             if (wr_c & CT_WR_REG)
             {
-                bool state_changed = false;
-
                 if (wr_off == 0xFFu && wr_page == (is_pbi ? 0xD1u : 0xD5u))
                 {
                     /* PBI: each device latches only its own data bit.
                      * CCTL: write $80 selects, $00 deselects. */
-                    bool new_sel = ((wr_data & PBI_DEV_ID) != 0u);
-                    if (new_sel != selected)
+                    const uint8_t new_sel = (wr_data & PBI_DEV_ID) ? 1u : 0u;
+                    if (new_sel != card.selected)
                     {
-                        selected      = new_sel;
-                        state_changed = true;
-                        uint8_t fl = 0x01u | (selected ? 0x02u : 0x00u);
+                        card.selected = new_sel;
+                        ctrl_cur = card_ctrl(portb);
+                        uint8_t fl = 0x01u | (new_sel ? 0x02u : 0x00u);
                         if (!(wr_c & DEDIC_OUT_MPD))    fl |= 0x04u;
                         if (!(wr_c & DEDIC_OUT_EXTSEL)) fl |= 0x08u;
                         log_send(EVT_LATCH, (uint8_t)wr_off, wr_data, fl);
@@ -492,21 +527,20 @@ static void IRAM_ATTR MonitorTask(void *arg)
                      *   write 0x34 → $D303  (PBCTL bit2=1 → output register at $D301)
                      *   write 0xNN → $D301  (memory configuration)
                      */
-                    uint32_t reg = wr_off & 0x03u;
+                    const uint32_t reg = wr_off & 0x03u;
                     if (reg == 0x03u)
                     {
-                        pbctl = wr_data;
+                        card.pbctl = wr_data;
                     }
                     else if (reg == 0x01u)
                     {
-                        if (pbctl & 0x04u)
-                            orb = wr_data;
+                        if (card.pbctl & 0x04u)
+                            card.orb = wr_data;
                         else
-                            ddrb = wr_data;
-                        portb         = bus_portb_pins(orb, ddrb);
-                        rambo_off     = bus_rambo_bank(portb) << 14;
-                        rambo_on      = !(portb & 0x10u);
-                        state_changed = true;
+                            card.ddrb = wr_data;
+                        portb     = bus_portb_pins(card.orb, card.ddrb);
+                        rambo_off = bus_rambo_bank(portb) << 14;
+                        ctrl_cur  = card_ctrl(portb);
                     }
                 }
 #if VERA_TRACE_REGS
@@ -518,40 +552,76 @@ static void IRAM_ATTR MonitorTask(void *arg)
                     log_send(EVT_REG, (uint8_t)wr_off, wr_data, fl);
                 }
 #endif
-                if (state_changed)
-                    ctrl_cur = bus_ctrl[bus_state(selected, rambo_on,
-                                                  bus_selftest_visible(portb))];
             }
+            wr_c = 0;
         }
 
-        /* 3. Wait until address and R/W are guaranteed stable. */
-        while ((uint32_t)(cpu_ll_get_cycle_count() - t_fall) < settle);
+        /*
+         * 3-6. Critical path, in assembly so that every operand stays in a
+         * register and the constants are loaded before the wait:
+         *   3. wait until address and R/W are guaranteed stable;
+         *   4. one dedicated read (PHI2, R/W, A10-A15) and one APB read (A0-A9),
+         *      page = A15..A8, c = ctrl_cur[page];
+         *   5. control signals for this cycle, around the PHI2 rising edge
+         *      (the VERA strobes ~mRE / ~mWE are gated by PHI2 in hardware);
+         *   6. read cycle on a CT_DRIVE page: drive the byte now (bank offset
+         *      only for RAMbo pages, without a branch).  U19 passes it to the
+         *      Atari only while PHI2 is high.
+         * CT_SLOW pages ($D1xx / $D5xx) leave at step 4 and finish in C: they
+         * never drive the bus.
+         */
+        uint32_t c, page, din, lo, off8, t1, t2;
+        asm volatile(
+            "   movi   %[c], 0xFC                \n\t"   /* A10-A15 in din */
+            "   movi   %[t2], 7                  \n\t"   /* DEDIC_OUT_CTRL_MASK */
+            "1: rsr.ccount %[t1]                 \n\t"
+            "   sub    %[t1], %[t1], %[ts]       \n\t"
+            "   bltz   %[t1], 1b                 \n\t"
+            "   ee.get_gpio_in %[din]            \n\t"
+            "   memw                             \n\t"
+            "   l32i   %[lo], %[gpio], %[o_in]   \n\t"
+            "   and    %[page], %[din], %[c]     \n\t"
+            "   extui  %[t1], %[lo], 20, 2       \n\t"   /* A8, A9 */
+            "   or     %[page], %[page], %[t1]   \n\t"
+            "   add    %[t1], %[ctrl], %[page]   \n\t"
+            "   l8ui   %[c], %[t1], 0            \n\t"
+            "   extui  %[off], %[lo], 12, 8      \n\t"   /* A0-A7 */
+            "   bbsi   %[c], 3, 2f               \n\t"   /* CT_SLOW */
+            "   ee.wr_mask_gpio_out %[c], %[t2]  \n\t"
+            "   bbci   %[din], 1, 2f             \n\t"   /* write cycle */
+            "   bbci   %[c], 4, 2f               \n\t"   /* not CT_DRIVE */
+            "   addx4  %[t1], %[page], %[rdb]    \n\t"
+            "   l32i   %[t1], %[t1], 0           \n\t"   /* bus_rd_base[page] */
+            "   extui  %[t2], %[c], 5, 1         \n\t"   /* CT_RAMBO */
+            "   neg    %[t2], %[t2]              \n\t"
+            "   and    %[t2], %[t2], %[roff]     \n\t"
+            "   add    %[t1], %[t1], %[off]      \n\t"
+            "   add    %[t1], %[t1], %[t2]       \n\t"
+            "   l8ui   %[t1], %[t1], 0           \n\t"
+            "   movi   %[t2], %[m_dbus]          \n\t"
+            "   slli   %[t1], %[t1], %[sh]       \n\t"
+            "   s32i   %[t1], %[gpio], %[o_out]  \n\t"   /* GPIO.out */
+            "   s32i   %[t2], %[gpio], %[o_en]   \n\t"   /* GPIO.enable_w1ts */
+            "2:                                  \n\t"
+            : [c] "=&r"(c), [page] "=&r"(page), [din] "=&r"(din), [lo] "=&r"(lo),
+              [off] "=&r"(off8), [t1] "=&r"(t1), [t2] "=&r"(t2)
+            : [ts] "r"(t_sample), [gpio] "r"(&GPIO), [ctrl] "r"(ctrl_cur),
+              [rdb] "r"(bus_rd_base), [roff] "r"(rambo_off),
+              [m_dbus] "n"(DBUS_MASK), [sh] "n"(DBUS_SHIFT),
+              [o_in] "n"(offsetof(gpio_dev_t, in)),
+              [o_out] "n"(offsetof(gpio_dev_t, out)),
+              [o_en] "n"(offsetof(gpio_dev_t, enable_w1ts))
+            : "memory");
 
-        /* 4. One dedicated read (PHI2, R/W, A10-A15) and one APB read (A0-A9). */
-        const uint32_t din  = dedic_in();
-        const uint32_t lo   = GPIO.in;
-        const uint32_t page = bus_page(lo, din);
-        const uint32_t off8 = (lo >> 12) & 0xFFu;
-        uint32_t c = ctrl_cur[page];
         if (c & CT_SLOW)
-            c = bus_slow_ctrl(c, off8, selected, is_pbi);
-
-        /* 5. Control signals for this cycle, around the PHI2 rising edge.
-         *    The VERA strobes (~mRE / ~mWE) are gated by PHI2 in hardware. */
-        cpu_ll_write_dedic_gpio_mask(DEDIC_OUT_CTRL_MASK, c);
+        {
+            c = bus_slow_ctrl(c, off8, card.selected != 0, is_pbi);
+            cpu_ll_write_dedic_gpio_mask(DEDIC_OUT_CTRL_MASK, c);
+        }
 
         if (din & DEDIC_IN_RW)
         {
-            /* 6a. Read: drive the byte now; U19 passes it to the Atari only
-             *     while PHI2 is high. */
-            if (c & CT_DRIVE)
-            {
-                /* Bank offset only for RAMbo pages, without a branch. */
-                const uint32_t bank_off = rambo_off & (0u - ((c / CT_RAMBO) & 1u));
-                bus_drive(bus_rd_base[page][bank_off + off8]);
-                drv = true;
-            }
-            while (!(dedic_in() & DEDIC_IN_PHI2));
+            wait_phi2_high();
 #if VERA_TRACE_REGS
             if ((c & CT_SLOW) && is_pbi && !(c & DEDIC_OUT_DEVSELN))
             {
@@ -565,25 +635,22 @@ static void IRAM_ATTR MonitorTask(void *arg)
                 log_send(EVT_REG, (uint8_t)off8, decode_data(last), fl);
             }
 #endif
-            while (dedic_in() & DEDIC_IN_PHI2);
+            wait_phi2_low();
         }
         else
         {
             /* 6b. Write: sample the data at a fixed time after PHI2 rises
              *     (valid from t_MDS = 100 ns to 30 ns after PHI2 falls). */
-            while (!(dedic_in() & DEDIC_IN_PHI2));
-            const uint32_t t_rise = cpu_ll_get_cycle_count();
-            while ((uint32_t)(cpu_ll_get_cycle_count() - t_rise) < wr_sample);
+            wait_phi2_high();
+            const uint32_t t_wr = cpu_ll_get_cycle_count() + wr_sample;
+            while ((int32_t)(cpu_ll_get_cycle_count() - t_wr) < 0);
             const uint32_t sample = GPIO.in;
             if (c & (CT_WR_MEM | CT_WR_REG))
             {
-                wr_pending = true;
-                wr_c       = c;
-                wr_page    = page;
-                wr_off     = off8;
-                wr_data    = decode_data(sample);
+                wr_c    = c;
+                wr_info = (page << 16) | (off8 << 8) | decode_data(sample);
             }
-            while (dedic_in() & DEDIC_IN_PHI2);
+            wait_phi2_low();
         }
     }
 }

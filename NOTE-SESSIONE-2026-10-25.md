@@ -1,8 +1,10 @@
 # Note di sessione — 2026-10-25
 
-Riassunto del lavoro per riprendere su un altro PC. **Niente di quanto segue è
-committato** in questo repo: per averlo sull'altro PC bisogna committare e fare
-push (oppure copiare i file elencati sotto).
+Riassunto del lavoro per riprendere su un altro PC.
+
+**Aggiornamento (fine giornata):** firmware e tesi committati e pushati in `0a2e665`
+e `04a165b`. Dopo il push è stata fatta l'**ottimizzazione del percorso critico**
+(§3b), con questo file aggiornato: verificare con `git status` se è stata committata.
 
 ---
 
@@ -84,6 +86,35 @@ Bilancio (dal disassemblato): dopo l'attesa 18 cicli + 1 lettura APB → control
 **Conforme nel caso peggiore se la latenza APB ≤ ~10 cicli → va misurata.**
 
 ---
+
+## 3b. Ottimizzazione dopo il commit `0a2e665`
+
+- Percorso critico (attesa → campionamento → decodifica → controlli → dato) scritto in
+  **assembly inline** in `MonitorTask`: tutti gli operandi in registro, costanti caricate
+  prima dell'attesa. Controlli: **11 cicli + 1 lettura APB** (prima 18); dato: altri
+  **14 cicli** (prima 22).
+- Le due scritture del dato (`GPIO.out`, `GPIO.enable_w1ts`) e il rilascio del bus sono
+  store "posted" senza `memw` (gli store Xtensa restano in ordine).
+- Attesa dei fronti di φ2 in assembly: 3 cicli per campione anche sulla discesa (prima 5).
+- Stato PIA e latch in una struttura in DRAM (`card`), scrittura pendente in due
+  registri (`wr_c`, `wr_info`): meno variabili sullo stack.
+- Le pagine `$D1xx`/`$D5xx` (`CT_SLOW`) escono dall'assembly e finiscono in C (non
+  pilotano mai il bus).
+- `timing_model.py` aggiornato (`CYC_P_DECODE = 11`, `CYC_P_DRIVE = 14`, overshoot
+  dell'attesa fino a 5 cicli).
+
+Margine del dato dopo l'ottimizzazione (NTSC; PAL ≈ +5 ns):
+
+| Latenza APB | Caso peggiore | Tipico |
+|---|---|---|
+| 6 cicli | +98 ns | +134 ns |
+| 9 cicli | +61 ns | +97 ns |
+| 12 cicli | +23 ns | +59 ns |
+| 15 cicli | −14 ns | +22 ns |
+
+**Conforme nel caso peggiore fino a ~13–14 cicli di latenza APB** (prima ~10).
+Il paragrafo "Dal disassemblato" di `firmware/MCU/README.md` riporta ancora i conteggi
+vecchi: da correggere con il resto della documentazione a fine ottimizzazione.
 
 ## 4. Prossimi passi
 

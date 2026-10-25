@@ -103,12 +103,15 @@ def vera_write_hold():
 
 
 # --- new loop (firmware with PHI1 decode), counts from its disassembly ------
-# Settle is counted from the detection of PHI2 falling; then one dedicated
-# read + one APB read, decode (18 cycles), ctrl write; data drive 22 cycles +
-# two APB writes.
+# Settle is counted from the detection of PHI2 falling; the wait loop
+# (rsr.ccount, sub, bltz) overshoots by up to 5 cycles.  Then the assembly
+# block: dedicated read + memw + APB read of GPIO.in, decode, ctrl write
+# (11 cycles + 1 APB read); data drive 14 cycles, two posted APB writes
+# (counted as sequential at the pins).
 SETTLE_NS = 150.0
-CYC_P_DECODE = 18
-CYC_P_DRIVE = 22
+SETTLE_OVERSHOOT = {"min": 0, "typ": 2.5, "max": 5}
+CYC_P_DECODE = 11
+CYC_P_DRIVE = 14
 
 
 def proposed(f_mhz, l_apb, case="max"):
@@ -116,7 +119,7 @@ def proposed(f_mhz, l_apb, case="max"):
     i = {"min": 0, "typ": 1, "max": 2}[case]
     asym = PHI2_ASYM if case == "max" else 0.0
     phi1 = half(f_mhz) + asym           # PHI1 is longer if PHI2 is shorter
-    t_s = t_detect(case) + SETTLE_NS    # address sampled, from PHI2 falling
+    t_s = t_detect(case) + SETTLE_NS + SETTLE_OVERSHOOT[case] * TC
     t_ctrl_p = t_s + (CYC_P_DECODE + l_apb) * TC + PAD_OUT[i]
     t_data_p = t_ctrl_p + (CYC_P_DRIVE + 2 * l_apb) * TC + LVC4245[i]
     return t_ctrl_p - phi1, t_data_p - phi1
