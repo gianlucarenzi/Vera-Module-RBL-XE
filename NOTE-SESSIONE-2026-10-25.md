@@ -156,9 +156,11 @@ vecchi: da correggere con il resto della documentazione a fine ottimizzazione.
 **Piano per il 2026-10-26:** Gianluca monta il gating di `~OE` di U19 seguendo
 `VERA-ATARI-HW-REQUIREMENTS.md` §2.1 (un 74LVC20, U23 pin 4 staccato da U19 pin 22,
 pull-up 10 kΩ su `~mVCS0`/`~mEXSEL`/`~mMPD`), più §2.7 (VCCB pin 23 dei 74LVC4245) e §2.8
-(ingressi liberi di U23). Dopo il montaggio: ottimizzare il firmware tenendo abilitate le
-uscite dati in φ1 e spegnendole solo prima di una scrittura o di una lettura VERA (una sola
-scrittura APB sul percorso critico; limite atteso ~17–20 cicli di latenza APB invece di 14).
+(ingressi liberi di U23). ~~Dopo il montaggio: tenere abilitate le uscite dati in φ1~~ — **rivisto il
+2026-10-26**: con le uscite sempre abilitate, nei cicli di scrittura l'ESP32 deve spegnerle
+prima che U19 piloti il lato scheda, e questo vincolo si rompe a ~13–14 cicli APB: nel caso
+peggiore non migliora il limite attuale (solo il caso tipico). Il gating resta indispensabile
+per eliminare la contesa. Dettagli nella tesi, cap. 8.
 
 1. Misurare la latenza APB di `GPIO.in` su una qualsiasi ESP32-S3 (programma nella tesi,
    §9.1, con `xthal_get_ccount()`); mettere il valore in `SCENARIOS` di `timing_model.py`.
@@ -184,3 +186,24 @@ scrittura APB sul percorso critico; limite atteso ~17–20 cicli di latenza APB 
 `~/Progetti/AMIGA/stalker`: firmware v3.2NG-RTOS + bootloader v1.1, tag
 `FWVER3.2-NG-RTOS`, release GitHub con i due `.hex`, `production.sh` che si ferma al
 primo errore (commit `34d2a01`, `e6e3afe`, `b05ac19`). Da provare su scheda.
+
+---
+
+## 6. Sessione 2026-10-26
+
+- **Firmware** (`main.cpp`):
+  - l'attesa di assestamento parte dal minore fra la discesa di φ2 rilevata e quella
+    prevista (salita + `BUS_PHI2_HIGH_MAX_NS` = 292 ns): dopo effetti lunghi il
+    campionamento successivo slitta al più di ~23 ns invece che dell'intero sforamento;
+  - scritture in RAM PBI / RAMbo messe in coda (`card.wr_mem`) ed eseguite nel φ1
+    successivo (~32 cicli, dentro l'attesa di 36): non ritardano mai il ciclo dopo;
+    latch e PORTB restano nella coda di φ2.
+- **Modello** (`firmware/tesi/timing_model.py`) riscritto: firmware iniziale (f311311) e
+  attuale, scheda con gating, opzione "uscite sempre abilitate", lettura dopo scrittura
+  sui registri. Limiti caso peggiore: NTSC 14,1 / PAL 14,5 cicli APB; tipico ~17;
+  dopo scrittura su latch/PORTB 12,3 / 12,9.
+- **Tesi riscritta** (`firmware/tesi/tesi.tex`, PDF 47 pagine) come progetto con gating e
+  firmware attuale: cap. 3 hardware con 74LVC20, cap. 5 firmware nuovo con listato
+  assembly, cap. 6 verifica, cap. 7 evoluzione dalla prima versione, cap. 8 questioni
+  aperte, cap. 9 piano di misure. Risultati dichiarati come analitici, non misurati.
+- Frontespizio ancora con segnaposto (università, relatore, matricola).
