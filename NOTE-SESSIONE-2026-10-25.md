@@ -153,6 +153,13 @@ vecchi: da correggere con il resto della documentazione a fine ottimizzazione.
 
 ## 4. Prossimi passi
 
+**Piano per il 2026-10-26:** Gianluca monta il gating di `~OE` di U19 seguendo
+`VERA-ATARI-HW-REQUIREMENTS.md` §2.1 (un 74LVC20, U23 pin 4 staccato da U19 pin 22,
+pull-up 10 kΩ su `~mVCS0`/`~mEXSEL`/`~mMPD`), più §2.7 (VCCB pin 23 dei 74LVC4245) e §2.8
+(ingressi liberi di U23). Dopo il montaggio: ottimizzare il firmware tenendo abilitate le
+uscite dati in φ1 e spegnendole solo prima di una scrittura o di una lettura VERA (una sola
+scrittura APB sul percorso critico; limite atteso ~17–20 cicli di latenza APB invece di 14).
+
 1. Misurare la latenza APB di `GPIO.in` su una qualsiasi ESP32-S3 (programma nella tesi,
    §9.1, con `xthal_get_ccount()`); mettere il valore in `SCENARIOS` di `timing_model.py`.
 2. Aggiungere la resistenza di strapping su GPIO3.

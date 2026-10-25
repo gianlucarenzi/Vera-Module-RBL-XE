@@ -77,24 +77,69 @@ fine ciclo. Quindi:
 ~OE_ = NOT( PHI2 AND ( NOT R/W   OR   ~DEV_SEL_N OR ~EXTSEL_N OR ~MPD ) )
 ```
 
-Con porte a 3,3 V:
+**Realizzazione (verificata sulla netlist 2026-10-23): un solo `74LVC20`** (due NAND a 4 ingressi,
+SO-14/TSSOP-14), alimentato a 3V3. La AND3 seguita dalla NAND con R/W equivale a una NAND a 4
+ingressi, quindi non servono `74LVC11` e NAND separate:
 
 ```
-A    = AND3(DEV_SEL_N, EXTSEL_N, MPD)    ; 1 quando nessuno risponde
-B    = NAND(R/W, A)                       ; 1 se scrittura oppure la scheda risponde
-~OE_ = NAND(PHI2, B)                      ; verso U19 pin 22 (al posto di NOT(PHI2))
+B    = NAND4(mR~W, ~mVCS0, ~mEXSEL, ~mMPD)   ; 1 se scrittura oppure la scheda risponde
+~OE_ = NAND2(mPHI2, B)                       ; verso U19 pin 22
 ```
 
-Parti: un `74LVC11` (AND a tre ingressi) e due NAND. Una NAND è la quarta porta libera di `U5`
-(pin 12 e 13, oggi a GND) se `U5` diventa un 74LVC00 come richiesto in §2.2; l'altra può essere un
-`74LVC1G00`. `NOT R/W` esiste già (`U23` pin 2, che pilota `DIR`); `DIR` resta invariato.
-Il pin 22 non deve più essere collegato a `U23` pin 4.
+Segnali presi dal lato scheda a 3,3 V (`~mVCS0` esiste solo lì):
+
+```
+ Lato scheda (3,3 V)                       U24 74LVC20  (Vcc = 3V3 pin 14, GND pin 7, 100 nF)
+                                          ┌─────────────────────────┐
+ mR~W    (U6.18 / U7.7 / U5.2) ───────────┤1  ┐                     │
+ ~mVCS0  (U7.45 / U2.28)  ────────────────┤2  ├ NAND4 ──o 6├──┐     │
+ ~mEXSEL (U7.47 / U16.18) ────────────────┤4  │               │ B   │
+ ~mMPD   (U7.48 / U16.17) ────────────────┤5  ┘               │     │
+                                          │                   │     │
+ mPHI2   (U6.17 / U7.6 / U5.1) ───────────┤9  ┐               │     │
+                              ┌───────────┤10 ├ NAND4 ──o 8├──┼──┐  │
+                         3V3 ─┼───────────┤12 │               │  │  │
+                         3V3 ─┼───────────┤13 ┘               │  │  │
+                              │           │  3, 11: NC        │  │  │
+                              └───────────────────────────────┘  │  │
+                                          └──────────────────────┼──┘
+                                                                 │
+                                                  U19 pin 22 ~OE ◄┘
+
+ U23 pin 3  ◄── PHI2           (resta com'è)
+ U23 pin 4  ──► NON COLLEGATO  (staccare dalla rete di U19 pin 22)
+ U23 pin 1/2 → U19 pin 2 DIR   (invariato)
+```
+
+Passi:
+1. staccare `U23` pin 4 da `U19` pin 22 (l'uscita di `U23` resta libera: va bene);
+2. `U24` NAND 1: pin 1 `mR~W`, pin 2 `~mVCS0`, pin 4 `~mEXSEL`, pin 5 `~mMPD` → pin 6 = **B**;
+3. `U24` NAND 2 usata come NAND a 2 ingressi: pin 9 `mPHI2`, pin 10 ← pin 6, pin 12 e 13 a 3V3;
+4. `U24` pin 8 → `U19` pin 22 (`~OE`); pin 3 e 11 NC; 100 nF tra pin 14 e GND vicino al chip;
+5. **pull-up 10 kΩ verso 3V3 su `~mVCS0`, `~mEXSEL` e `~mMPD`**: nella netlist non ci sono, e durante
+   reset e boot dell'ESP32 i GPIO 40–42 (pin JTAG) non hanno un livello garantito. Senza pull-up un
+   livello basso spurio accenderebbe `U19` nelle letture e, già oggi tramite `U16`, abbasserebbe
+   `EXTSEL`/`MPD` sul bus Atari.
+
+| mPHI2 | mR~W | ~mVCS0 / ~mEXSEL / ~mMPD | B | ~OE | U19 |
+|---|---|---|---|---|---|
+| 0 | x | x | x | 1 | spento (φ1) |
+| 1 | 0 (scrittura) | x | 1 | 0 | acceso, Atari → scheda |
+| 1 | 1 (lettura) | tutti a 1 | 0 | 1 | spento: niente contesa |
+| 1 | 1 (lettura) | almeno uno a 0 | 1 | 0 | acceso, scheda → Atari |
+
+`~OE` di `U19` è riferito a VCCA (5 V) con soglia TTL (VIH ≥ 2,0 V): l'uscita LVC a 3,3 V lo pilota
+direttamente (verificare sul datasheet della versione montata). Ritardo: due livelli LVC, ~3–5 ns
+ciascuno. `DIR` resta invariato (`U23` pin 1→2).
 
 Da controllare:
-- **Tempi.** `DEV_SEL_N`, `EXTSEL_N` e `MPD` vengono asseriti dall'ESP32 dopo la salita di PHI2
-  (latenza del firmware più i ritardi di porta): `~OE_` si abbassa in ritardo. Il dato in
-  lettura deve comunque essere valido alla CPU prima della discesa di PHI2 meno il suo tempo di
-  setup. Da misurare con l'oscilloscopio.
+- **Tempi.** Con il firmware attuale (decodifica in φ1, commit `82c429f`) `DEV_SEL_N`, `EXTSEL_N` e
+  `MPD` arrivano intorno alla salita di PHI2 (0…+40 ns nel caso peggiore); `~OE_` li segue di
+  ~10 ns più il tempo di abilitazione del 4245 (≤ ~9 ns). Il dato dell'ESP32 arriva comunque dopo:
+  da misurare con l'oscilloscopio.
+- **Firmware dopo la modifica.** Con `U19` isolato l'ESP32 può tenere abilitate le uscite dati in φ1
+  e spegnerle solo prima di un ciclo di scrittura o di una lettura dei registri VERA: una sola
+  scrittura APB (`GPIO.out`) sul percorso critico invece di due. Da fare dopo il montaggio.
 - **`$D1FF` in lettura non abilita `U19`** (nessun segnale di risposta è asserito): è voluto, vedere §2.4.
 - **Scritture.** `U19` resta abilitato in ogni scrittura: l'ESP32 deve vedere tutte le scritture
   (`$D301`, `$D303`, latch `$D1FF`, finestra RAMbo).
@@ -234,6 +279,19 @@ sostituita con l'handler corrente di `VERA_ATARI_PBI` e rigenerata con `make -C 
 (`vera_pbi_handler.bin`, `include/vera_pbi_handler.h`, `FPGA/pbi_rom_pkg.vhd`): il binario è identico
 a `vera_pbi_handler.rom` di `VERA_ATARI_PBI`. Contiene il nuovo `IRQVECTOR` e l'attesa lunga di
 `WAIT_VERA`.
+
+### 2.7 [A] VCCB (pin 23) dei 74LVC4245 scollegato
+
+Nella netlist 2026-10-23 il pin 23 di `U3`, `U4`, `U6`, `U16` e `U19` è su una rete senza altri
+collegamenti; solo il pin 24 va a 3V3. Il simbolo KiCad lo chiama `VCCB` (power_in): è il secondo pin
+di alimentazione del lato B. Collegare il pin 23 a 3V3 su tutti e cinque i chip, con il
+disaccoppiamento vicino.
+
+### 2.8 [B] Ingressi liberi di U23 flottanti
+
+`U23` (SN74HCT04) usa due invertitori (pin 1→2, 3→4). Gli ingressi degli altri quattro (pin 5, 9, 11,
+13) sono scollegati: gli ingressi CMOS flottanti possono oscillare e assorbire corrente. Collegarli a
+GND (o a 5V).
 
 ---
 
