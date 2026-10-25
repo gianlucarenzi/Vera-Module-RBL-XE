@@ -113,6 +113,25 @@ Margine del dato dopo l'ottimizzazione (NTSC; PAL ≈ +5 ns):
 | 15 cicli | −14 ns | +22 ns |
 
 **Conforme nel caso peggiore fino a ~13–14 cicli di latenza APB** (prima ~10).
+
+Passo successivo (stesso giorno): la pagina `$D1xx`/`$D5xx` (registri VERA) è decisa
+nell'assembly con una seconda tabella `bus_slow[selected][A0-A7]` (`bus_build_slow_tables()`
+in `bus_decode.h`, verificata dal test host): `DEV_SEL_N` arriva ~18 cicli + 1 lettura APB
+dopo l'attesa invece di ~30. Il percorso del dato ROM/RAM/RAMbo è invariato (limite
+~13–14 cicli APB). Provato lo srotolamento del loop di attesa: nel caso peggiore non
+guadagna (salto all'indietro e uscita su salto preso), quindi è rimasto il loop semplice.
+
+Limiti rimasti, non risolvibili solo nel firmware:
+- i 3 accessi APB per ciclo letto dall'ESP32 (1 lettura indirizzo + 2 scritture dato);
+  con il gating di `~OE` di U19 (§2.1 requisiti HW) le uscite potrebbero restare
+  abilitate e il caso medio scenderebbe a 2, ma il caso peggiore (lettura dopo una
+  scrittura) resta a 3;
+- anticipare `EXTSEL`/`MPD` usando solo A10–A15 (canali Dedicated GPIO, prima della
+  lettura APB) è possibile per RAMbo e `$D800`, ma costa ~5 cicli sul percorso del dato:
+  non fatto, da valutare dopo le misure;
+- dopo una scrittura su `$D1FF` (cambio di latch, con log) gli effetti in φ1 superano
+  l'attesa di ~14 cicli: ritarda solo il ciclo seguente, che in pratica è un fetch dalla
+  ROM del sistema operativo.
 Il paragrafo "Dal disassemblato" di `firmware/MCU/README.md` riporta ancora i conteggi
 vecchi: da correggere con il resto della documentazione a fine ottimizzazione.
 

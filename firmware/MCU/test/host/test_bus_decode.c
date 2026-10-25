@@ -141,7 +141,9 @@ int main(void)
 
     for (int pbi = 0; pbi <= 1; pbi++)
     {
+        static uint8_t slow[2][256];
         bus_build_tables(ctrl, rd_base, pbi, rom, ram, rambo);
+        bus_build_slow_tables(slow, ctrl, pbi);
         for (int sel = 0; sel <= 1; sel++)
         for (int portb_bit4 = 0; portb_bit4 <= 1; portb_bit4++)
         for (int st = 0; st <= 1; st++)
@@ -159,7 +161,13 @@ int main(void)
                 uint32_t c    = tab[page];
                 uint32_t off8 = (lo >> 12) & 0xFFu;
                 if (c & CT_SLOW)
-                    c = bus_slow_ctrl(c, off8, sel, pbi);
+                {
+                    uint32_t ref = bus_slow_ctrl(c, off8, sel, pbi);
+                    c = slow[sel][off8];          /* as in the bus loop */
+                    if (c != ref && ++errors <= 20)
+                        printf("FAIL slow table pbi=%d sel=%d $%04X\n", pbi, sel, a);
+                    checks++;
+                }
 
                 const uint8_t *drv = NULL;
                 if (c & CT_DRIVE)

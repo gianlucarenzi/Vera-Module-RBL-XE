@@ -152,6 +152,24 @@ static inline void bus_build_tables(uint8_t ctrl[BUS_STATES][256],
     }
 }
 
+/*
+ * Second-level table for the CT_SLOW page ($D1xx in PBI, $D5xx in CCTL):
+ * the complete entry for each A0-A7, for card deselected [0] / selected [1].
+ * The slow page does not depend on the RAMbo / self-test state.
+ */
+static inline void bus_build_slow_tables(uint8_t slow[2][256],
+                                         const uint8_t ctrl[BUS_STATES][256],
+                                         bool is_pbi)
+{
+    const uint32_t page = is_pbi ? 0xD1u : 0xD5u;
+    for (uint32_t sel = 0; sel < 2u; sel++)
+    {
+        uint32_t c = ctrl[bus_state(sel != 0, false, false)][page];
+        for (uint32_t off8 = 0; off8 < 256u; off8++)
+            slow[sel][off8] = (uint8_t)bus_slow_ctrl(c, off8, sel != 0, is_pbi);
+    }
+}
+
 /* RAMbo bank (0-15) from PORTB bits 6, 5, 3, 2. */
 BUS_INLINE uint32_t bus_rambo_bank(uint8_t portb)
 {

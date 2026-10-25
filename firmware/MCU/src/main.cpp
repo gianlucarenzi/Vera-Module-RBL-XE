@@ -227,6 +227,7 @@ static DRAM_ATTR uint8_t  ram_pbi[512];     /* 512B RAM at $D600-$D7FF */
 
 /* Bus decode tables (see bus_decode.h), built in setup(). */
 static DRAM_ATTR uint8_t        bus_ctrl[BUS_STATES][256];
+static DRAM_ATTR uint8_t        bus_slow[2][256];   /* $D1xx / $D5xx by A0-A7, [selected] */
 static DRAM_ATTR const uint8_t *bus_rd_base[256];
 
 /*
@@ -458,6 +459,7 @@ static void IRAM_ATTR MonitorTask(void *arg)
     /* Decode state, kept in registers; the tables are switched by pointer. */
     uint8_t        portb     = bus_portb_pins(card.orb, card.ddrb);
     const uint8_t *ctrl_cur  = card_ctrl(portb);
+    const uint8_t *slow_cur  = bus_slow[card.selected];
     uint32_t       rambo_off = bus_rambo_bank(portb) << 14;
 
     /* Previous write cycle, applied during the next PHI1:
@@ -509,6 +511,7 @@ static void IRAM_ATTR MonitorTask(void *arg)
                     {
                         card.selected = new_sel;
                         ctrl_cur = card_ctrl(portb);
+                        slow_cur = bus_slow[new_sel];
                         uint8_t fl = 0x01u | (new_sel ? 0x02u : 0x00u);
                         if (!(wr_c & DEDIC_OUT_MPD))    fl |= 0x04u;
                         if (!(wr_c & DEDIC_OUT_EXTSEL)) fl |= 0x08u;
@@ -559,16 +562,16 @@ static void IRAM_ATTR MonitorTask(void *arg)
         /*
          * 3-6. Critical path, in assembly so that every operand stays in a
          * register and the constants are loaded before the wait:
-         *   3. wait until address and R/W are guaranteed stable;
+         *   3. wait until address and R/W are guaranteed stable (one check
+         *      every 5 cycles, leaving the loop without a taken branch);
          *   4. one dedicated read (PHI2, R/W, A10-A15) and one APB read (A0-A9),
-         *      page = A15..A8, c = ctrl_cur[page];
+         *      page = A15..A8, c = ctrl_cur[page]; on the CT_SLOW page
+         *      ($D1xx / $D5xx) c = slow_cur[A0-A7] instead;
          *   5. control signals for this cycle, around the PHI2 rising edge
          *      (the VERA strobes ~mRE / ~mWE are gated by PHI2 in hardware);
          *   6. read cycle on a CT_DRIVE page: drive the byte now (bank offset
          *      only for RAMbo pages, without a branch).  U19 passes it to the
-         *      Atari only while PHI2 is high.
-         * CT_SLOW pages ($D1xx / $D5xx) leave at step 4 and finish in C: they
-         * never drive the bus.
+         *      Atari only while PHI2 is high.  The slow page never drives.
          */
         uint32_t c, page, din, lo, off8, t1, t2;
         asm volatile(
@@ -586,10 +589,10 @@ static void IRAM_ATTR MonitorTask(void *arg)
             "   add    %[t1], %[ctrl], %[page]   \n\t"
             "   l8ui   %[c], %[t1], 0            \n\t"
             "   extui  %[off], %[lo], 12, 8      \n\t"   /* A0-A7 */
-            "   bbsi   %[c], 3, 2f               \n\t"   /* CT_SLOW */
-            "   ee.wr_mask_gpio_out %[c], %[t2]  \n\t"
-            "   bbci   %[din], 1, 2f             \n\t"   /* write cycle */
-            "   bbci   %[c], 4, 2f               \n\t"   /* not CT_DRIVE */
+            "   bbsi   %[c], 3, 5f               \n\t"   /* CT_SLOW */
+            "3: ee.wr_mask_gpio_out %[c], %[t2]  \n\t"
+            "   bbci   %[din], 1, 4f             \n\t"   /* write cycle */
+            "   bbci   %[c], 4, 4f               \n\t"   /* not CT_DRIVE */
             "   addx4  %[t1], %[page], %[rdb]    \n\t"
             "   l32i   %[t1], %[t1], 0           \n\t"   /* bus_rd_base[page] */
             "   extui  %[t2], %[c], 5, 1         \n\t"   /* CT_RAMBO */
@@ -602,22 +605,20 @@ static void IRAM_ATTR MonitorTask(void *arg)
             "   slli   %[t1], %[t1], %[sh]       \n\t"
             "   s32i   %[t1], %[gpio], %[o_out]  \n\t"   /* GPIO.out */
             "   s32i   %[t2], %[gpio], %[o_en]   \n\t"   /* GPIO.enable_w1ts */
-            "2:                                  \n\t"
+            "4: j      6f                        \n\t"
+            "5: add    %[t1], %[slow], %[off]    \n\t"   /* CT_SLOW page */
+            "   l8ui   %[c], %[t1], 0            \n\t"
+            "   j      3b                        \n\t"
+            "6:                                  \n\t"
             : [c] "=&r"(c), [page] "=&r"(page), [din] "=&r"(din), [lo] "=&r"(lo),
               [off] "=&r"(off8), [t1] "=&r"(t1), [t2] "=&r"(t2)
             : [ts] "r"(t_sample), [gpio] "r"(&GPIO), [ctrl] "r"(ctrl_cur),
-              [rdb] "r"(bus_rd_base), [roff] "r"(rambo_off),
+              [slow] "r"(slow_cur), [rdb] "r"(bus_rd_base), [roff] "r"(rambo_off),
               [m_dbus] "n"(DBUS_MASK), [sh] "n"(DBUS_SHIFT),
               [o_in] "n"(offsetof(gpio_dev_t, in)),
               [o_out] "n"(offsetof(gpio_dev_t, out)),
               [o_en] "n"(offsetof(gpio_dev_t, enable_w1ts))
             : "memory");
-
-        if (c & CT_SLOW)
-        {
-            c = bus_slow_ctrl(c, off8, card.selected != 0, is_pbi);
-            cpu_ll_write_dedic_gpio_mask(DEDIC_OUT_CTRL_MASK, c);
-        }
 
         if (din & DEDIC_IN_RW)
         {
@@ -832,6 +833,7 @@ void setup(void)
 
     bus_build_tables(bus_ctrl, bus_rd_base, VERA_BOARD_IS_PBI,
                      vera_pbi_handler, ram_pbi, extended_rambo_256k);
+    bus_build_slow_tables(bus_slow, bus_ctrl, VERA_BOARD_IS_PBI);
 
     /* Configure GPIO Modes */
     gpio_config_t cfg = {};
