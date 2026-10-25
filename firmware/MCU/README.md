@@ -14,10 +14,8 @@ Il modulo si collega al computer **ATARI XE** tramite il connettore **PBI**
 (Parallel Bus Interface) oppure tramite il segnale **CCTL** (Cartridge Control).
 La modalità operativa è selezionata a **tempo di compilazione** tramite la macro
 `VERA_BOARD_IS_PBI` in `main.cpp`: `1` per PBI (default), `0` per CCTL.
-L'emulatore RAMbo 256 KB è sempre compilato nel firmware e abilitato a **runtime**
-tramite il pin hardware `PIN_RAMBO_EN` (GPIO 3, QFN56 pin 8): pull-up 10 kΩ verso
-VCC = RAMbo presente, pull-down 10 kΩ verso GND = assente. Funziona
-indipendentemente dalla modalità PBI/CCTL.
+L'emulazione **RAMbo 320K** (256 KB in 16 banchi a $4000–$7FFF) è sempre attiva:
+non c'è un pin di abilitazione. Funziona indipendentemente dalla modalità PBI/CCTL.
 Il bus indirizzi A0–A15 è decodificato completamente via software in entrambe
 le modalità.
 
@@ -25,70 +23,85 @@ le modalità.
 
 ## 2. Architettura del Firmware
 
-### Sequenza di startup (prima del hot loop)
+### Sequenza di startup
 
-`setup()` abbassa **ARESET** e **CRESET** immediatamente dopo il reclaim dei pin
-JTAG — prima ancora di `Serial.begin` — garantendo che Atari e FPGA VERA rimangano
-in reset per tutta la durata dell'inizializzazione ESP32.
+`setup()` (Core 1) abbassa **ARESET** e **CRESET** immediatamente dopo il reclaim
+dei pin JTAG, garantendo che Atari e FPGA VERA rimangano in reset per tutta la
+durata dell'inizializzazione ESP32. Poi:
 
-`setup()` (Core 1) crea `MonitorTask` sul **Core 0** con priorità massima, dopo
-aver tolto l'idle task del Core 0 dal task watchdog (`disableCore0WDT()`): il hot
-loop non cede mai la CPU. Prima di entrare nel hot loop il task esegue la
-sequenza di sincronizzazione:
-
-1. **CRESET → HIGH** (`GPIO.out1_w1ts`): la FPGA VERA esce dal reset e inizia il
-   caricamento del bitstream dalla flash SPI on-board.
-2. **Poll CDONE** (GPIO 39): attesa con `vTaskDelay(1)` finché il pin va HIGH —
-   ICE40UP5K tipicamente < 100 ms. Timeout 5 s con log di errore.
-3. **Attesa `VERA_POST_CDONE_DELAY_US`** (default 1000 µs): copre il power-on reset
-   interno della VERA, che parte solo dopo `CDONE`.
-4. **ARESET → HIGH** (`GPIO.out1_w1ts`): l'Atari esce dal reset. Da questo momento
-   il bus è live e il hot loop deve rispondere ad ogni ciclo PHI2.
+1. crea `LogTask` sul **Core 0**, che apre `Serial` (l'interrupt della UART va
+   sul core che chiama `Serial.begin`);
+2. costruisce le tabelle di decodifica e configura i GPIO;
+3. **CRESET → HIGH**: la FPGA VERA esce dal reset e carica il bitstream dalla
+   flash SPI on-board;
+4. **Poll CDONE** (GPIO 39) finché il pin va HIGH — ICE40UP5K tipicamente
+   < 100 ms. Timeout 5 s con log di errore;
+5. **Attesa `VERA_POST_CDONE_DELAY_US`** (default 1000 µs): copre il power-on
+   reset interno della VERA, che parte solo dopo `CDONE`;
+6. crea `MonitorTask` sul **Core 1** con priorità massima: il task prende il core
+   e `setup()` non riprende più. `MonitorTask` crea i bundle Dedicated GPIO,
+   disattiva il watchdog delle interruzioni, maschera le interruzioni e porta
+   **ARESET → HIGH**: da questo momento il bus è live.
 
 ### Divisione dei core
 
 | Core | Cosa gira | Interrupt |
 |------|-----------|-----------|
-| **0** | solo `MonitorTask` (hot loop del bus, priorità `configMAX_PRIORITIES - 1`, non cede mai la CPU) | tick FreeRTOS |
-| **1** | `setup()`, `loop()`: svuota `log_ring` e stampa su `Serial` | tick, UART0 |
+| **0** | `LogTask`: svuota `log_ring` e stampa su `Serial`; tick FreeRTOS | tick, UART0 |
+| **1** | solo `MonitorTask` (loop del bus, priorità `configMAX_PRIORITIES - 1`, non cede mai la CPU) | **nessuno** (mascherati) |
 
-Il hot loop passa gli eventi (cambio di latch, registri VERA con
-`-DVERA_TRACE_REGS=1`) a `loop()` tramite `log_ring`, un ring buffer
-single-producer/single-consumer senza lock: il push costa poche istruzioni
-(timestamp = tick FreeRTOS in ms). `xQueueSend()` + `esp_timer_get_time()`
-costavano circa 1 µs e facevano perdere i cicli successivi — dopo una
-scrittura su `$D1FF` sono i fetch dalla ROM PBI. Se il ring è pieno l'evento
-viene scartato e `loop()` stampa quanti ne sono stati persi.
+Il loop del bus gira a interruzioni mascherate (`portDISABLE_INTERRUPTS()`): il
+tick di FreeRTOS a 1 kHz gli faceva perdere alcuni cicli di bus ogni millisecondo.
+Il contatore dei tick resta aggiornato dal Core 0. Il watchdog delle interruzioni
+(MWDT1) controlla anche il Core 1 tramite il suo tick hook, che non gira più:
+`MonitorTask` lo disattiva prima di mascherare le interruzioni.
 
-### Hot loop (Core 0, priorità massima FreeRTOS)
+Il loop passa gli eventi (cambio di latch, registri VERA con
+`-DVERA_TRACE_REGS=1`) a `LogTask` tramite `log_ring`, un ring buffer
+single-producer/single-consumer senza lock: il push costa poche istruzioni e
+non chiama FreeRTOS; il timestamp è aggiunto da `LogTask` quando stampa. Se il
+ring è pieno l'evento viene scartato e `LogTask` stampa quanti ne sono stati persi.
 
-Ad ogni ciclo di clock del 6502 (PHI2 @ 1,79 MHz, finestra utile ≈ 279 ns,
-circa 67 cicli CPU a 240 MHz):
+### Loop del bus (Core 1, interruzioni mascherate)
 
-1. Attende il fronte di salita di PHI2 tramite **Dedicated GPIO in**
-   (`ee.get_gpio_in`, 1 ciclo CPU anziché ~6 cicli via APB).
-2. Legge A0–A15, R/W e D0–D7 da `GPIO.in` / `GPIO.in1.val` (due letture APB).
-3. Calcola l'indice di pagina (A8–A15, nell'ordine dei pin) e legge la voce
-   della tabella dello stato corrente (`include/bus_decode.h`): livelli di
-   DEV\_SEL\_N / EXTSEL\_N / MPD e azioni (pilotare il bus, scrivere in memoria,
-   snoop dei registri). Solo `$D1xx` (PBI) e `$D5xx` (CCTL) guardano anche A0–A7.
-   Le tabelle sono 4 (latch selezionato × RAMbo attivo) e si cambiano per
-   puntatore quando cambia lo stato.
+Il 6502 presenta indirizzo e R/W al più `t_ADS` = 140 ns dopo l'inizio di PHI1,
+cioè circa 140 ns **prima** della salita di PHI2, e campiona il dato in lettura
+50 ns prima della discesa di PHI2. Il loop quindi decodifica durante PHI1:
+
+1. Alla discesa di PHI2 (rilevata con **Dedicated GPIO in**, `ee.get_gpio_in`,
+   1 ciclo CPU) chiude il ciclo precedente: rilascia il bus dati e i segnali di
+   controllo, e applica gli effetti dell'eventuale scrittura (RAM PBI, banco
+   RAMbo, latch `$D1FF`/`$D5FF`, snoop di PORTB/PBCTL).
+2. Attende `BUS_ADDR_SETTLE_NS` (default 150 ns) dalla discesa di PHI2, contati
+   con `CCOUNT`, perché indirizzo e R/W siano garantiti stabili.
+3. Campiona l'indirizzo con **una sola lettura APB**: PHI2, R/W e A10–A15 sono
+   anche sui canali Dedicated GPIO in, letti in un ciclo; `GPIO.in` dà A0–A9.
+   La pagina A8–A15 indicizza la tabella dello stato corrente
+   (`include/bus_decode.h`): livelli di DEV\_SEL\_N / EXTSEL\_N / MPD e azioni.
+   Solo `$D1xx` (PBI) e `$D5xx` (CCTL) guardano anche A0–A7. Le tabelle sono 8
+   (latch selezionato × RAMbo attiva × ROM di autotest visibile) e si cambiano
+   per puntatore quando cambia lo stato.
 4. Afferma i segnali di controllo con **Dedicated GPIO out**
-   (`ee.wr_mask_gpio_out`, un'unica istruzione TIE): **16 istruzioni** dopo le
-   letture APB (26 per `$D1xx`/`$D5xx`), contro le circa 95 della versione con
-   confronti di range.
+   (`ee.wr_mask_gpio_out`) intorno alla salita di PHI2, come un decodificatore
+   combinatorio, invece che oltre 150 ns dopo.
 5. **Lettura:** se la pagina lo prevede, guida D0–D7 con `bus_drive()` (ROM PBI
-   `$D800–$DFFF`, RAM PBI `$D600–$D7FF`, banco RAMbo), poi attende il fronte di
-   discesa di PHI2 e rilascia bus e controlli.
-6. **Scrittura:** rilegge `GPIO.in` finché PHI2 è alto e usa l'ultimo campione
-   (il dato del 6502 è valido solo ~100–150 ns dopo la salita di PHI2 e resta
-   ~10–30 ns dopo la discesa). Rilascia i controlli e applica gli effetti
-   durante PHI1: RAM PBI, banco RAMbo, latch `$D1FF`/`$D5FF`, snoop di
-   PORTB/PBCTL.
+   `$D800–$DFFF`, RAM PBI `$D600–$D7FF`, banco RAMbo) senza attendere la salita
+   di PHI2: U19 porta il dato al bus Atari solo mentre PHI2 è alto. Poi attende
+   la discesa di PHI2.
+6. **Scrittura:** campiona `GPIO.in` `BUS_WR_SAMPLE_NS` (default 120 ns) dopo la
+   salita di PHI2 (il dato del 6502 è valido da `t_MDS` = 100 ns fino a 30 ns
+   dopo la discesa) e attende la discesa con Dedicated GPIO.
 
-La logica di decodifica non dipende da ESP-IDF ed è verificata sul PC contro la
-versione a confronti di range, per tutti gli indirizzi e stati:
+Dal disassemblato: dopo l'attesa di assestamento servono 18 cicli più una
+lettura APB per i segnali di controllo, e altri 22 cicli più due scritture APB
+per il dato. Il bilancio temporale completo è in `firmware/tesi/` (cap. 6 e 8);
+in sintesi, il dato rispetta il setup del 6502 nel caso peggiore se la latenza
+di un accesso APB è al massimo ~10 cicli CPU, da misurare (programma di prova
+nella tesi, §9.1). `BUS_ADDR_SETTLE_NS` e `BUS_WR_SAMPLE_NS` si possono
+regolare con `-D` dopo aver misurato il bus reale.
+
+La logica di decodifica non dipende da ESP-IDF ed è verificata sul PC contro
+una versione a confronti di range, per tutti gli indirizzi e stati:
 
 ```bash
 cd test/host
@@ -110,6 +123,8 @@ I canali configurati nel firmware:
 | Bundle  | Canale | GPIO           | Segnale     | Nota                  |
 |---------|--------|----------------|-------------|-----------------------|
 | Input   | bit 0  | GPIO 1 (pin 6) | PHI2        | Clock 6502            |
+| Input   | bit 1  | GPIO 2 (pin 7) | R/W         |                       |
+| Input   | bit 2–7 | GPIO 35, 36, 33, 34, 45, 46 | A10–A15 | Anche in `GPIO.in1` |
 | Output  | bit 0  | GPIO 40 (pin 45)| DEV\_SEL\_N | Chip-select VERA      |
 | Output  | bit 1  | GPIO 41 (pin 47)| EXTSEL\_N   | Disabilita MMU ATARI  |
 | Output  | bit 2  | GPIO 42 (pin 48)| MPD         | Disabilita Math Pack  |
@@ -122,7 +137,7 @@ I pin GPIO 39–42 erano originariamente riservati a JTAG; vengono liberati in
 | Segnale      | GPIO        | QFN-56 pin | Note                              |
 |--------------|-------------|------------|-----------------------------------|
 | PHI2         | 1           | 6          | Input dedicated                   |
-| R/W          | 2           | 7          | Input                             |
+| R/W          | 2           | 7          | Input dedicated                   |
 | D0–D7        | 4–11        | 9–16       | Bus dati bidirezionale            |
 | A0–A9        | 12–21       | 17–27      | GPIO 19=USB D−, 20=USB D+ (USB disabilitato) |
 | A10          | 35          | 40         | Address bit 10 (via U3)           |
@@ -135,7 +150,7 @@ I pin GPIO 39–42 erano originariamente riservati a JTAG; vengono liberati in
 | BOOT0        | 0           | 5          | Pulsante BOOT / auto-reset (non usato dal firmware) |
 | CRESET       | 38          | 43         | Chip reset VERA (output)          |
 | CDONE        | 39          | 44         | VERA programmata (input)          |
-| RAMBO\_EN    | 3           | 8          | RAMbo hardware enable (input, pull esterno 10 kΩ) |
+| —            | 3           | 8          | Non usato; strapping (JTAG source), richiede resistenza esterna |
 | DEV\_SEL\_N  | 40          | 45         | Chip-select VERA (output, dedicated) |
 | EXTSEL\_N    | 41          | 47         | Disabilita MMU (output, dedicated)|
 | MPD          | 42          | 48         | Disabilita Math Pack (dedicated)  |
@@ -143,8 +158,8 @@ I pin GPIO 39–42 erano originariamente riservati a JTAG; vengono liberati in
 | Debug RX     | 44          | 50         | UART0 RX (Serial)                 |
 
 Tutti i 16 bit di indirizzo sono decodificati: la pagina (A8–A15) indicizza le
-tabelle di `bus_decode.h`, A0–A7 l'offset nella pagina. I bit A10–A15 arrivano
-dalla stessa lettura `GPIO.in1.val` — zero cicli APB aggiuntivi nel hot loop.
+tabelle di `bus_decode.h`, A0–A7 l'offset nella pagina. A10–A15 arrivano dai
+canali Dedicated GPIO, A0–A9 dall'unica lettura APB di `GPIO.in`.
 
 Per la mappatura completa GPIO→QFN-56 e lo schema level shifter U4 vedere
 `PIN-MAPPING.md` nella root.
@@ -158,9 +173,9 @@ firmware/MCU/
 ├── platformio.ini               # Ambienti: esp32s3fn8, esp32s3fn8-cctl
 ├── pre_build_6502.py            # Script pre-build PlatformIO: esegue make in 6502/
 ├── include/
-│   ├── bus_decode.h             # Tabelle di decodifica del bus (hot loop), senza dipendenze IDF
-│   ├── pbi-driver.h             # Strutture dati e costanti del protocollo PBI
-│   └── vera_pbi_handler.h       # ROM 6502 compilata come array C (generato da make)
+│   ├── bus_decode.h             # Tabelle di decodifica del bus, senza dipendenze IDF
+│   ├── pbi-driver.h             # ROM PBI precedente (4 KB), non più usata
+│   └── vera_pbi_handler.h       # ROM PBI servita a $D800 (2 KB, generata da make, DRAM_ATTR)
 ├── src/
 │   └── main.cpp                 # Sorgente principale del firmware ESP32
 ├── test/host/
@@ -191,7 +206,9 @@ Opzioni di compilazione (`-D`):
 | Macro | Default | Effetto |
 |---|---|---|
 | `VERA_BOARD_IS_PBI` | 1 | 1 = PBI, 0 = CCTL (impostata dall'ambiente) |
-| `VERA_TRACE_REGS` | 0 | log di ogni accesso ai registri VERA. **Solo debug**: costa ~1 µs nel loop del bus e può lasciare `DEV_SEL_N` asserito nel ciclo seguente |
+| `VERA_TRACE_REGS` | 0 | log di ogni accesso ai registri VERA. **Solo debug**: in lettura campiona il bus fino alla discesa di PHI2 e ritarda il ciclo seguente |
+| `BUS_ADDR_SETTLE_NS` | 150 | attesa dalla discesa di PHI2 al campionamento dell'indirizzo (`t_ADS` + traslatori) |
+| `BUS_WR_SAMPLE_NS` | 120 | ritardo dalla salita di PHI2 al campionamento del dato in scrittura |
 
 La modalità PBI/CCTL è scelta tramite la macro in `main.cpp`:
 
@@ -199,13 +216,7 @@ La modalità PBI/CCTL è scelta tramite la macro in `main.cpp`:
 #define VERA_BOARD_IS_PBI 0x01   /* 1 = PBI (default), 0 = CCTL */
 ```
 
-L'abilitazione del RAMbo non richiede ricompilazione: è determinata dal livello
-del pin **GPIO 3** (`PIN_RAMBO_EN`, QFN56 pin 8) letto una volta in `setup()`.
-
-| GPIO 3 al boot | Effetto |
-|----------------|---------|
-| Pull-up 10 kΩ → VCC (HIGH) | `rambo_hw_enabled = true` — RAMbo attivo, segue bit 4 di PORTB |
-| Pull-down 10 kΩ → GND (LOW) | `rambo_hw_enabled = false` — $4000–$7FFF non intercettato |
+La RAMbo è sempre presente, in entrambe le modalità: segue il bit 4 di PORTB.
 
 ### Modalità PBI (`VERA_BOARD_IS_PBI = 1`)
 
@@ -223,11 +234,10 @@ del pin **GPIO 3** (`PIN_RAMBO_EN`, QFN56 pin 8) letto una volta in `setup()`.
 | $D120–$D1FE   | EXTSEL\_N (se selezionato)               | non decodificato       |
 | $D1FF         | latch VCS — **scrittura**: D7 = 1 seleziona, D7 = 0 deseleziona (si usa solo il proprio bit). **Lettura**: non pilotata (l'identificazione IRQ via `$D1FF` non è realizzabile con `U19`, vedere `VERA-ATARI-HW-REQUIREMENTS.md` §2.4) | —                      |
 | $D600–$D7FF   | EXTSEL\_N (se selezionato)               | ESP32 → `ram_pbi[]`    |
-| $D800–$DFFF   | MPD (se selezionato)                    | ESP32 → `pbi_driver[]` |
+| $D800–$DFFF   | MPD (se selezionato)                    | ESP32 → `vera_pbi_handler[]` |
 
-`build_drive_lut()` precalcola al boot le bitmask per D0–D7, rendendo
-`bus_drive()` una sola scrittura APB a `GPIO.out`. Viene chiamata in PBI mode, e
-anche in CCTL mode se RAMbo è abilitato via `PIN_RAMBO_EN` (le letture RAMbo richiedono `bus_drive()`).
+D0–D7 sono su GPIO 4–11 contigui: `bus_drive()` scrive `byte << 4` in `GPIO.out`
+e abilita le uscite con `GPIO.enable_w1ts` (due scritture APB).
 
 ### Modalità CCTL (`VERA_BOARD_IS_PBI = 0`)
 
@@ -237,29 +247,32 @@ anche in CCTL mode se RAMbo è abilitato via `PIN_RAMBO_EN` (le letture RAMbo ri
 | $D5FF         | latch CCTL — write `0x80` per selezionare | —                    |
 
 L'ESP32 non guida D0–D7 per i propri registri in CCTL mode; nessuna RAM
-(`ram_pbi`) né ROM (`pbi_driver`) esposta al 6502. Se RAMbo è abilitato via
-`PIN_RAMBO_EN`, `bus_drive()` viene comunque usata per la finestra RAMbo $4000–$7FFF.
+(`ram_pbi`) né ROM esposta al 6502. `bus_drive()` serve comunque per la finestra
+RAMbo $4000–$7FFF.
 
-### Emulatore RAMbo 256 KB (`PIN_RAMBO_EN`)
+### Emulatore RAMbo 320K
 
-L'ESP32 emula una scheda **RAMbo 256 KB** bank-switched a $4000–$7FFF.
-Funziona sia in PBI mode sia in CCTL mode — è indipendente da `VERA_BOARD_IS_PBI`.
-Il codice è sempre compilato nel firmware; l'abilitazione è hardware tramite
-`PIN_RAMBO_EN` (GPIO 3, QFN56 pin 8), letto una sola volta in `setup()`.
-Il meccanismo è identico all'hardware originale. La PIA 6520 dell'Atari espone due
+L'ESP32 emula una scheda **RAMbo 320K** (64 KB di base + 256 KB in 16 banchi da
+16 KB) bank-switched a $4000–$7FFF, sempre attiva, sia in PBI mode sia in CCTL
+mode. Il meccanismo è identico all'hardware originale. La PIA 6520 dell'Atari espone due
 registri sovrapposti a `$D301` — Output Register e Data Direction Register (DDR) — la
 scelta dipende da **PBCTL** (`$D303`) bit 2 (CRB-2):
 
 | PBCTL bit 2 | Registro accessibile a $D301 |
 |-------------|------------------------------|
-| **0** | Data Direction Register (DDR) — write **ignorate** ai fini del bank-switching |
-| **1** | Output Register = **PORTB** — write **catturate** come selezione banco |
+| **0** | Data Direction Register (DDR) |
+| **1** | Output Register = **PORTB** |
+
+Il banco segue i livelli dei pin di Port B: bit del registro di uscita dove il
+DDR è 1, livello alto (pull-up) dove il DDR è 0. Dopo il reset della PIA entrambi
+i registri valgono 0 e i pin leggono `$FF` (RAMbo disabilitata).
 
 | PORTB bit | Nome | Significato |
 |-----------|------|-------------|
 | 4 = **0** | **RAME** | RAMbo **attivo** — finestra $4000–$7FFF → banco selezionato; EXTSEL\_N asserito |
 | 4 = **1** | RAME | RAMbo disabilitato — RAM interna Atari risponde normalmente |
 | 6,5,3,2   | B3:B0 | Selezione banco (0–15): `bank = ((portb>>2)&0x03)\|((portb>>3)&0x0C)` |
+| 0 = 1, 7 = 0 | — | ROM di autotest visibile: ha la precedenza su $5000–$57FF, che la scheda non intercetta |
 
 Tabella dei 16 valori PORTB ($D301):
 
@@ -282,10 +295,11 @@ Tabella dei 16 valori PORTB ($D301):
 | 14 | $EB | 11101011 | bit 3,5,6 |
 | 15 | $EF | 11101111 | bit 2,3,5,6 |
 
-Il firmware nel hot loop:
-1. **Snoopa `$D303`** (PBCTL) ad ogni write e aggiorna `PBCTL`.
-2. **Snoopa `$D301`** (PORTB) solo se `PBCTL` bit 2 = 1 — altrimenti è un write DDR e viene ignorato.
-3. Quando `rambo_active` (RAME = 0 e hardware presente) e l'indirizzo è in $4000–$7FFF:
+Il firmware nel loop del bus:
+1. **Snoopa `$D303`** (PBCTL) ad ogni write e aggiorna `pbctl`.
+2. **Snoopa `$D301`**: con `PBCTL` bit 2 = 1 aggiorna il registro di uscita, altrimenti il DDR.
+   La PIA decodifica solo A0–A1, quindi valgono anche i mirror in `$D300–$D3FF`.
+3. Quando la RAMbo è attiva (pin RAME = 0) e l'indirizzo è in $4000–$7FFF:
    - Asserisce **EXTSEL\_N** per silenziare la RAM interna dell'Atari.
    - **Lettura**: guida D0–D7 con il byte dal banco in `extended_rambo_256k`.
    - **Scrittura**: memorizza il dato nel banco corrispondente.
@@ -299,7 +313,7 @@ Il chip **6520 PIA è fisicamente presente** sulla scheda madre dell'Atari e ris
 | `$D301` / `$D303` | 6520 PIA (hardware reale) | Solo snooping passivo — non pilota mai D0–D7 |
 | `$4000–$7FFF` (RAMbo window) | ESP32 | Attivo: asserisce EXTSEL\_N, pilota D0–D7 |
 
-Quando il 6502 scrive a `$D301` o `$D303`, il 6520 riceve e processa normalmente la transazione; l'ESP32 legge gli stessi dati sul bus e aggiorna le proprie shadow copy (`PORTB`, `PBCTL`). Non c'è mai contesa sul bus perché l'ESP32 non tenta mai di guidare D0–D7 per quegli indirizzi.
+Quando il 6502 scrive a `$D301` o `$D303`, il 6520 riceve e processa normalmente la transazione; l'ESP32 legge gli stessi dati sul bus e aggiorna le proprie copie (registro di uscita, DDR, PBCTL). Non c'è mai contesa sul bus perché l'ESP32 non tenta mai di guidare D0–D7 per quegli indirizzi.
 
 Il motivo per cui il firmware deve tracciare PBCTL è proprio questo: essendo un osservatore passivo, non può interrogare il 6520 per sapere quale registro è esposto a `$D301`. Dal bus, una write DDR e una write all'Output Register sono **indistinguibili** — stesse linee, stesso ciclo. Solo tenendo traccia di quanto scritto a `$D303` è possibile qualificare correttamente le write a `$D301`.
 
@@ -318,20 +332,22 @@ Sequenza tipica di init del sistema operativo Atari:
 | Step | Write | Effetto |
 |------|-------|---------|
 | 1 | `$00` → `$D303` | PBCTL bit 2 = 0 → DDR selezionato a $D301 |
-| 2 | `$FF` → `$D301` | Write DDR (tutti output) — **ignorata** dal firmware |
+| 2 | `$FF` → `$D301` | Write DDR (tutti output) — registrata come DDR |
 | 3 | `$34` → `$D303` | PBCTL bit 2 = 1 → Output Register selezionato a $D301 |
-| 4 | `$NN` → `$D301` | Selezione banco — **catturata** e salvata in `PORTB` |
+| 4 | `$NN` → `$D301` | Selezione banco — registrata come registro di uscita |
 
-`PORTB` è inizializzato a `0xFF` (RAME = 1 → RAMbo disabilitato);
-`PBCTL` a `0x00` (bit 2 = 0 → DDR esposto a $D301).
+Le copie partono dallo stato di reset della PIA: registro di uscita e DDR a `0x00`
+(pin a `$FF`, RAMbo disabilitata), `PBCTL` a `0x00` (DDR esposto a $D301).
 
 ### Area RAM PBI
 
 `ram_pbi[512]` — esposta a $D600–$D7FF in PBI mode — è l'area di
 scambio dati tra ESP32 e 6502.
 
-`extended_rambo_256k[256 KB]` — in IRAM BSS (zero Flash cost) — sempre presente
-nel firmware; attivato a runtime solo se `PIN_RAMBO_EN` è HIGH al boot.
+`extended_rambo_256k[256 KB]` — `.bss` ordinaria in DRAM (zero Flash cost). Non
+può stare in IRAM: il loop vi accede a byte, e una sezione fuori dal layout IRAM
+di ESP-IDF non viene riservata sul bus dati (si sovrapporrebbe a `.data`, `.bss`
+e heap).
 
 ### Pre-build automatico del driver 6502
 

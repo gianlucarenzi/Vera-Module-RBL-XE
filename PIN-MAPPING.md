@@ -17,7 +17,7 @@ Target MCU: **ESP32-S3FN8** — QFN56 package, 45 GPIOs, 8 MB in-package Quad SP
 | GPIO | QFN56 pin | Signal | Risk |
 |------|-----------|--------|------|
 | **GPIO 0** | 5 | BOOT0 | Strapping pin (boot mode) — **non è NC**: rete `BOOT0` con `R33` 4,7 kΩ → 3V3, pulsante `SW3`, `C61` 100 nF e `R54` 220 Ω verso `Q4` (auto-reset del programmatore). LOW al reset = modalità download. |
-| **GPIO 3** | 8 | RAMBO\_EN | Strapping pin (JTAG source, no internal pull) — usato come **RAMbo hardware enable**: pull-up 10 kΩ → VCC = RAMbo presente; pull-down 10 kΩ → GND = assente. Letto una volta in `setup()`. |
+| **GPIO 3** | 8 | — | Strapping pin (JTAG source, no internal pull) — **non usato dal firmware** (la RAMbo è sempre attiva). Nella netlist 2026-10-23 il pin è scollegato: il datasheet richiede una resistenza esterna (pull-up o pull-down) perché il livello non resti flottante. Con gli eFuse di fabbrica il valore è comunque ignorato. |
 | **GPIO 26–32** | 28, 30–35 | — | SPI0/1 pins of the in-package memory (datasheet Table 2-14). On the FN8 the Quad SPI flash uses GPIO 27–32 (pins 30–35): **never connect externally**. GPIO 26 (pin 28, SPICS1) is the in-package PSRAM chip select, absent on the FN8; Espressif still advises against other uses. |
 | **GPIO 45** | 51 | A14 | Strapping pin (VDD_SPI select) — internal weak pull-down (~5 kΩ). Connesso ad A14 via 74LVC4245APW_118 U3. Al power-on il 6502 è in reset → A14 alta impedenza → U3 flotta → pull-down → **LOW → VDD_SPI = 3.3 V da VDD3P3_RTC** (datasheet v2.2 Table 3-4), il valore richiesto dalla flash in-package della FN8 (Table 1-1). **Con A14 HIGH al reset VDD_SPI = 1.8 V e il chip non si avvia**: A14 deve essere LOW al power-on (da verificare), oppure programmare `EFUSE_VDD_SPI_FORCE` = 1 e `EFUSE_VDD_SPI_TIEH` = 1 (irreversibile) per fissare 3.3 V. |
 | **GPIO 46** | 52 | A15 | Strapping pin (ROM messages on UART0) — internal weak pull-down (~5 kΩ). Connesso ad A15 via 74LVC4245APW_118 U3. Stesso scenario di GPIO 45 → **LOW → messaggi ROM disabilitati** (corretto per produzione). |
@@ -93,19 +93,16 @@ Firmware data decode: `data = (GPIO.in >> 4) & 0xFF`
 
 ### Firmware: decode indirizzo completo (16 bit)
 
-Il hot loop non ricompone l'indirizzo bit per bit: usa la pagina A8–A15 **nell'ordine dei
-pin** come indice di tabelle precalcolate (`firmware/MCU/include/bus_decode.h`) e A0–A7
-come offset nella pagina.
+Il loop del bus usa la pagina A8–A15 come indice di tabelle precalcolate
+(`firmware/MCU/include/bus_decode.h`) e A0–A7 come offset nella pagina. PHI2, R/W e
+A10–A15 sono collegati anche agli otto canali di ingresso **Dedicated GPIO**, letti in un
+ciclo; A0–A9 vengono dall'unica lettura APB di `GPIO.in`.
 
 ```c
-/* bus_page_idx(g_lo, g_hi) — indice di pagina, 6 istruzioni:            */
-/*   bit 0,1 = A8,A9   — Bank 0 bits 20,21                               */
-/*   bit 2,3 = A12,A13 — Bank 1 bits 1,2   (GPIO33,34)                   */
-/*   bit 4,5 = A10,A11 — Bank 1 bits 3,4   (GPIO35,36)                   */
-/*   bit 6,7 = A14,A15 — Bank 1 bits 13,14 (GPIO45,46)                   */
-uint32_t idx  = ((g_lo >> 20) & 0x03) | ((g_hi << 1) & 0x3C) | ((g_hi >> 7) & 0xC0);
-uint32_t off8 = (g_lo >> 12) & 0xFF;              /* A0-A7 — Bank 0 bits 12-19 */
-/* bus_idx_to_page(idx) ricostruisce A15..A8 quando serve (fuori dal percorso critico) */
+/* din = ee.get_gpio_in: bit 0 = PHI2, bit 1 = R/W, bit 2..7 = A10..A15      */
+/* lo  = GPIO.in:        bit 12..21 = A0..A9                                 */
+uint32_t page = ((lo >> 20) & 0x03) | (din & 0xFC);   /* A15..A8 */
+uint32_t off8 = (lo >> 12) & 0xFF;                    /* A7..A0  */
 ```
 
 La modalità operativa è selezionata a compile time tramite `VERA_BOARD_IS_PBI` in `main.cpp`:
@@ -146,14 +143,13 @@ Con A0–A15 completi il decode è esatto: nessuna ambiguità di pagina.
 
 La modalità operativa (PBI o CCTL) è selezionata a compile time con `VERA_BOARD_IS_PBI`
 (vedere sezione 2). In PBI mode tutti e tre i segnali (EXTSEL\_N, DEV\_SEL\_N, MPD) sono
-attivi; in CCTL mode solo DEV\_SEL\_N è usato. Il RAMbo 256 KB è abilitato a runtime
-tramite `RAMBO_EN` (GPIO 3, vedere sezione 2).
+attivi; in CCTL mode solo DEV\_SEL\_N è usato. La RAMbo 320K (256 KB a `$4000–$7FFF`)
+è sempre attiva, in entrambe le modalità.
 
 | Signal | GPIO | QFN56 pin | IO MUX | Direction | Active | Level shift | Description |
 |---|---|---|---|---|---|---|---|
 | PHI2 | 1 | 6 | GPIO1 | Input | HIGH | via U6 | Clock fase 2 CPU 6502 — 1.79 MHz |
 | R/W\_ | 2 | 7 | GPIO2 | Input | HIGH=read | via U6 | Read / Not-Write |
-| RAMBO\_EN | 3 | 8 | GPIO3 | Input | HIGH | **direct** | RAMbo 256 KB enable — pull-up 10 kΩ→VCC = presente; pull-down 10 kΩ→GND = assente. Letto in `setup()`. |
 | EXTSEL\_N | 41 | 47 | MTDI | **Output** | LOW | via U16 | Disabilita MMU/Freddie per $D1xx, $D6xx e finestra RAMbo $4000–$7FFF. **Solo PBI mode** per VERA; RAMbo in entrambe le modalità. Ex-JTAG, reclaimed. |
 | DEV\_SEL\_N | 40 | 45 | MTDO | **Output** | LOW | **direct** | VERA chip select (3.3 V); PBI: VERA regs $D1xx; CCTL: range $D5xx. Ex-JTAG, reclaimed. |
 | MPD | 42 | 48 | MTMS | **Output** | LOW | via U16 | Math Pack Disable — disabilita ROM Atari $D800–$DFFF — **solo PBI mode**. Ex-JTAG, reclaimed. |
@@ -342,7 +338,8 @@ Pin non assegnati al progetto, esclusi strapping e flash in-package.
 | 22–25 | — | — | Non esistono su ESP32-S3 |
 
 > Restano liberi solo GPIO 47 e GPIO 48 (pin 37 e 36); tutti gli altri GPIO non riservati sono
-> assegnati: GPIO 3 = RAMBO\_EN; GPIO 33, 34, 45, 46 = A12–A15.
+> assegnati: GPIO 33, 34, 45, 46 = A12–A15. GPIO 3 non è usato ma è un pin di strapping:
+> va fissato con una resistenza esterna.
 
 **Pin esclusi (non utilizzabili):**
 
@@ -369,7 +366,7 @@ memoria da Table 2-14 "Pin Mapping Between Chip and Flash or PSRAM" (pag. 31).
 | 5   | GPIO 0 | BOOT0 (pulsante BOOT / auto-reset, pull-up `R33`) — strapping |
 | 6   | GPIO 1 | PHI2 input (via U6) |
 | 7   | GPIO 2 | R/W\_ input (via U6) |
-| 8   | GPIO 3 | RAMBO\_EN — pull-up 10 kΩ → VCC = RAMbo presente; pull-down 10 kΩ → GND = assente |
+| 8   | GPIO 3 | Non usato — strapping JTAG source, richiede resistenza esterna |
 | 9   | GPIO 4 | D0 (via U19) |
 | 10  | GPIO 5 | D1 (via U19) |
 | 11  | GPIO 6 | D2 (via U19) |

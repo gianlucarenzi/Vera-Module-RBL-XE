@@ -46,15 +46,16 @@ $(BIN_FILE): $(OBJ_FILE) $(LINK_CFG)
 # ---
 ## Conversione in Array C
 
-# Regola per convertire il binario in un array C in un file .h
-$(C_ARRAY_FILE): $(BIN_FILE)
+# Regola per convertire il binario in un array C in un file .h.
+# DRAM_ATTR: il bus loop legge la ROM a byte (l8ui), possibile solo sul bus dati.
+$(C_ARRAY_FILE): $(BIN_FILE) Makefile
 	@echo "/* Automatically generated! Do not edit! */" > $@
 	@echo "#ifndef VERA_PBI_HANDLER_BIN_ARRAY_H" >> $@
 	@echo "#define VERA_PBI_HANDLER_BIN_ARRAY_H" >> $@
 	@echo "" >> $@
 	@echo "#include <stdint.h>" >> $@
 	@echo "" >> $@
-	@echo "const uint8_t IRAM_ATTR vera_pbi_handler[] = {" >> $@
+	@echo "const uint8_t DRAM_ATTR vera_pbi_handler[] = {" >> $@
 	hexdump -v -e '16/1 "0x%02x," "\n"' $< >> $@
 	@echo "" >> $@
 	@echo "};" >> $@

@@ -1,17 +1,17 @@
 /**
  * test_bus_decode.c  --  host-side equivalence test for include/bus_decode.h
  *
- * Builds GPIO.in / GPIO.in1 snapshots exactly as the ESP32-S3 pins would
- * deliver them, runs the table-driven decode used by MonitorTask, and
- * compares it with the reference range-compare logic of the previous
- * firmware, for every address x selected x RAMbo state x PBI/CCTL mode.
+ * Builds the GPIO.in and dedicated GPIO input snapshots exactly as the
+ * ESP32-S3 pins would deliver them, runs the table-driven decode used by
+ * MonitorTask, and compares it with reference range-compare logic, for every
+ * address x selected x RAMbo x self-test state x PBI/CCTL mode (the RAMbo
+ * 320K emulation is always present).
  *
  *   cc -O2 -Wall -I../../include test_bus_decode.c -o test_bus_decode && ./test_bus_decode
  *
- * Expected difference from the old firmware: PBI RAM writes ($D600-$D7FF,
- * card selected) are now stored (CT_WR_MEM); the old loop never wrote ram_pbi.
  * The VERA registers ($D100-$D11F) answer only when the card is selected,
- * as the Atari PBI rules require.
+ * as the Atari PBI rules require.  With the self-test ROM visible (PORTB
+ * bit 0 = 1, bit 7 = 0) the RAMbo window leaves $5000-$57FF to the ROM.
  */
 
 #include <stdio.h>
@@ -19,32 +19,21 @@
 #include <stdbool.h>
 #include "bus_decode.h"
 
-/* Pin mapping (src/main.cpp) */
-#define PIN_A12 33
-#define PIN_A13 34
-#define PIN_A10 35
-#define PIN_A11 36
-#define PIN_A14 45
-#define PIN_A15 46
-
 static uint8_t rom[2048], ram[512], rambo[256 * 1024];
 
-static void pins_from_addr(uint16_t a, uint32_t *lo, uint32_t *hi)
+/* GPIO.in: A0-A9 on bits 12-21.  Dedicated input: PHI2, R/W, A10-A15. */
+static void pins_from_addr(uint16_t a, uint32_t *lo, uint32_t *din)
 {
     *lo = (uint32_t)(a & 0x3FFu) << 12;
-    *hi = (((a >> 10) & 1u) << (PIN_A10 - 32)) |
-          (((a >> 11) & 1u) << (PIN_A11 - 32)) |
-          (((a >> 12) & 1u) << (PIN_A12 - 32)) |
-          (((a >> 13) & 1u) << (PIN_A13 - 32)) |
-          (((a >> 14) & 1u) << (PIN_A14 - 32)) |
-          (((a >> 15) & 1u) << (PIN_A15 - 32));
+    *din = (uint32_t)((a >> 10) & 0x3Fu) << 2;
     /* unrelated bits set, to catch masking mistakes */
     *lo |= 0xFFC00000u | 0x00000FF6u;
-    *hi |= ~((1u << 1) | (1u << 2) | (1u << 3) | (1u << 4) | (1u << 13) | (1u << 14)) & 0x0001FFFFu;
+    *din |= DEDIC_IN_PHI2 | DEDIC_IN_RW;
 }
 
-/* Reference: control levels of the previous MonitorTask. */
-static uint32_t ref_ctrl(uint16_t addr, bool is_pbi, bool selected, bool rambo_active)
+/* Reference: control levels. */
+static uint32_t ref_ctrl(uint16_t addr, bool is_pbi, bool selected, bool rambo_active,
+                         bool selftest)
 {
     uint8_t off8 = addr & 0xFFu;
     bool is_d1xx = addr >= 0xD100u && addr <= 0xD1FFu;
@@ -54,7 +43,8 @@ static uint32_t ref_ctrl(uint16_t addr, bool is_pbi, bool selected, bool rambo_a
     bool is_vcs_latch  = is_d1xx && off8 == 0xFFu;
     bool is_d5xx = addr >= 0xD500u && addr <= 0xD5FFu;
     bool is_cctl_range = is_d5xx && off8 != 0xFFu;
-    bool is_rambo_window = addr >= 0x4000u && addr <= 0x7FFFu;
+    bool is_rambo_window = addr >= 0x4000u && addr <= 0x7FFFu &&
+                           !(selftest && addr >= 0x5000u && addr <= 0x57FFu);
 
     uint32_t ctrl = DEDIC_OUT_CTRL_IDLE;
     if (is_pbi)
@@ -78,9 +68,15 @@ static uint32_t ref_ctrl(uint16_t addr, bool is_pbi, bool selected, bool rambo_a
     return ctrl;
 }
 
+static bool in_rambo(uint16_t addr, bool rambo_active, bool selftest)
+{
+    return rambo_active && addr >= 0x4000u && addr <= 0x7FFFu &&
+           !(selftest && addr >= 0x5000u && addr <= 0x57FFu);
+}
+
 /* Reference: byte driven on a read (NULL = bus not driven). */
 static const uint8_t *ref_drive(uint16_t addr, bool is_pbi, bool selected,
-                                bool rambo_active, uint32_t bank)
+                                bool rambo_active, bool selftest, uint32_t bank)
 {
     const uint8_t *p = NULL;
     if (is_pbi && selected)
@@ -90,18 +86,18 @@ static const uint8_t *ref_drive(uint16_t addr, bool is_pbi, bool selected,
         else if (addr >= 0xD600u && addr <= 0xD7FFu)
             p = &ram[addr & 0x1FFu];
     }
-    if (rambo_active && addr >= 0x4000u && addr <= 0x7FFFu)
+    if (in_rambo(addr, rambo_active, selftest))
         p = &rambo[(bank << 14) | (addr & 0x3FFFu)];
     return p;
 }
 
-/* Reference: write target (PBI RAM included, see header comment). */
+/* Reference: write target. */
 static uint8_t *ref_wr_mem(uint16_t addr, bool is_pbi, bool selected,
-                           bool rambo_active, uint32_t bank)
+                           bool rambo_active, bool selftest, uint32_t bank)
 {
     if (is_pbi && selected && addr >= 0xD600u && addr <= 0xD7FFu)
         return &ram[addr & 0x1FFu];
-    if (rambo_active && addr >= 0x4000u && addr <= 0x7FFFu)
+    if (in_rambo(addr, rambo_active, selftest))
         return &rambo[(bank << 14) | (addr & 0x3FFFu)];
     return NULL;
 }
@@ -112,58 +108,69 @@ static bool ref_wr_reg(uint16_t addr, bool is_pbi)
     return addr == (is_pbi ? 0xD1FFu : 0xD5FFu) || addr == 0xD301u || addr == 0xD303u;
 }
 
+static unsigned long checks, errors;
+
+static void expect(bool ok, const char *what, unsigned v)
+{
+    checks++;
+    if (!ok && ++errors <= 20)
+        printf("FAIL %s (%u)\n", what, v);
+}
+
 int main(void)
 {
     static uint8_t        ctrl[BUS_STATES][256];
     static const uint8_t *rd_base[256];
-    unsigned long checks = 0, errors = 0;
 
-    /* page index <-> page round trip */
+    /* page from the two snapshots */
     for (uint32_t a = 0; a < 0x10000u; a += 0x100u)
     {
-        uint32_t lo, hi;
-        pins_from_addr((uint16_t)a, &lo, &hi);
-        uint32_t idx = bus_page_idx(lo, hi);
-        checks++;
-        if (bus_idx_to_page(idx) != (a >> 8))
-        {
-            errors++;
-            printf("FAIL page index: $%04X -> idx %02X -> page %02X\n", a, idx, bus_idx_to_page(idx));
-        }
+        uint32_t lo, din;
+        pins_from_addr((uint16_t)a, &lo, &din);
+        expect(bus_page(lo, din) == (a >> 8), "page", a);
     }
 
+    /* PORTB helpers */
+    expect(bus_rambo_bank(0x83) == 0 && bus_rambo_bank(0xEF) == 15 &&
+           bus_rambo_bank(0xA7) == 5 && bus_rambo_bank(0xCB) == 10, "bank", 0);
+    expect(bus_portb_pins(0x00, 0x00) == 0xFF, "pins after PIA reset", 0);
+    expect(bus_portb_pins(0x83, 0xFF) == 0x83, "pins all outputs", 0);
+    expect(bus_portb_pins(0x00, 0xEF) == 0x10, "pins bit 4 input", 0);
+    expect(bus_selftest_visible(0x7F) && !bus_selftest_visible(0xFF) &&
+           !bus_selftest_visible(0x7E), "self-test", 0);
+
     for (int pbi = 0; pbi <= 1; pbi++)
-    for (int hw = 0; hw <= 1; hw++)
     {
-        bus_build_tables(ctrl, rd_base, pbi, hw, rom, ram, rambo);
+        bus_build_tables(ctrl, rd_base, pbi, rom, ram, rambo);
         for (int sel = 0; sel <= 1; sel++)
         for (int portb_bit4 = 0; portb_bit4 <= 1; portb_bit4++)
+        for (int st = 0; st <= 1; st++)
         for (uint32_t bank = 0; bank < 16u; bank += 5u)
         {
-            bool rambo_active = hw && !portb_bit4;
-            const uint8_t *tab = ctrl[bus_state(sel, rambo_active)];
+            bool rambo_active = !portb_bit4;
+            const uint8_t *tab = ctrl[bus_state(sel, rambo_active, st)];
             uint32_t rambo_off = bank << 14;
 
             for (uint32_t a = 0; a < 0x10000u; a++)
             {
-                uint32_t lo, hi;
-                pins_from_addr((uint16_t)a, &lo, &hi);
-                uint32_t idx  = bus_page_idx(lo, hi);
-                uint32_t c    = tab[idx];
+                uint32_t lo, din;
+                pins_from_addr((uint16_t)a, &lo, &din);
+                uint32_t page = bus_page(lo, din);
+                uint32_t c    = tab[page];
                 uint32_t off8 = (lo >> 12) & 0xFFu;
                 if (c & CT_SLOW)
                     c = bus_slow_ctrl(c, off8, sel, pbi);
 
                 const uint8_t *drv = NULL;
                 if (c & CT_DRIVE)
-                    drv = rd_base[idx] + ((c & CT_RAMBO) ? rambo_off : 0u) + off8;
+                    drv = rd_base[page] + ((c & CT_RAMBO) ? rambo_off : 0u) + off8;
                 uint8_t *wr = NULL;
                 if (c & CT_WR_MEM)
-                    wr = (uint8_t *)rd_base[idx] + ((c & CT_RAMBO) ? rambo_off : 0u) + off8;
+                    wr = (uint8_t *)rd_base[page] + ((c & CT_RAMBO) ? rambo_off : 0u) + off8;
 
-                uint32_t       e_ctrl = ref_ctrl((uint16_t)a, pbi, sel, rambo_active);
-                const uint8_t *e_drv  = ref_drive((uint16_t)a, pbi, sel, rambo_active, bank);
-                uint8_t       *e_wr   = ref_wr_mem((uint16_t)a, pbi, sel, rambo_active, bank);
+                uint32_t       e_ctrl = ref_ctrl((uint16_t)a, pbi, sel, rambo_active, st);
+                const uint8_t *e_drv  = ref_drive((uint16_t)a, pbi, sel, rambo_active, st, bank);
+                uint8_t       *e_wr   = ref_wr_mem((uint16_t)a, pbi, sel, rambo_active, st, bank);
                 bool           e_reg  = ref_wr_reg((uint16_t)a, pbi);
 
                 checks += 4;
@@ -171,9 +178,9 @@ int main(void)
                     (e_reg && !(c & CT_WR_REG)))
                 {
                     if (++errors <= 20)
-                        printf("FAIL pbi=%d hw=%d sel=%d rame=%d bank=%u $%04X: "
+                        printf("FAIL pbi=%d sel=%d rame=%d st=%d bank=%u $%04X: "
                                "ctrl %X/%X drive %s wr %s reg %d/%d\n",
-                               pbi, hw, sel, portb_bit4, bank, a,
+                               pbi, sel, portb_bit4, st, bank, a,
                                c & 7u, e_ctrl,
                                drv == e_drv ? "ok" : "DIFF", wr == e_wr ? "ok" : "DIFF",
                                (c & CT_WR_REG) != 0, e_reg);
