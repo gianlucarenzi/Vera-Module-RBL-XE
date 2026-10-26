@@ -5,7 +5,7 @@ $Descr A4 11693 8268
 encoding utf-8
 Sheet 5 7
 Title "uSD Card, FPGA FLASH and AUDIO SECTION"
-Date "2026-10-23"
+Date "2026-10-26"
 Rev "1.0"
 Comp "RetroBit Lab"
 Comment1 "Gianluca Renzi"
@@ -1181,7 +1181,7 @@ P 960 5725
 F 0 "R35" H 1005 5715 50  0000 L CNN
 F 1 "CREZ08051%" V 870 5470 50  0000 L CNN
 F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" H 960 5725 50  0001 C CNN
-F 3 "" H 960 5725 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C328378.pdf?spm=wm.sxq.inf.ggs&lcsc_vid=QAIPVVVVRlJXV1FQQABeBQAAQQNaVFMAR1IIXwYHFlgxVlNfRFFfVlJfTlRXVDsOAxUeFF5JWBYZEEoKFBINSQcJGk4%3D" H 960 5725 50  0001 C CNN
 F 4 "C328378" H 960 5725 50  0001 C CNN "LCSC"
 	1    960  5725
 	1    0    0    -1  
