@@ -139,21 +139,22 @@ I pin GPIO 39–42 erano originariamente riservati a JTAG; vengono liberati in
 | PHI2         | 1           | 6          | Input dedicated                   |
 | R/W          | 2           | 7          | Input dedicated                   |
 | D0–D7        | 4–11        | 9–16       | Bus dati bidirezionale            |
-| A0–A9        | 12–21       | 17–27      | GPIO 19=USB D−, 20=USB D+ (USB disabilitato) |
+| A0–A9        | 12–21       | 17–27      | A0–A7 via U4, A8–A9 via U3; GPIO 19=USB D−, 20=USB D+ (USB disabilitato) |
 | A10          | 35          | 40         | Address bit 10 (via U3)           |
 | A11          | 36          | 41         | Address bit 11 (via U3)           |
-| A12          | 33          | 38         | Address bit 12 (via U4)           |
-| A13          | 34          | 39         | Address bit 13 (via U4)           |
-| A14          | 45          | 51         | Address bit 14 (via U4)           |
-| A15          | 46          | 52         | Address bit 15 (via U4)           |
+| A12          | 33          | 38         | Address bit 12 (via U3)           |
+| A13          | 34          | 39         | Address bit 13 (via U3)           |
+| A14          | 45          | 51         | Address bit 14 (via U3); strapping VDD\_SPI |
+| A15          | 46          | 52         | Address bit 15 (via U3); strapping ROM msg / download |
 | ARESET       | 37          | 42         | System reset ATARI (output)       |
 | BOOT0        | 0           | 5          | Pulsante BOOT / auto-reset (non usato dal firmware) |
 | CRESET       | 38          | 43         | Chip reset VERA (output)          |
 | CDONE        | 39          | 44         | VERA programmata (input)          |
-| —            | 3           | 8          | Non usato; strapping (JTAG source), richiede resistenza esterna |
+| —            | 3           | 8          | Non usato; strapping (JTAG source), pull-up R71 10 kΩ |
 | DEV\_SEL\_N  | 40          | 45         | Chip-select VERA (output, dedicated) |
 | EXTSEL\_N    | 41          | 47         | Disabilita MMU (output, dedicated)|
 | MPD          | 42          | 48         | Disabilita Math Pack (dedicated)  |
+| ABUS\_OE\_N  | 47          | 37         | `~OE` di U3/U4 (output): alto durante il reset (pull-up R7/R34) per gli strapping di GPIO 45/46, basso da `setup()` |
 | Debug TX     | 43          | 49         | UART0 TX (Serial)                 |
 | Debug RX     | 44          | 50         | UART0 RX (Serial)                 |
 
@@ -161,8 +162,11 @@ Tutti i 16 bit di indirizzo sono decodificati: la pagina (A8–A15) indicizza le
 tabelle di `bus_decode.h`, A0–A7 l'offset nella pagina. A10–A15 arrivano dai
 canali Dedicated GPIO, A0–A9 dall'unica lettura APB di `GPIO.in`.
 
-Per la mappatura completa GPIO→QFN-56 e lo schema level shifter U4 vedere
-`PIN-MAPPING.md` nella root.
+Fino a quando `setup()` porta basso `PIN_ABUS_OE_N`, U3 e U4 sono spenti: GPIO 45/46
+(A14/A15) leggono LOW dai pull-down interni a ogni reset del chip, quindi VDD\_SPI = 3,3 V
+e il download boot funziona anche con l'Atari acceso (`VERA-ATARI-HW-REQUIREMENTS.md` §2.9).
+
+Per la mappatura completa GPIO→QFN-56 e i level shifter vedere `PIN-MAPPING.md` nella root.
 
 ---
 
@@ -361,6 +365,8 @@ Il `make` è incrementale: se i sorgenti non sono cambiati non rigenera nulla.
 ## 5. Compilazione e Flashing
 
 È necessario avere **PlatformIO Core** installato (`pip install platformio`).
+
+> ⚠ **Programmazione e USB solo a scheda scollegata dall'Atari.** La rete 5 V della scheda è unita al +5 V dell'Atari (`CART1` pin 13, `ECI1` pin 7) senza diodo: con il cavo USB (`J4`) o il jack (`J5`) collegati mentre la scheda è inserita, la scheda alimenterebbe l'Atari (spento) o lavorerebbe in parallelo al suo alimentatore (acceso). Vale anche per il monitor seriale: con la scheda nell'Atari usare un adattatore senza VBUS. (`VERA-ATARI-HW-REQUIREMENTS.md` §2.11)
 
 ```bash
 # Compila (firmware unificato PBI + CCTL)

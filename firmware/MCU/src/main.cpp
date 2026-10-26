@@ -59,6 +59,7 @@
 #define PIN_MPD         42   /* Math Pack Disable — disables internal Atari Math Pack ROM $D800-$DFFF (Pin 48, active LOW) */
 #define PIN_A14         45   /* Address Bit 14 (Pin 51) */
 #define PIN_A15         46   /* Address Bit 15 (Pin 52) */
+#define PIN_ABUS_OE_N   47   /* ~OE of U3 (A8-A15) and U4 (A0-A7), 10 kΩ pull-ups R7/R34 (Pin 37, active LOW) */
 
 /* Serial Debug (UART0 default pins on ESP32-S3 QFN56) */
 #define PIN_UART_TX     43   /* UART0 TX (Pin 49) */
@@ -67,58 +68,44 @@
 /*
  * Strapping Pins — Power-On Boot Configuration (ESP32-S3FN8 QFN56)
  *
- * The ESP32-S3 samples four strapping pins during the power-on reset window,
- * before any firmware code executes.  The sampled levels select the boot mode
- * and several chip-level options.
+ * The ESP32-S3 latches four strapping pins at every chip reset (power-on,
+ * CHIP_PU, brown-out, RTC watchdog; not esp_restart()), before any firmware
+ * code executes.  The levels must be valid when CHIP_PU rises and for
+ * t_H = 3 ms after it (datasheet v2.2, §3, Table 3-2).
  *
- * Timing note: PIN_ARESET (GPIO37) is configured as OUTPUT only inside setup().
- * At strapping-sample time it is still an input (high-Z), so the ESP32 has NOT
- * yet asserted the Atari reset line.  The Atari's own power-on reset circuitry
- * (MMU/POKEY RC network) holds the 6502 RESET# pin LOW, which tri-states the
- * 6502 address bus.  The TXS0108E level-shifters (U1–U4) auto-sense direction:
- * with floating inputs on the Atari side the outputs are high-Z, and the
- * ESP32-side internal pull resistors determine the final strapping level.
+ * GPIO0  —  Pin  5  |  Boot mode selection  |  Internal weak PULL-UP 45 kΩ
+ *   Net BOOT0: R33 4.7 kΩ pull-up, BOOT button SW3, C61 100 nF, and R54 -> Q4
+ *   (auto-reset from the programmer).  Not wired to any Atari signal.
+ *   CHIP_PU has R31 4.7 kΩ + C25 1 µF (4.7 ms) against 0.47 ms on GPIO0, so
+ *   GPIO0 is already HIGH when the reset is released.
+ *   Sampled value: HIGH → SPI boot from embedded flash.  LOW (SW3 or Q4)
+ *   → joint download boot, which also needs GPIO46 LOW (see below).
  *
- * GPIO0  —  Pin  5  |  Boot mode selection  |  Internal weak PULL-UP ~45 kΩ
- *   Net BOOT0: R33 4.7 kΩ pull-up, BOOT button SW3, C61, and R54 -> Q4 (auto-reset
- *   from the programmer).  Not wired to any Atari signal.
- *   Pull-up holds GPIO0 HIGH throughout the strapping window.
- *   Sampled value: HIGH → SPI boot from embedded flash (correct for normal
- *   operation).  LOW would enter UART/JTAG download mode and halt the system.
+ * GPIO3  —  Pin  8  |  JTAG signal source   |  NO internal pull
+ *   Not used by the firmware.  R71 10 kΩ pull-up to 3V3 fixes it HIGH, as the
+ *   datasheet requires (§3.4: no internal pull, must not be left floating).
+ *   Table 3-5: with the default eFuses GPIO3 is ignored and JTAG goes to the
+ *   USB Serial/JTAG Controller; HIGH keeps that choice even if
+ *   EFUSE_STRAP_JTAG_SEL is burned, so GPIO39-42 never become JTAG pins.
  *
- * GPIO3  —  Pin  8  |  JTAG signal source   |  NO internal pull (truly floating)
- *   Not used by the firmware (the RAMbo emulation is always present).  Per the
- *   ESP32-S3 datasheet (§3.4 "JTAG Signal Source Control") this pin has no
- *   internal pull resistors and "the strapping value must be controlled by the
- *   external circuit that cannot be in a high impedance state": the board needs
- *   an external strapping resistor here (netlist 2026-10-23: pin 8 unconnected).
- *   Polarity per Table 3-5: LOW → JTAG pins (MTDI/MTCK/MTMS/MTDO, GPIO39-42);
- *   HIGH → USB Serial/JTAG Controller.  With the default (unburned) eFuses —
- *   EFUSE_DIS_PAD_JTAG=0, EFUSE_DIS_USB_JTAG=0, EFUSE_STRAP_JTAG_SEL=0 — GPIO3
- *   is "Ignored" and the USB Serial/JTAG Controller is always selected; the
- *   polarity only matters if EFUSE_STRAP_JTAG_SEL has been burned to 1.
- *   gpio_reset_pin() reclaims GPIO39-42 in setup() either way.
- *
- * GPIO45 —  Pin 51  |  VDD_SPI voltage      |  Internal weak PULL-DOWN ~5 kΩ
- *   Wired to address bit A14 via TXS0108E U4 (Atari 5 V → ESP32 3.3 V).
- *   At power-on the 6502 RESET# is LOW → A14 pin is high-Z on the Atari side
- *   → U4 output floats → internal pull-down drives GPIO45 LOW.
- *   Sampled value: LOW → VDD_SPI = 3.3 V from VDD3P3_RTC (datasheet v2.2,
- *   Table 3-4, default eFuses).  This is the value the FN8 needs: its in-package
- *   flash runs from VDD_SPI at 3.3 V (Table 1-1).
- *   Risk: if A14 is HIGH during the sampling window, VDD_SPI = 1.8 V from the
- *   flash regulator and the in-package flash is under-powered: the chip does
- *   not boot.  A14 must be LOW at power-on, or burn EFUSE_VDD_SPI_FORCE = 1 and
- *   EFUSE_VDD_SPI_TIEH = 1 (one-time) to fix VDD_SPI at 3.3 V and ignore GPIO45.
- *
- * GPIO46 —  Pin 52  |  ROM messages on UART |  Internal weak PULL-DOWN ~5 kΩ
- *   Wired to address bit A15 via TXS0108E U4.  Identical power-on scenario:
- *   6502 reset → A15 high-Z → U4 floats → pull-down → GPIO46 LOW.
- *   Sampled value: LOW → first-stage ROM boot messages on UART0 suppressed.
- *   Correct for production: the firmware initialises UART0 independently via
- *   Serial.begin() and uses it exclusively for debug output.  Enabling ROM
- *   messages (HIGH) would prepend Espressif boot log lines before the firmware
- *   output, which is undesirable but not harmful.
+ * GPIO45 —  Pin 51  |  VDD_SPI voltage      |  Internal weak PULL-DOWN 45 kΩ
+ * GPIO46 —  Pin 52  |  ROM messages / download mode | Internal weak PULL-DOWN 45 kΩ
+ *   A14 and A15, from the Atari bus through U3 (74LVC4245).  The 6502 keeps
+ *   driving its address bus while in reset, so the strapping level cannot be
+ *   left to the Atari: PIN_ABUS_OE_N (GPIO47) drives ~OE of U3 and U4, and
+ *   R7/R34 (10 kΩ to 3V3) hold it HIGH while the ESP32 is in reset (GPIO47
+ *   has no pull and no power-up glitch).  With U3 disabled its outputs are
+ *   high-Z and the internal pull-downs read GPIO45 = GPIO46 = LOW at every
+ *   chip reset:
+ *     GPIO45 LOW → VDD_SPI = 3.3 V from VDD3P3_RTC (Table 3-4), the voltage
+ *                  of the FN8 in-package flash (HIGH = 1.8 V: no boot);
+ *     GPIO46 LOW → ROM messages suppressed; together with GPIO0 LOW it gives
+ *                  the joint download boot (GPIO0 LOW + GPIO46 HIGH is
+ *                  invalid), so flashing works with the Atari running.
+ *   setup() drives PIN_ABUS_OE_N LOW long after the 3 ms hold time; until
+ *   then A0-A15 read as LOW (A8-A15 pulled down or floating, A0-A7 floating):
+ *   the bus loop starts only afterwards.  Disabling U4 as well also avoids
+ *   driving GPIO12-19 against U4 during their power-up glitches (Table 2-2).
  */
 
 /* ===========================================================================
@@ -902,6 +889,10 @@ void setup(void)
                        (1ULL << PIN_A14) | (1ULL << PIN_A15) |
                        (1ULL << PIN_CDONE);
     gpio_config(&cfg);
+
+    /* Strapping pins latched: enable the address translators U3/U4. */
+    pinMode(PIN_ABUS_OE_N, OUTPUT);
+    digitalWrite(PIN_ABUS_OE_N, LOW);
 
     /* Output Signal Initialization */
     pinMode(PIN_EXTSEL_N, OUTPUT);
