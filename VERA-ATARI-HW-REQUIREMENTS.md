@@ -49,9 +49,9 @@ Questi sono i vincoli che l'hardware deve rispettare, indipendentemente dal prog
 Priorità: **A** = da risolvere prima del primo test sul bus, **B** = da risolvere prima del
 rilascio, **C** = da decidere.
 
-### 2.1 [A] Il bus dati può fare contesa su letture non destinate alla scheda — VERIFICA
+### 2.1 [A] Il bus dati può fare contesa su letture non destinate alla scheda — **corretto nello schema (2026-10-26)**
 
-Dalla netlist:
+Prima della modifica (netlist 2026-10-23):
 - `U19` (74LVC4245, bus dati): `~OE_` (pin 22) è collegato **solo** a `NOT(PHI2)` (`U23` pin 3→4);
   `DIR` (pin 2) è `NOT(R/W)` (`U23` pin 1→2).
 - Quindi `U19` è abilitato in **ogni** ciclo con PHI2 alto, qualunque sia l'indirizzo.
@@ -77,49 +77,42 @@ fine ciclo. Quindi:
 ~OE_ = NOT( PHI2 AND ( NOT R/W   OR   ~DEV_SEL_N OR ~EXTSEL_N OR ~MPD ) )
 ```
 
-**Realizzazione (verificata sulla netlist 2026-10-23): un solo `74LVC20`** (due NAND a 4 ingressi,
-SO-14/TSSOP-14), alimentato a 3V3. La AND3 seguita dalla NAND con R/W equivale a una NAND a 4
-ingressi, quindi non servono `74LVC11` e NAND separate:
+**Realizzazione (schema e netlist 2026-10-26): due `SN74LVC00A`** (`U24`, `U25`, quattro NAND a 2
+ingressi ciascuno, TSSOP-14, LCSC C7803), alimentati a 3V3. Il 74LVC20 (due NAND a 4 ingressi), che
+avrebbe fatto lo stesso con due porte, non si trova; la NAND a 4 ingressi si scompone in NAND a 2:
 
 ```
-B    = NAND4(mR~W, ~mVCS0, ~mEXSEL, ~mMPD)   ; 1 se scrittura oppure la scheda risponde
-~OE_ = NAND2(mPHI2, B)                       ; verso U19 pin 22
+n1  = NAND(mR~W,    ~mVCS0)      U24 pin 1, 2  → 3
+n2  = NAND(~mEXSEL, ~mMPD)       U24 pin 4, 5  → 6
+a1  = NAND(n1, n1)               U24 pin 9, 10 → 8     (= AND)
+a2  = NAND(n2, n2)               U24 pin 12, 13 → 11   (= AND)
+B   = NAND(a1, a2)               U25 pin 1, 2  → 3     (= NAND4: 1 se scrittura o la scheda risponde)
+~OE = NAND(mPHI2, B)             U25 pin 4, 5  → 6     → U19 pin 22
 ```
 
 Segnali presi dal lato scheda a 3,3 V (`~mVCS0` esiste solo lì):
 
-```
- Lato scheda (3,3 V)                       U24 74LVC20  (Vcc = 3V3 pin 14, GND pin 7, 100 nF)
-                                          ┌─────────────────────────┐
- mR~W    (U6.18 / U7.7 / U5.2) ───────────┤1  ┐                     │
- ~mVCS0  (U7.45 / U2.28)  ────────────────┤2  ├ NAND4 ──o 6├──┐     │
- ~mEXSEL (U7.47 / U16.18) ────────────────┤4  │               │ B   │
- ~mMPD   (U7.48 / U16.17) ────────────────┤5  ┘               │     │
-                                          │                   │     │
- mPHI2   (U6.17 / U7.6 / U5.1) ───────────┤9  ┐               │     │
-                              ┌───────────┤10 ├ NAND4 ──o 8├──┼──┐  │
-                         3V3 ─┼───────────┤12 │               │  │  │
-                         3V3 ─┼───────────┤13 ┘               │  │  │
-                              │           │  3, 11: NC        │  │  │
-                              └───────────────────────────────┘  │  │
-                                          └──────────────────────┼──┘
-                                                                 │
-                                                  U19 pin 22 ~OE ◄┘
+| Pin | U24 | U25 |
+|---|---|---|
+| 1 | `mR~W` (U6.18 / U7.7 / U5.2) | a1 (U24.8) |
+| 2 | `~mVCS0` (U7.45 / U2.28) | a2 (U24.11) |
+| 3 | n1 → U24.9, U24.10 | B → U25.5 |
+| 4 | `~mEXSEL` (U7.47 / U16.18) | `mPHI2` (U6.17 / U7.6 / U5.1) |
+| 5 | `~mMPD` (U7.48 / U16.17) | B (U25.3) |
+| 6 | n2 → U24.12, U24.13 | **`~OE` → U19 pin 22** |
+| 7 | GND | GND |
+| 8 | a1 → U25.1 | libero |
+| 9, 10 | n1 | GND (porta libera) |
+| 11 | a2 → U25.2 | libero |
+| 12, 13 | n2 | GND (porta libera) |
+| 14 | 3V3, 100 nF `C67` | 3V3, 100 nF `C68` |
 
- U23 pin 3  ◄── PHI2           (resta com'è)
- U23 pin 4  ──► NON COLLEGATO  (staccare dalla rete di U19 pin 22)
- U23 pin 1/2 → U19 pin 2 DIR   (invariato)
-```
-
-Passi:
-1. staccare `U23` pin 4 da `U19` pin 22 (l'uscita di `U23` resta libera: va bene);
-2. `U24` NAND 1: pin 1 `mR~W`, pin 2 `~mVCS0`, pin 4 `~mEXSEL`, pin 5 `~mMPD` → pin 6 = **B**;
-3. `U24` NAND 2 usata come NAND a 2 ingressi: pin 9 `mPHI2`, pin 10 ← pin 6, pin 12 e 13 a 3V3;
-4. `U24` pin 8 → `U19` pin 22 (`~OE`); pin 3 e 11 NC; 100 nF tra pin 14 e GND vicino al chip;
-5. **pull-up 10 kΩ verso 3V3 su `~mVCS0`, `~mEXSEL` e `~mMPD`**: nella netlist non ci sono, e durante
-   reset e boot dell'ESP32 i GPIO 40–42 (pin JTAG) non hanno un livello garantito. Senza pull-up un
-   livello basso spurio accenderebbe `U19` nelle letture e, già oggi tramite `U16`, abbasserebbe
-   `EXTSEL`/`MPD` sul bus Atari.
+- `U23` pin 4 non pilota più U19 pin 22; l'unità 3→4 di `U23` non è usata e il suo ingresso va a GND
+  (§2.8).
+- **pull-up 10 kΩ verso 3V3 su `~mVCS0`, `~mEXSEL` e `~mMPD`** (`R36`, `R53`, `R65`): durante reset e
+  boot dell'ESP32 i GPIO 40–42 (pin JTAG) non hanno un livello garantito. Senza pull-up un livello
+  basso spurio accenderebbe `U19` nelle letture e, tramite `U16`, abbasserebbe `EXTSEL`/`MPD` sul bus
+  Atari.
 
 | mPHI2 | mR~W | ~mVCS0 / ~mEXSEL / ~mMPD | B | ~OE | U19 |
 |---|---|---|---|---|---|
@@ -129,17 +122,22 @@ Passi:
 | 1 | 1 (lettura) | almeno uno a 0 | 1 | 0 | acceso, scheda → Atari |
 
 `~OE` di `U19` è riferito a VCCA (5 V) con soglia TTL (VIH ≥ 2,0 V): l'uscita LVC a 3,3 V lo pilota
-direttamente (verificare sul datasheet della versione montata). Ritardo: due livelli LVC, ~3–5 ns
-ciascuno. `DIR` resta invariato (`U23` pin 1→2).
+direttamente. Ritardo: dai segnali di controllo a `~OE` quattro porte LVC (≤ 4,5 ns ciascuna a 3,3 V),
+da `mPHI2` a `~OE` una. Con il modello della tesi (`timing_model.py`) il dato servito dall'ESP32 arriva
+comunque almeno ~80 ns dopo l'accensione di U19: il margine nel caso peggiore non cambia rispetto al
+74LVC20 (NTSC +27/+2 ns a 12/14 cicli APB); le letture VERA perdono ~5 ns (+136/+128 ns). **Non usare
+74HC00**: a 3,3 V il datasheet non dà tempi e l'estrapolazione arriva a ~35–40 ns per porta, proprio dove
+quattro livelli entrano nel percorso critico (~37–39 ns). `DIR` resta invariato (`U23` pin 1→2).
 
 Da controllare:
-- **Tempi.** Con il firmware attuale (decodifica in φ1, commit `82c429f`) `DEV_SEL_N`, `EXTSEL_N` e
-  `MPD` arrivano intorno alla salita di PHI2 (0…+40 ns nel caso peggiore); `~OE_` li segue di
-  ~10 ns più il tempo di abilitazione del 4245 (≤ ~9 ns). Il dato dell'ESP32 arriva comunque dopo:
-  da misurare con l'oscilloscopio.
-- **Firmware dopo la modifica.** Con `U19` isolato l'ESP32 può tenere abilitate le uscite dati in φ1
-  e spegnerle solo prima di un ciclo di scrittura o di una lettura dei registri VERA: una sola
-  scrittura APB (`GPIO.out`) sul percorso critico invece di due. Da fare dopo il montaggio.
+- **Tempi.** Con il firmware attuale (decodifica in φ1) `DEV_SEL_N`, `EXTSEL_N` e `MPD` arrivano
+  intorno alla salita di PHI2 (0…+40 ns nel caso peggiore); `~OE_` li segue di ≤ 18 ns (quattro porte)
+  più il tempo di abilitazione del 4245 (≤ ~9 ns). Il dato dell'ESP32 arriva comunque dopo: da
+  misurare con l'oscilloscopio.
+- **Uscite dati sempre abilitate: valutato e scartato.** Con `U19` isolato l'ESP32 potrebbe tenere
+  abilitate le uscite dati in φ1 (una scrittura APB in meno nelle letture), ma nei cicli di scrittura
+  dovrebbe spegnerle prima che `U19` piloti il lato scheda (una sola porta dopo la salita di PHI2):
+  questo vincolo si rompe a ~13 cicli APB, quindi il caso peggiore non migliora (tesi, cap. 8).
 - **`$D1FF` in lettura non abilita `U19`** (nessun segnale di risposta è asserito): è voluto, vedere §2.4.
 - **Scritture.** `U19` resta abilitato in ogni scrittura: l'ESP32 deve vedere tutte le scritture
   (`$D301`, `$D303`, latch `$D1FF`, finestra RAMbo).
@@ -163,10 +161,8 @@ Richieste:
 3. Verificare con analizzatore logico/oscilloscopio: dato stabile ≥ 5 ns dopo la salita di
    `~mWE` e `~mVCS0` al pin FPGA.
 
-### 2.3 [A] Linea IRQ push-pull verso il bus Atari — VERIFICA
+### 2.3 [A] Linea IRQ verso il bus Atari (open-collector) — **corretto nello schema (2026-10-26)**
 
-- `~mVIRQ` (FPGA, pin 32) va a `U16` pin 18 → `~IRQ` (`U16` pin 6) → `ECI1` pin B. C'è un
-  pull-up `R65` sulla rete `~mVIRQ`.
 - L'uscita VERA è push-pull (§1). Il bus Atari ha una linea IRQ **open-collector** condivisa
   con POKEY, PIA e altri device: un'uscita push-pull in alto contro un altro device che tira
   in basso crea contesa.
@@ -176,38 +172,35 @@ Richiesta: tra FPGA e ECI usare uno stadio open-drain/open-collector con uscita 
 mai in alto; il livello alto lo dà l'unico pull-up sul computer. Aggiungere un proprio stadio
 open-drain dà esattamente questo comportamento con POKEY, PIA e gli altri device.
 
-**Soluzione consigliata (un componente).** `74LVC1G07` (buffer non invertente open-drain, SOT-23-5
-o SC-70-5), alimentato a 3,3 V:
+**Realizzazione (schema e netlist 2026-10-26): `U26` SN74LVC1G07DBVR** (TI, buffer non invertente
+open-drain, SOT-23-5, LCSC C7829), alimentato a 3,3 V:
 
 ```
- 3V3 ──┬── Vcc (pin 5)
-       └── 100 nF ── GND
- ~mVIRQ (FPGA, 3,3 V, attivo basso) ──► A (pin 2)      GND (pin 3)
- Y (pin 4, open-drain) ──► ECI1 pin B (~IRQ, 5 V)   [nessun pull-up proprio verso 5 V]
+ 3V3 ──┬── VCC (pin 5)              C69 100 nF (C840116) fra 3V3 e GND, vicino al chip
+ ~mVIRQ (FPGA U2 pin 32, 3,3 V, attivo basso) ──► A (pin 2)      GND (pin 3), pin 1 NC
+ Y (pin 4, open-drain) ──► ~IRQ, ECI1 pin B (5 V)   [nessun pull-up proprio verso 5 V]
 ```
 
 - Uscita bassa quando l'FPGA chiede IRQ, alta impedenza altrimenti: non invertente, quindi la
   polarità resta quella di `~mVIRQ` (basso = IRQ).
-- L'uscita open-drain dell'LVC1G07 tollera 5,5 V (Ioff), quindi il pull-up da 5 V sul computer non
-  la danneggia, anche con la scheda spenta.
-- VOL tipico < 0,4 V a qualche mA: la corrente tipica del pull-up IRQ Atari (circa 1-1,5 mA con
-  3,3-4,7 kΩ, **verificare sul computer di prova**) è ampiamente entro i limiti.
-- **Modifica sulla scheda attuale:** (1) staccare `U16` pin 6 dalla rete `~IRQ` (altrimenti resta
-  l'uscita push-pull in parallelo); (2) collegare `Y` a `ECI1` pin B; (3) lasciare l'ingresso di
-  `U16` pin 18 collegato a `~mVIRQ` (innocuo, uscita non utilizzata). `R65` (10 kΩ sul lato
-  3,3 V) può restare come pull-up dell'ingresso dello stadio.
+- L'uscita open-drain tollera 5,5 V anche a chip spento (Ioff), quindi il pull-up a 5 V del computer
+  non la danneggia.
+- VOL < 0,4 V a qualche mA: la corrente del pull-up IRQ Atari (circa 1–1,5 mA con 3,3–4,7 kΩ,
+  **verificare sul computer di prova**) è ampiamente entro i limiti. Ritardo ≤ 4,2 ns a 3,3 V.
+- Il simbolo `SN74LVC1G07DBVR` è stato aggiunto alla RetroBitLab-Library (`RetroBitLab.lib`/`.dcm`),
+  con i pin di alimentazione visibili (un pin VCC nascosto si collegherebbe da solo a una rete `VCC`).
 
-**Alternative.** (a) `BSS138`/`2N7002` con gate pilotato da `NOT(~mVIRQ)`, per esempio da un
-`74LVC1G04`: due componenti; (b) diodo Schottky (BAT54) con anodo su `~IRQ` e catodo su
-`~mVIRQ`: funziona come OR cablato, ma il livello basso risulta VOL(FPGA) + Vf (circa 0,6-0,7 V)
-vicino al limite TTL di 0,8 V, quindi sconsigliato.
+**Storia.** Nella netlist 2026-10-23 `~mVIRQ` andava a `U16` pin 18 → `~IRQ` (`U16` pin 6) in push-pull.
+Nella revisione successiva era stato sostituito dal diodo Schottky `D1` (BAT43W), montato però al
+contrario (catodo su `~IRQ`, anodo sull'FPGA): l'IRQ della VERA non arrivava all'Atari e l'uscita alta
+dell'FPGA caricava la linea quando POKEY o la PIA la tiravano bassa. Anche con il verso giusto il livello
+basso (VOL dell'FPGA + Vf) sarebbe stato vicino al limite TTL di 0,8 V. `D1` è stato tolto.
 
 **Gestione dell'IRQ.** Con lo stadio open-drain basta un gancio software sul vettore IRQ (vedere §2.4):
 non serve nessun collegamento aggiuntivo all'ESP32.
 
-**Cosa NON fare.** Non lasciare l'uscita push-pull verso il bus, non aggiungere un pull-up a
-5 V sulla scheda (la linea ha già il suo) e non usare un 74LVC4245 per questo segnale: non ha
-uscite open-drain.
+**Cosa NON fare.** Non lasciare un'uscita push-pull verso il bus, non aggiungere un pull-up a 5 V sulla
+scheda (la linea ha già il suo) e non usare un 74LVC4245 per questo segnale: non ha uscite open-drain.
 
 ### 2.4 [A] Identificazione dell'IRQ: via software, non tramite `$D1FF`
 
@@ -218,8 +211,8 @@ chiamare. Con la scheda attuale non è realizzabile:
   lascerebbe D0-D6 del lato scheda non pilotati, e `U19` li porterebbe sul bus Atari a un livello
   casuale, in contesa con i bit di eventuali altri device PBI. Con la regola di §2.1 `U19` non viene
   nemmeno abilitato per `$D1FF`.
-- `~mVIRQ` non arriva all'ESP32. I soli GPIO liberi sono GPIO 47 e 48 (`PIN-MAPPING.md` §7); anche
-  portando lì `~mVIRQ`, servirebbe comunque un buffer tri-state separato per pilotare solo D7. Per questo il filo `~mVIRQ`→GPIO0 e l'opzione firmware `VERA_HAS_VIRQ_SENSE` sono
+- `~mVIRQ` non arriva all'ESP32. L'unico GPIO libero è GPIO 48 (`PIN-MAPPING.md` §7; GPIO 47 è
+  `ABUS_OE_N`, §2.9); anche portando lì `~mVIRQ`, servirebbe comunque un buffer tri-state separato per pilotare solo D7. Per questo il filo `~mVIRQ`→GPIO0 e l'opzione firmware `VERA_HAS_VIRQ_SENSE` sono
   stati **eliminati** (il documento `HW-MOD-GPIO0-VIRQ.md` non esiste più).
 
 **Soluzione adottata: gancio software sul vettore IRQ.** I registri VERA sono sempre leggibili
@@ -280,18 +273,85 @@ sostituita con l'handler corrente di `VERA_ATARI_PBI` e rigenerata con `make -C 
 a `vera_pbi_handler.rom` di `VERA_ATARI_PBI`. Contiene il nuovo `IRQVECTOR` e l'attesa lunga di
 `WAIT_VERA`.
 
-### 2.7 [A] VCCB (pin 23) dei 74LVC4245 scollegato
+### 2.7 [A] VCCB (pin 23) dei 74LVC4245 scollegato — **corretto nello schema (2026-10-26)**
+
+Nello schema il pin 23 di ogni chip è ora collegato al pin 24 (3V3).
 
 Nella netlist 2026-10-23 il pin 23 di `U3`, `U4`, `U6`, `U16` e `U19` è su una rete senza altri
 collegamenti; solo il pin 24 va a 3V3. Il simbolo KiCad lo chiama `VCCB` (power_in): è il secondo pin
 di alimentazione del lato B. Collegare il pin 23 a 3V3 su tutti e cinque i chip, con il
 disaccoppiamento vicino.
 
-### 2.8 [B] Ingressi liberi di U23 flottanti
+### 2.8 [B] Ingressi liberi flottanti — **corretto nello schema (2026-10-26)**
 
-`U23` (SN74HCT04) usa due invertitori (pin 1→2, 3→4). Gli ingressi degli altri quattro (pin 5, 9, 11,
-13) sono scollegati: gli ingressi CMOS flottanti possono oscillare e assorbire corrente. Collegarli a
-GND (o a 5V).
+`U23` (SN74HCT04) usava due invertitori (pin 1→2, 3→4) e aveva gli ingressi degli altri quattro (pin 5,
+9, 11, 13) scollegati: gli ingressi CMOS flottanti possono oscillare e assorbire corrente. Con il gating
+di §2.1 anche l'invertitore 3→4 non serve più. Nello schema ora vanno a GND:
+- `U23` pin 3, 5, 9, 11, 13 (le uscite 4, 6, 8, 10, 12 restano libere);
+- gli ingressi dei canali di riserva dei 74LVC4245, **ciascuno con una propria resistenza da 0 Ω**
+  (CREZ0805, LCSC C328378) verso GND, così ogni canale si può riusare togliendo una resistenza:
+  `U6` pin 10 (A7, lato Atari) → `R74`; `U16` pin 14 → `R72`, 15 → `R75`, 19 → `R73`, 20 → `R76`,
+  21 → `R77` (lato scheda). Le uscite corrispondenti (`U6` pin 14, `U16` pin 3, 4, 5, 9, 10) restano
+  libere. Le masse di `U6` (pin 11–13) vanno direttamente a GND.
+
+### 2.9 [A] Strapping dell'ESP32-S3 — **corretto nello schema e nel firmware (2026-10-26)**
+
+L'ESP32-S3 campiona GPIO 0, 3, 45 e 46 a ogni reset del chip (accensione, CHIP_PU, programmatore,
+brown-out); i livelli devono essere validi alla salita di CHIP_PU e per 3 ms dopo (datasheet v2.2, §3).
+
+| Pin | Funzione | Problema | Correzione |
+|---|---|---|---|
+| GPIO 3 (pin 8) | sorgente JTAG | senza pull interne, era scollegato (il datasheet vieta l'alta impedenza) | `R71` 10 kΩ → 3V3 |
+| GPIO 0 (pin 5) | modo di boot | CHIP_PU (`R31` 4,7 kΩ + `C25` 100 nF) e BOOT0 (`R33` 4,7 kΩ + `C61` 100 nF) avevano la stessa costante di tempo: GPIO 0 arrivava alla soglia insieme al rilascio del reset | `C25` → 1 µF (4,7 ms contro 0,47 ms) |
+| GPIO 45 (pin 51) | VDD_SPI | è A14 attraverso `U3`, sempre abilitato (`~OE` a GND con `R7` 0 Ω). Il 6502 pilota il bus indirizzi anche in reset: A14 alto → VDD_SPI 1,8 V e la flash della FN8 non parte | `~OE` di `U3` sulla rete `~ABUS_OE` (sotto) |
+| GPIO 46 (pin 52) | messaggi ROM / download | è A15: A15 alto con GPIO 0 basso è una combinazione non valida → programmazione via CH340 fallita a caso con l'Atari acceso | come GPIO 45 |
+
+**Rete `~ABUS_OE`.** `~OE` (pin 22) di `U3` (A8–A15) e di `U4` (A0–A7) è pilotato da **GPIO 47**
+(pin 37, prima libero), con pull-up `R7` e `R34` (prima 0 Ω a GND, ora 10 kΩ → 3V3, stessa parte
+LCSC C84376 delle altre pull-up). GPIO 47 dopo il reset è un ingresso senza pull e senza glitch
+(datasheet Table 2-1/2-2): durante il reset dell'ESP32 le pull-up spengono `U3`/`U4`, le uscite verso
+l'ESP32 sono in alta impedenza e i pull-down interni (45 kΩ) danno GPIO 45 = GPIO 46 = LOW a ogni
+reset, qualunque cosa faccia l'Atari. Il firmware (`PIN_ABUS_OE_N` in `main.cpp`) porta GPIO 47 basso
+in `setup()`, molto dopo i 3 ms di hold e prima di avviare il loop del bus. `~OE` è riferito a VCCA
+(5 V) con soglia TTL: 3,3 V lo tengono alto.
+
+Spegnere anche `U4` non serve agli strapping, ma all'accensione GPIO 12–19 hanno glitch di uscita di
+~60 µs (datasheet Table 2-2): con `U4` spento non c'è contesa con le sue uscite. Gli eFuse
+`VDD_SPI_FORCE`/`VDD_SPI_TIEH` (irreversibili) non servono più.
+
+Resta aperto, fuori da questo punto: anche GPIO 1, 2 (PHI2, R/W da `U6`) e GPIO 4–11 (dati, `U19` in
+scrittura) hanno glitch di uscita all'accensione. `U6` resta sempre abilitato perché `mPHI2`/`mR~W`
+servono al gating di §2.1 e agli strobe della VERA.
+
+### 2.10 [A] U16 pilotava `~HALT`, `RD4` e `RD5` sul bus Atari da ingressi flottanti — **corretto nello schema (2026-10-26)**
+
+`U16` (scheda → Atari, `DIR` = GND con `R66`, `~OE` = GND) è sempre abilitato. Nella netlist 2026-10-26
+tre suoi canali avevano l'ingresso lato scheda collegato **solo a un test point** e l'uscita sul
+connettore: `~mHALT` (pin 19) → `~HALT` (pin 5, `ECI1` pin C), `mRD4` (pin 20) → `RD4` (pin 4, `CART1`
+pin A), `mRD5` (pin 21) → `RD5` (pin 3, `CART1` pin 14). Gli ingressi flottanti davano livelli casuali,
+portati sul bus in push-pull: `HALT` è un'uscita di ANTIC verso il 6502 (contesa, CPU ferma con un
+livello basso); `RD4`/`RD5` dicono all'MMU che c'è una cartuccia a `$8000`/`$A000`.
+
+I tre segnali servivano solo come test point. Correzione:
+- `U16` pin 3, 4, 5 (uscite) **non collegati**; pin 19, 20, 21 (ingressi) a GND con una 0 Ω ciascuno
+  (`R73`, `R76`, `R77`), come gli altri canali di riserva (§2.8);
+- i test point (`~HALT1`, `RD5`, `RD4`, prima `~mHALT1`, `mRD5`, `mRD4`) sono sulle reti lato Atari
+  `~HALT`, `RD5`, `RD4`: misurano direttamente i segnali a 5 V, senza caricarli.
+
+### 2.11 [A] Il 5 V della scheda è collegato al 5 V dell'Atari senza diodo — **regola d'uso (2026-10-26)**
+
+La rete `5V` della scheda unisce tre sorgenti:
+- `CART1` pin 13 e `ECI1` pin 7: il +5 V dell'Atari, **collegato direttamente**;
+- `U18` (MAX40200, diodo ideale) da VBUS dell'USB (`J4`);
+- `U17` (MAX40200) dal 7805 `U15` alimentato dal jack `J5` (5–24 V).
+
+I due MAX40200 impediscono alla scheda di alimentare all'indietro l'USB e il 7805, ma niente impedisce
+alla scheda di alimentare l'Atari: con l'Atari spento e l'USB (o il jack) collegato, l'USB o il 7805
+alimenterebbero la scheda madre dell'Atari attraverso il connettore; con l'Atari acceso le sorgenti
+lavorerebbero in parallelo.
+
+Decisione: nessun diodo sul ramo dell'Atari. **Programmazione e USB solo a scheda scollegata dall'Atari.** La rete 5 V della scheda è unita al +5 V dell'Atari (`CART1` pin 13, `ECI1` pin 7) senza diodo: con il cavo USB (`J4`) o il jack (`J5`) collegati mentre la scheda è inserita, la scheda alimenterebbe l'Atari (spento) o lavorerebbe in parallelo al suo alimentatore (acceso). Vale anche per il monitor seriale: con la scheda nell'Atari usare un adattatore senza VBUS. Il jack e l'USB servono per programmare
+l'ESP32 e la flash della VERA e per le prove a banco, con la scheda fuori dall'Atari.
 
 ---
 
@@ -317,10 +377,9 @@ CDONE).
 - **Livelli.** VERA, ESP32 e FPGA sono a 3,3 V; il bus Atari è a 5 V TTL. Tutti i segnali verso
   l'Atari passano da 74LVC4245. Controllare che le uscite 3,3 V rispettino VIH dei ricevitori
   sul bus (TTL ≥ 2,0 V) e che gli ingressi sul lato 5 V non superino i limiti dell'FPGA.
-- **Alimentazioni.** Nella netlist `U16` e `U19` hanno `VCCA` (pin 1) a **5 V**, mentre
-  `PIN-MAPPING.md` descrive il lato A come 3,3 V (ESP32). Le due descrizioni non coincidono:
-  verificare il lato corretto per ogni chip (per `U16` e `U19` il lato A risulta quello
-  dell'Atari).
+- **Alimentazioni.** In tutti e cinque i 74LVC4245 `VCCA` (pin 1) è a 5 V (lato A = Atari) e `VCCB`
+  (pin 23, 24) a 3,3 V (lato B = ESP32/FPGA); `DIR` e `~OE` sono riferiti a VCCA con soglia TTL.
+  `PIN-MAPPING.md` è stato corretto (2026-10-26): prima descriveva i due lati invertiti.
 - **Tempo di risposta in lettura.** In lettura la VERA risponde da registri e dati già pronti
   (prefetch): alla scheda basta il tempo di propagazione attraverso `U4/U3`, FPGA e `U19`
   (circa 30-50 ns stimati, da misurare). Per la ROM/RAM `$D600-$DFFF` servite dall'ESP32 il
@@ -362,7 +421,7 @@ Il driver e i test già le seguono, ma valgono per qualunque programma futuro:
    **PASS: 36, FAIL: 0**, e la riga `VERA firmware 48.0.1`); da `disk2-veratests-*.atr` `TEST8.COM`, `TESTGS8.COM`, `TESTMAZ8.COM`,
    `TESTMTX8.COM` (ESC per uscire); da `disk3-standalone.atr` `TESTPLR.COM`; poi `RUNCPM.COM`
    (`disk1-runcpm.atr`) con FujiNet.
-6. **IRQ** solo quando §2.3 (stadio open-drain) è montato: `TESTIRQ.COM` da `disk3-standalone.atr` (atteso PASS 13, FAIL 0).
+6. **IRQ** (stadio open-drain `U26`, §2.3): `TESTIRQ.COM` da `disk3-standalone.atr` (atteso PASS 13, FAIL 0).
 7. Ogni anomalia va riprodotta in emulatore con `-verax16-config-ms` (0 e 100) per separare
    problemi software da problemi di scheda.
 

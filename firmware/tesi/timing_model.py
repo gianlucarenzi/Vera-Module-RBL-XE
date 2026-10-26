@@ -10,8 +10,8 @@ disassembly of MonitorTask (firmware.elf, env esp32s3fn8, arduino-esp32
   initial firmware   commit f311311 (decode after PHI2 rises, two APB reads)
   current firmware   commit 82c429f (decode during PHI1, assembly critical path)
 
-The board is assumed to have the U19 ~OE gating (one 74LVC20, see
-VERA-ATARI-HW-REQUIREMENTS.md section 2.1).
+The board is assumed to have the U19 ~OE gating (two SN74LVC00A, U24 and U25,
+see VERA-ATARI-HW-REQUIREMENTS.md section 2.1).
 
 Writes:
   data/numbers.tex   \\newcommand macros used in the thesis text and tables
@@ -38,7 +38,9 @@ PHI2_ASYM = 10.0                        # assumed PHI2-high shortening (duty err
 LVC4245 = (1.0, 4.0, 6.5)               # 74LVC4245A propagation 5 V <-> 3.3 V
 LVC4245_EN = (1.0, 5.0, 9.0)            # output enable (~OE low -> outputs driven)
 LVC4245_DIS = (1.0, 4.0, 8.0)           # output disable
-LVC20 = (1.0, 2.5, 4.5)                 # 74LVC20 NAND4 @ 3.3 V, per gate
+LVC00 = (1.0, 2.5, 4.5)                 # SN74LVC00A NAND2 @ 3.3 V, per gate
+GATE_CTRL = 4                           # control -> n -> a -> B -> ~OE
+GATE_PHI2 = 1                           # mPHI2 -> ~OE (B already settled)
 HCT04 = (4.0, 10.0, 24.0)               # SN74HCT04 @ 5 V
 HC00_3V3 = (5.0, 12.0, 30.0)            # 74HC00 @ 3.3 V (interpolated)
 FPGA_PAD = (6.0, 10.0, 15.0)            # iCE40UP5K pad -> logic -> pad
@@ -124,9 +126,9 @@ def new_ctrl(f_mhz, l_apb, slow=False, case="max"):
 
 
 def u19_enabled(t_ctrl, case="max"):
-    """U19 drives the Atari side: control signal -> 74LVC20 (2 gates) -> 4245 enable."""
+    """U19 drives the Atari side: control signal -> U24/U25 (4 gates) -> 4245 enable."""
     i = CASES[case]
-    return t_ctrl + 2 * LVC20[i] + LVC4245_EN[i]
+    return t_ctrl + GATE_CTRL * LVC00[i] + LVC4245_EN[i]
 
 
 def new_data_esp(f_mhz, l_apb, case="max", keep_enabled=False):
@@ -181,7 +183,7 @@ def keep_disable_slack(f_mhz, l_apb):
     """Option 'outputs kept enabled': in a write cycle the ESP32 must release
     D0-D7 before U19 starts driving the board side after PHI2 rises."""
     t_off = new_sample(f_mhz, "max") + (NEW_WR_DISABLE + l_apb) * TC + PAD_OUT[2]
-    u19_on = LVC4245[0] + 2 * LVC20[0] + LVC4245_EN[0]          # earliest
+    u19_on = LVC4245[0] + GATE_PHI2 * LVC00[0] + LVC4245_EN[0]  # earliest
     return u19_on - t_off
 
 

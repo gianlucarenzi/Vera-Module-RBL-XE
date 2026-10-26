@@ -16,11 +16,11 @@ Target MCU: **ESP32-S3FN8** — QFN56 package, 45 GPIOs, 8 MB in-package Quad SP
 
 | GPIO | QFN56 pin | Signal | Risk |
 |------|-----------|--------|------|
-| **GPIO 0** | 5 | BOOT0 | Strapping pin (boot mode) — **non è NC**: rete `BOOT0` con `R33` 4,7 kΩ → 3V3, pulsante `SW3`, `C61` 100 nF e `R54` 220 Ω verso `Q4` (auto-reset del programmatore). LOW al reset = modalità download. |
-| **GPIO 3** | 8 | — | Strapping pin (JTAG source, no internal pull) — **non usato dal firmware** (la RAMbo è sempre attiva). Nella netlist 2026-10-23 il pin è scollegato: il datasheet richiede una resistenza esterna (pull-up o pull-down) perché il livello non resti flottante. Con gli eFuse di fabbrica il valore è comunque ignorato. |
+| **GPIO 0** | 5 | BOOT0 | Strapping pin (boot mode) — **non è NC**: rete `BOOT0` con `R33` 4,7 kΩ → 3V3, pulsante `SW3`, `C61` 100 nF e `R54` 220 Ω verso `Q4` (auto-reset del programmatore). LOW al reset = modalità download (richiede anche GPIO 46 LOW). CHIP_PU ha `R31` 4,7 kΩ + `C25` **1 µF** (4,7 ms) contro 0,47 ms di BOOT0: GPIO 0 è già alto quando il reset viene rilasciato. |
+| **GPIO 3** | 8 | — | Strapping pin (JTAG source, no internal pull) — **non usato dal firmware**. Pull-up **`R71` 10 kΩ → 3V3**, come richiesto dal datasheet (§3.4: senza pull interne, non può restare flottante). HIGH = JTAG sull'USB Serial/JTAG anche se un giorno si programmasse `EFUSE_STRAP_JTAG_SEL`: GPIO 39–42 non diventano mai pin JTAG. Con gli eFuse di fabbrica il valore è comunque ignorato. |
 | **GPIO 26–32** | 28, 30–35 | — | SPI0/1 pins of the in-package memory (datasheet Table 2-14). On the FN8 the Quad SPI flash uses GPIO 27–32 (pins 30–35): **never connect externally**. GPIO 26 (pin 28, SPICS1) is the in-package PSRAM chip select, absent on the FN8; Espressif still advises against other uses. |
-| **GPIO 45** | 51 | A14 | Strapping pin (VDD_SPI select) — internal weak pull-down (~5 kΩ). Connesso ad A14 via 74LVC4245APW_118 U3. Al power-on il 6502 è in reset → A14 alta impedenza → U3 flotta → pull-down → **LOW → VDD_SPI = 3.3 V da VDD3P3_RTC** (datasheet v2.2 Table 3-4), il valore richiesto dalla flash in-package della FN8 (Table 1-1). **Con A14 HIGH al reset VDD_SPI = 1.8 V e il chip non si avvia**: A14 deve essere LOW al power-on (da verificare), oppure programmare `EFUSE_VDD_SPI_FORCE` = 1 e `EFUSE_VDD_SPI_TIEH` = 1 (irreversibile) per fissare 3.3 V. |
-| **GPIO 46** | 52 | A15 | Strapping pin (ROM messages on UART0) — internal weak pull-down (~5 kΩ). Connesso ad A15 via 74LVC4245APW_118 U3. Stesso scenario di GPIO 45 → **LOW → messaggi ROM disabilitati** (corretto per produzione). |
+| **GPIO 45** | 51 | A14 | Strapping pin (VDD_SPI select) — pull-down interno debole (45 kΩ). Connesso ad A14 via `U3` (74LVC4245). Il 6502 **pilota il bus indirizzi anche in reset**, quindi il livello non può dipendere dall'Atari: `~OE` di `U3` (e di `U4`) è la rete **`~ABUS_OE`**, pilotata da **GPIO 47** e tenuta alta da `R7`/`R34` (10 kΩ → 3V3) mentre l'ESP32 è in reset. Con `U3` spento il pull-down interno dà **LOW → VDD_SPI = 3,3 V da VDD3P3_RTC** (Table 3-4), il valore richiesto dalla flash in-package della FN8. Vale a ogni reset del chip (accensione, CHIP_PU, programmatore). Il firmware abilita `U3`/`U4` in `setup()`, molto dopo i 3 ms di hold. Gli eFuse `VDD_SPI_FORCE`/`TIEH` non servono. |
+| **GPIO 46** | 52 | A15 | Strapping pin (ROM messages on UART0, download mode) — pull-down interno debole (45 kΩ). Connesso ad A15 via `U3`, stesso gating di GPIO 45 → **LOW**: messaggi ROM disabilitati e, con GPIO 0 LOW, download boot valido (GPIO 0 LOW + GPIO 46 HIGH è una combinazione non valida): la programmazione funziona anche con l'Atari acceso. |
 
 > **JTAG pins reclaimed (GPIO 39–42):** il firmware chiama `gpio_reset_pin()` su GPIO 39, 40,
 > 41, 42 per de-registrarli dal controller JTAG e utilizzarli come GPIO normali.
@@ -35,10 +35,10 @@ Target MCU: **ESP32-S3FN8** — QFN56 package, 45 GPIOs, 8 MB in-package Quad SP
 
 ## 1. Data Bus D0–D7  (bidirectional, Bank 0 bits 4–11)
 
-Tutti via level shifter **74LVC4245APW_118 U19** (B side = Atari 5 V, A side = ESP32 3.3 V) —
+Tutti via level shifter **74LVC4245APW_118 U19** (A side = Atari 5 V, B side = ESP32 3,3 V) —
 unico canale realmente **bidirezionale** del progetto: la direzione (pin DIR) è commutata
-dinamicamente da due invertitori **SN74HCT04DR U23**, pilotati da R/W\_ e PHI2, invece
-dell'auto-sensing analogico del vecchio TXS0108E. Vedere § 6.
+dinamicamente da un invertitore **SN74HCT04DR U23** pilotato da R/W\_, invece dell'auto-sensing
+analogico del vecchio TXS0108E; `~OE` viene dal gating di `U24`/`U25`. Vedere § 6.
 
 | Atari signal | GPIO | QFN56 pin | IO MUX | Bank-0 bit | Notes |
 |---|---|---|---|---|---|
@@ -88,8 +88,8 @@ Firmware data decode: `data = (GPIO.in >> 4) & 0xFF`
 | A11 | 36 | 41 | GPIO36  | Bank 1 bit 4  | |
 | A12 | 33 | 38 | GPIO33  | Bank 1 bit 1  | Ex-spare CONN / libre |
 | A13 | 34 | 39 | GPIO34  | Bank 1 bit 2  | Ex-spare CONN / libre |
-| A14 | 45 | 51 | GPIO45  | Bank 1 bit 13 | Strapping pin (VDD_SPI); pull-down → LOW al boot (sicuro FN8) |
-| A15 | 46 | 52 | GPIO46  | Bank 1 bit 14 | Strapping pin (ROM msgs); pull-down → LOW al boot (corretto) |
+| A14 | 45 | 51 | GPIO45  | Bank 1 bit 13 | Strapping pin (VDD_SPI); `U3` spento durante il reset (`~ABUS_OE`) → pull-down → LOW |
+| A15 | 46 | 52 | GPIO46  | Bank 1 bit 14 | Strapping pin (ROM msgs / download); `U3` spento durante il reset → pull-down → LOW |
 
 ### Firmware: decode indirizzo completo (16 bit)
 
@@ -134,8 +134,8 @@ L'ESP32 legge A0–A15, PHI2, R/W\_ ogni ciclo e asserisce i segnali di uscita d
 tramite il **Dedicated GPIO** (istruzioni TIE Xtensa `ee.get_gpio_in` / `ee.wr_mask_gpio_out`).
 Con A0–A15 completi il decode è esatto: nessuna ambiguità di pagina.
 
-> **Perché non i chip-select hardware:** sull'ESP32-S3FN8 restano liberi solo due GPIO
-> (GPIO 47 e 48, § 7), non abbastanza per i quattro chip-select hardware disponibili sui
+> **Perché non i chip-select hardware:** sull'ESP32-S3FN8 resta libero un solo GPIO
+> (GPIO 48, § 7; GPIO 47 è `ABUS_OE_N`), non abbastanza per i quattro chip-select hardware disponibili sui
 > connettori Atari (`/D1XX`, `/S4`, `/S5`, `/CCTL`). Inoltre l'emulazione RAMbo 256 KB richiede comunque di leggere l'intero
 > bus indirizzi A0–A15 (per decodificare la finestra $4000–$7FFF) e di intercettare le
 > scritture su PORTB ($D301), quindi anche con GPIO disponibili i chip-select hardware
@@ -156,6 +156,7 @@ attivi; in CCTL mode solo DEV\_SEL\_N è usato. La RAMbo 320K (256 KB a `$4000�
 | ARESET | 37 | 42 | GPIO37 | **Output** | LOW | via U16 | Atari System Reset — pilota /RESET bus Atari (open-drain + pull-up consigliati). |
 | CRESET | 38 | 43 | GPIO38 | **Output** | LOW | **direct** | VERA FPGA Reset — 3.3 V, diretto al chip FPGA. |
 | CDONE | 39 | 44 | MTCK | Input | HIGH | **direct** | VERA FPGA configured status — HIGH = configurazione completata. Ex-JTAG, reclaimed. |
+| ABUS\_OE\_N | 47 | 37 | SPICLK\_P | **Output** | LOW | **direct** | Rete `~ABUS_OE`: `~OE` di `U3` (A8–A15) e `U4` (A0–A7), pull-up `R7`/`R34` 10 kΩ → 3V3. Alto (traslatori spenti) durante il reset dell'ESP32, così GPIO 45/46 leggono LOW; il firmware lo porta basso in `setup()`. Dominio VDD\_SPI = 3,3 V. |
 
 ### Dedicated GPIO — canali usati
 
@@ -177,6 +178,8 @@ e il canale 0 in scrittura puntano a pin fisici diversi.
 |---|---|---|---|---|
 | UART TX | 43 | 49 | U0TXD | Serial debug output — UART0 hardware pin |
 | UART RX | 44 | 50 | U0RXD | Serial debug input  — UART0 hardware pin |
+
+> **Programmazione e USB solo a scheda scollegata dall'Atari.** La rete 5 V della scheda è unita al +5 V dell'Atari (`CART1` pin 13, `ECI1` pin 7) senza diodo: con il cavo USB (`J4`) o il jack (`J5`) collegati mentre la scheda è inserita, la scheda alimenterebbe l'Atari (spento) o lavorerebbe in parallelo al suo alimentatore (acceso). Vale anche per il monitor seriale: con la scheda nell'Atari usare un adattatore senza VBUS. Vedere `VERA-ATARI-HW-REQUIREMENTS.md` §2.11.
 
 ---
 
@@ -219,33 +222,39 @@ XTAL_N (53) ──┤├── GND
 
 ---
 
-## 6. Level Shifting (74LVC4245APW_118 + SN74HCT04DR)
+## 6. Level Shifting (74LVC4245APW_118, SN74HCT04DR, SN74LVC00A)
 
 I tre TXS0108E (auto-sensing, 8 canali ciascuno) sono stati sostituiti da **cinque
 74LVC4245APW,118** (NXP, dual-supply octal bus transceiver, TSSOP-24, LCSC C6091) più
-due unità di un **SN74HCT04DR** (hex inverter) usate solo per generare la direzione
-dinamica del bus dati. A differenza del TXS0108E, il 74LVC4245 **non ha auto-sensing**:
+un'unità di un **SN74HCT04DR** (hex inverter, `U23`) per la direzione dinamica del bus dati e
+due **SN74LVC00A** (`U24`, `U25`) per l'abilitazione (`~OE`) di U19. A differenza del TXS0108E, il 74LVC4245 **non ha auto-sensing**:
 richiede che DIR e ~OE\_ siano pilotati esplicitamente.
 
 **Pinout 74LVC4245APW,118 (TSSOP-24):**
 
 | Pin | Nome | Funzione |
 |---|---|---|
-| 1 | VCCA | Alimentazione lato A — 3.3 V (ESP32-S3) |
+| 1 | VCCA | Alimentazione lato A — 5 V (Atari); `DIR` e `~OE_` sono riferiti a VCCA (soglia TTL) |
 | 2 | DIR | Direzione: A→B oppure B→A a seconda del verso cablato |
-| 3–10 | A0–A7 | Canali lato A (3.3 V) |
+| 3–10 | A0–A7 | Canali lato A (5 V, Atari) |
 | 11, 12, 13 | GND | Massa |
-| 14–21 | B7–B0 | Canali lato B (5 V, ordine invertito rispetto ad A0–A7) |
+| 14–21 | B7–B0 | Canali lato B (3,3 V, ESP32/FPGA; ordine invertito rispetto ad A0–A7) |
 | 22 | ~OE\_ | Output enable, attivo basso |
-| 23, 24 | VCCB | Alimentazione lato B — 5 V (Atari) |
+| 23, 24 | VCCB | Alimentazione lato B — 3,3 V (entrambi i pin a 3V3) |
 
 100 nF ceramico su VCCA→GND e VCCB→GND per ciascun chip. Sui bus a **direzione fissa**
-(indirizzi, metà dei segnali di controllo) DIR e ~OE\_ sono cablati staticamente al verso
-corretto; sul bus dati **bidirezionale** (U19) DIR è invece pilotato dinamicamente.
+(indirizzi, metà dei segnali di controllo) DIR è cablato staticamente al verso corretto; sul bus
+dati **bidirezionale** (U19) DIR è invece pilotato dinamicamente. `~OE_` è fisso a GND (`R64`, `R66`
+da 0 Ω) solo su U6 e U16: su U3 e U4 è la rete `~ABUS_OE` (GPIO 47, § 3), su U19 il gating di
+`U24`/`U25`.
 
 ### U4 — Address bus A0–A7 (fisso, 6502 → MCU)
 
-| Canale | Lato A (3.3 V, ESP32-S3) | Lato B (5 V, Atari) |
+`~OE_` (pin 22) = `~ABUS_OE` (GPIO 47, pull-up `R34` 10 kΩ → 3V3), come U3: spento durante il reset
+dell'ESP32. Oltre agli strapping di U3, evita che U4 piloti GPIO 12–19 durante i loro glitch di uscita
+all'accensione (datasheet Table 2-2).
+
+| Canale | Lato B (3,3 V, ESP32-S3) | Lato A (5 V, Atari) |
 |---|---|---|
 | A0/B0 | GPIO 12 (pin 17) — A0 | Atari A0 |
 | A1/B1 | GPIO 13 (pin 18) — A1 | Atari A1 |
@@ -258,12 +267,17 @@ corretto; sul bus dati **bidirezionale** (U19) DIR è invece pilotato dinamicame
 
 ### U3 — Address bus A8–A15 (fisso, 6502 → MCU)
 
+`~OE_` (pin 22) = `~ABUS_OE` (GPIO 47, pull-up `R7` 10 kΩ → 3V3). Durante il reset dell'ESP32
+GPIO 47 è in alta impedenza (nessuna pull interna, nessun glitch), `R7` spegne U3 e GPIO 45/46
+(A14/A15) leggono LOW dai pull-down interni: VDD\_SPI = 3,3 V e download boot valido a ogni reset
+(§ Critical Boot-Time Warnings). Il firmware abilita U3/U4 in `setup()`.
+
 > **Nota PCB:** tutte le tracce A12–A15 sono portate alla lunghezza della
 > traccia più lunga (*length matching* con serpentine) per eliminare lo skew.
 > Un solo package copre l'intero bus alto, a differenza della vecchia coppia
 > di TXS0108E U3/U4.
 
-| Canale | Lato A (3.3 V, ESP32-S3) | Lato B (5 V, Atari) |
+| Canale | Lato B (3,3 V, ESP32-S3) | Lato A (5 V, Atari) |
 |---|---|---|
 | A0/B0 | GPIO 20 (pin 26) — A8  | Atari A8 (pin condiviso USB D+) |
 | A1/B1 | GPIO 21 (pin 27) — A9  | Atari A9  |
@@ -276,7 +290,7 @@ corretto; sul bus dati **bidirezionale** (U19) DIR è invece pilotato dinamicame
 
 ### U6 — Control signals, 6502 → MCU (fisso, input)
 
-| Canale | Lato A (3.3 V, ESP32-S3) | Lato B (5 V, Atari) | Note |
+| Canale | Lato B (3,3 V, ESP32-S3) | Lato A (5 V, Atari) | Note |
 |---|---|---|---|
 | — | GPIO 1 (pin 6) — PHI2 | Atari PHI2 | Clock fase 2, 1.79 MHz |
 | — | GPIO 2 (pin 7) — R/W\_ | Atari R/W\_ | Read / Not-Write |
@@ -284,29 +298,27 @@ corretto; sul bus dati **bidirezionale** (U19) DIR è invece pilotato dinamicame
 
 ### U16 — Control signals, MCU → 6502 (fisso, output)
 
-| Canale | Lato A (3.3 V, ESP32-S3) | Lato B (5 V, Atari) | Note |
+| Canale | Lato B (3,3 V, ESP32-S3) | Lato A (5 V, Atari) | Note |
 |---|---|---|---|
 | — | GPIO 41 (pin 47) — EXTSEL\_N | Atari EXTSEL | Output, active LOW |
 | — | GPIO 42 (pin 48) — MPD | Atari ECI MPD | Output, active LOW |
 | — | GPIO 37 (pin 42) — ARESET | Atari /RESET | Output, active LOW |
-| — | — | RD4, RD5, HALT | Canali liberi, portati a test point — **non collegati a un GPIO in questo progetto** |
-| — | `~mVIRQ` (FPGA, pin 18 lato 3,3 V) | Atari IRQ (`ECI1` pin B) | Uscita FPGA **push-pull** direttamente sul bus: da sostituire con uno stadio open-drain (74LVC1G07), vedere `VERA-ATARI-HW-REQUIREMENTS.md` §2.3 |
+| — | GND con una 0 Ω ciascuno (pin 19 `R73`, 20 `R76`, 21 `R77`, 14 `R72`, 15 `R75`) | non collegati (pin 5, 4, 3, 9, 10) | Canali di riserva. RD4, RD5 e HALT non passano da `U16`: hanno test point (`RD4`, `RD5`, `~HALT1`) direttamente sulle reti lato Atari (`VERA-ATARI-HW-REQUIREMENTS.md` §2.10) |
+| — | `~mVIRQ` (FPGA `U2` pin 32) | Atari IRQ (`ECI1` pin B) | **Non passa da `U16`**: buffer open-drain `U26` SN74LVC1G07DBVR (A pin 2 ← `~mVIRQ`, Y pin 4 → `~IRQ`), 3V3 con `C69` 100 nF. Vedere `VERA-ATARI-HW-REQUIREMENTS.md` §2.3 |
 
 ### U19 — Data bus D0–D7 (bidirezionale, direzione dinamica)
 
-DIR è pilotato da due invertitori **SN74HCT04DR U23** a partire da R/W\_ e PHI2 (stessa
+DIR è pilotato da un invertitore **SN74HCT04DR U23** (pin 1→2) a partire da R/W\_ (stessa
 logica di un transceiver dati 6502 classico: direzione verso l'Atari durante i cicli di
 lettura del 6502, verso l'ESP32 durante i cicli di scrittura), non più dall'auto-sensing
 del TXS0108E.
 
-> **`~OE_` (pin 22): da modificare.** Oggi è `NOT(PHI2)` (via `U23`), quindi `U19` pilota il bus Atari in
-> ogni lettura, anche di memorie non della scheda. Deve diventare
-> `~OE_ = NAND(PHI2, NAND(R/W, AND3(DEV_SEL_N, EXTSEL_N, MPD)))`: attivo in scrittura e nelle
-> sole letture a cui la scheda risponde (non va collegato a `CDONE`). Dettaglio, parti e tempi in
-> `VERA-ATARI-HW-REQUIREMENTS.md` §2.1. Nella netlist `VCCA` (pin 1) di `U19` è a 5 V: il lato "A" di
-> questa tabella (3,3 V) e il lato "B" (5 V) vanno **verificati** sullo schema.
+> **`~OE_` (pin 22) = `NAND(PHI2, NAND4(R/W, DEV_SEL_N, EXTSEL_N, MPD))`**, realizzato con due
+> SN74LVC00A (`U24`, `U25`): `U19` è acceso in scrittura e nelle sole letture a cui la scheda risponde,
+> spento in φ1 e nelle letture di RAM/ROM interne (prima era `NOT(PHI2)` da `U23` e faceva contesa in
+> ogni lettura). Dettaglio, piedinatura e tempi in `VERA-ATARI-HW-REQUIREMENTS.md` §2.1.
 
-| Canale | Lato A (3.3 V, ESP32-S3) | Lato B (5 V, Atari) |
+| Canale | Lato B (3,3 V, ESP32-S3) | Lato A (5 V, Atari) |
 |---|---|---|
 | A0/B0 | GPIO 4  (pin  9) — D0 | Atari D0 |
 | A1/B1 | GPIO 5  (pin 10) — D1 | Atari D1 |
@@ -333,13 +345,12 @@ Pin non assegnati al progetto, esclusi strapping e flash in-package.
 
 | GPIO | QFN56 pin | IO MUX | Note |
 |---|---|---|---|
-| 47 | 37 | SPICLK\_P | Libero. Dominio VDD\_SPI (3.3 V sulla FN8, datasheet Table 1-1); usato dalla memoria solo in Octal SPI |
-| 48 | 36 | SPICLK\_N | Libero. Come GPIO 47 |
+| 48 | 36 | SPICLK\_N | Libero. Dominio VDD\_SPI (3.3 V sulla FN8, datasheet Table 1-1); usato dalla memoria solo in Octal SPI |
 | 22–25 | — | — | Non esistono su ESP32-S3 |
 
-> Restano liberi solo GPIO 47 e GPIO 48 (pin 37 e 36); tutti gli altri GPIO non riservati sono
-> assegnati: GPIO 33, 34, 45, 46 = A12–A15. GPIO 3 non è usato ma è un pin di strapping:
-> va fissato con una resistenza esterna.
+> Resta libero solo GPIO 48 (pin 36); GPIO 47 (pin 37) è `ABUS_OE_N`, tutti gli altri GPIO non
+> riservati sono assegnati: GPIO 33, 34, 45, 46 = A12–A15. GPIO 3 non è usato ma è un pin di
+> strapping: lo fissa `R71` (10 kΩ → 3V3).
 
 **Pin esclusi (non utilizzabili):**
 
@@ -362,11 +373,11 @@ memoria da Table 2-14 "Pin Mapping Between Chip and Flash or PSRAM" (pag. 31).
 | 1   | LNA\_IN | Ingresso RF (Wi-Fi/Bluetooth) — non usato dal firmware |
 | 2   | VDD3P3 | Alimentazione analogica 3.3 V |
 | 3   | VDD3P3 | Alimentazione analogica 3.3 V |
-| 4   | CHIP\_PU (EN) | Pull-up 10 kΩ a 3.3 V |
+| 4   | CHIP\_PU (EN) | `R31` 4,7 kΩ a 3V3 + `C25` 1 µF a GND (4,7 ms), reset `SW1`, auto-reset `Q3` |
 | 5   | GPIO 0 | BOOT0 (pulsante BOOT / auto-reset, pull-up `R33`) — strapping |
 | 6   | GPIO 1 | PHI2 input (via U6) |
 | 7   | GPIO 2 | R/W\_ input (via U6) |
-| 8   | GPIO 3 | Non usato — strapping JTAG source, richiede resistenza esterna |
+| 8   | GPIO 3 | Non usato — strapping JTAG source, pull-up `R71` 10 kΩ → 3V3 |
 | 9   | GPIO 4 | D0 (via U19) |
 | 10  | GPIO 5 | D1 (via U19) |
 | 11  | GPIO 6 | D2 (via U19) |
@@ -395,7 +406,7 @@ memoria da Table 2-14 "Pin Mapping Between Chip and Flash or PSRAM" (pag. 31).
 | 34  | GPIO 31 (SPIQ)   | **Flash in-package (DO) — NC esterno** |
 | 35  | GPIO 32 (SPID)   | **Flash in-package (DI) — NC esterno** |
 | 36  | GPIO 48 (SPICLK\_N) | GPIO libero — usato dalla memoria solo in Octal SPI; non usato in questo progetto |
-| 37  | GPIO 47 (SPICLK\_P) | GPIO libero — usato dalla memoria solo in Octal SPI; non usato in questo progetto |
+| 37  | GPIO 47 (SPICLK\_P) | ABUS\_OE\_N output → `~OE` di U3/U4 (rete `~ABUS_OE`, pull-up `R7`/`R34`) |
 | 38  | GPIO 33 | A12 (via U3) |
 | 39  | GPIO 34 | A13 (via U3) |
 | 40  | GPIO 35 | A10 (via U3) |
@@ -409,8 +420,8 @@ memoria da Table 2-14 "Pin Mapping Between Chip and Flash or PSRAM" (pag. 31).
 | 48  | GPIO 42 / MTMS | MPD output (via U16) — ex-JTAG |
 | 49  | GPIO 43 / U0TXD | UART0 TX — debug seriale |
 | 50  | GPIO 44 / U0RXD | UART0 RX — debug seriale |
-| 51  | GPIO 45 | A14 (via U3) — strapping VDD\_SPI; pull-down → LOW al boot (FN8 safe) |
-| 52  | GPIO 46 | A15 (via U3) — strapping ROM msgs; pull-down → LOW al boot |
+| 51  | GPIO 45 | A14 (via U3) — strapping VDD\_SPI; U3 spento durante il reset → LOW (3,3 V) |
+| 52  | GPIO 46 | A15 (via U3) — strapping ROM msgs / download; U3 spento durante il reset → LOW |
 | 53  | XTAL\_N | Quarzo principale 40 MHz — dedicated analog |
 | 54  | XTAL\_P | Quarzo principale 40 MHz — dedicated analog |
 | 55  | VDDA1   | Alimentazione analogica — non GPIO |

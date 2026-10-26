@@ -153,10 +153,12 @@ vecchi: da correggere con il resto della documentazione a fine ottimizzazione.
 
 ## 4. Prossimi passi
 
-**Piano per il 2026-10-26:** Gianluca monta il gating di `~OE` di U19 seguendo
-`VERA-ATARI-HW-REQUIREMENTS.md` §2.1 (un 74LVC20, U23 pin 4 staccato da U19 pin 22,
-pull-up 10 kΩ su `~mVCS0`/`~mEXSEL`/`~mMPD`), più §2.7 (VCCB pin 23 dei 74LVC4245) e §2.8
-(ingressi liberi di U23). ~~Dopo il montaggio: tenere abilitate le uscite dati in φ1~~ — **rivisto il
+**Correzione (2026-10-26):** nessuna scheda è stata costruita. Le modifiche hardware vanno
+nello schema, nella netlist e nel PCB del primo lotto di produzione (vedi §8), non su una
+scheda esistente. Piano originale: gating di `~OE` di U19 seguendo
+`VERA-ATARI-HW-REQUIREMENTS.md` §2.1 (un 74LVC20, poi diventato due SN74LVC00A),
+U23 pin 4 staccato da U19 pin 22, pull-up 10 kΩ su `~mVCS0`/`~mEXSEL`/`~mMPD`, più §2.7
+(VCCB pin 23 dei 74LVC4245) e §2.8 (ingressi liberi di U23). ~~Dopo il montaggio: tenere abilitate le uscite dati in φ1~~ — **rivisto il
 2026-10-26**: con le uscite sempre abilitate, nei cicli di scrittura l'ESP32 deve spegnerle
 prima che U19 piloti il lato scheda, e questo vincolo si rompe a ~13–14 cicli APB: nel caso
 peggiore non migliora il limite attuale (solo il caso tipico). Il gating resta indispensabile
@@ -164,7 +166,7 @@ per eliminare la contesa. Dettagli nella tesi, cap. 8.
 
 1. Misurare la latenza APB di `GPIO.in` su una qualsiasi ESP32-S3 (programma nella tesi,
    §9.1, con `xthal_get_ccount()`); mettere il valore in `SCENARIOS` di `timing_model.py`.
-2. Aggiungere la resistenza di strapping su GPIO3.
+2. ~~Aggiungere la resistenza di strapping su GPIO3.~~ Fatto nello schema (`R71`, §8).
 3. Aggiornare la tesi con il firmware nuovo; ricompilare il PDF.
 4. Decidere se cancellare `include/pbi-driver.h` e `6502/inc/pbi-driver.h` (ROM vecchia,
    non più usate).
@@ -173,9 +175,8 @@ per eliminare la contesa. Dettagli nella tesi, cap. 8.
    `BUS_ADDR_SETTLE_NS` / `BUS_WR_SAMPLE_NS` con `-D`.
 7. Hardware ancora aperto (`VERA-ATARI-HW-REQUIREMENTS.md` §2.1–2.3): gating di
    `~OE` di U19, hold della scrittura verso la VERA (margine −32…−2 ns), IRQ open-drain.
-8. Rischio strapping GPIO45 (A14 → VDD_SPI): se A14 è alto al power-on la flash va a
-   1,8 V. Il commento in `main.cpp` presume il bus indirizzi in alta impedenza durante
-   il reset del 6502: da verificare (eventualmente eFuse `VDD_SPI_FORCE`).
+8. ~~Rischio strapping GPIO45/46~~ risolto nello schema e nel firmware (§8): `~OE` di U3/U4
+   pilotato da GPIO 47 con pull-up, niente eFuse.
 9. Se la latenza APB risulta alta: spostare ROM/RAM/RAMbo nella FPGA di interfaccia
    (`firmware/FPGA/C6502_Interface.vhd`).
 
@@ -223,10 +224,10 @@ all'altro: questa sezione ne riporta il contenuto.
   le misure con l'oscilloscopio. Tenere le uscite dati sempre abilitate dopo il gating
   **non** estende il limite nel caso peggiore (vincolo di spegnimento nei cicli di
   scrittura a ~13–14 cicli): non riproporlo come guadagno.
-- **Hardware in corso.** Montaggio del gating di `~OE` di U19 (74LVC20 + tre pull-up da
-  10 kΩ, requisiti §2.1), VCCB pin 23 dei cinque 74LVC4245 (§2.7), ingressi liberi di U23
-  (§2.8), resistenza di strapping su GPIO3. La RAMbo 320K è sempre attiva: non esiste un pin
-  RAMBO_EN.
+- **Hardware: nessuna scheda costruita.** Tutte le correzioni vanno nel progetto KiCad
+  (schema → netlist → "Update PCB from netlist") per il primo lotto di produzione, non come
+  modifiche a mano. Stato al 2026-10-26 in §8. La RAMbo 320K è sempre attiva: non esiste un
+  pin RAMBO_EN.
 - **Metodo di lavoro tra i due PC.** Alla fine di ogni blocco di lavoro aggiornare questo
   file (stato, file non committati, prossimi passi, correzioni ad affermazioni precedenti)
   prima del commit. Commit e push solo su richiesta, direttamente su `master`.
@@ -235,3 +236,59 @@ all'altro: questa sezione ne riporta il contenuto.
   07/05/15): §2.2 clock (NTSC 1,789773 / PAL 1,773447 MHz), §3.4–3.5 banking di PORTB e
   schema "320K Rambo" (bit 2, 3, 5, 6 per il banco, bit 4 per CPU+ANTIC), cap. 10 PBI
   (`$D1FF`, MPD, EXTSEL). Per leggerlo: `pdftotext -layout`.
+
+---
+
+## 8. Sessione 2026-10-26 (pomeriggio): schema, netlist e strapping
+
+Nessuna scheda è stata costruita: tutto è nello schema (`.sch`) e nella netlist
+(`VERA-MODULE-RBL.net`); il PCB va aggiornato con "Update PCB from netlist". Niente commit.
+
+- **Gating di `~OE` di U19** (requisiti §2.1) con **due SN74LVC00A** (TSSOP-14, LCSC C7803)
+  invece del 74LVC20, introvabile: `U24` (n1 = NAND(mR~W, ~mVCS0), n2 = NAND(~mEXSEL, ~mMPD),
+  a1/a2 = NAND usate come invertitori) e `U25` (B = NAND(a1, a2), `~OE` = NAND(mPHI2, B) →
+  U19 pin 22), porte libere a GND, 100 nF `C67`/`C68`. Pull-up `R36`/`R53`/`R65`. Quattro
+  livelli di NAND: con LVC il margine non cambia (ESP32 +27/+2 ns, VERA +136/+128 ns NTSC a
+  12/14 cicli APB); con 74HC00 a 3,3 V il ritardo sarebbe stato al limite (~37–39 ns/porta).
+  KiCad aveva chiamato i chip U1 e U20 (U20 esiste in `addressdecoder.sch`, fuori gerarchia):
+  rinominati U24/U25.
+- **U23**: unità 2 (pin 3→4) non più usata; ingressi 3, 5, 9, 11, 13 a GND.
+- **VCCB** (pin 23) dei cinque 74LVC4245 collegato al pin 24 (3V3) (§2.7).
+- **Canali di riserva**: ingressi `U6` pin 10 e `U16` pin 14, 15, 19, 20, 21 a GND, ciascuno con una propria
+  0 Ω (`R74`, `R72`, `R75`, `R73`, `R76`, `R77`; scelta dell'utente per il DRC e per poter riusare i canali).
+  Masse di `U6` (pin 11–13) dirette a GND.
+- **Strapping ESP32** (requisiti §2.9):
+  - GPIO 3: pull-up `R71` 10 kΩ (C84376);
+  - `C25` (CHIP_PU) 100 nF → 1 µF (C2798196): 4,7 ms contro 0,47 ms di BOOT0;
+  - GPIO 45/46 (A14/A15): `~OE` di U3 e U4 = rete `~ABUS_OE`, pilotata da **GPIO 47**
+    (`PIN_ABUS_OE_N`), pull-up `R7`/`R34` (erano 0 Ω a GND, ora 10 kΩ → 3V3). Durante il
+    reset dell'ESP32 i traslatori sono spenti e i pull-down interni danno LOW: VDD_SPI 3,3 V
+    e download boot valido anche con l'Atari acceso. Firmware: `setup()` porta GPIO 47 basso
+    dopo la configurazione degli ingressi; compilati entrambi gli ambienti. Resta libero solo
+    GPIO 48.
+- **Documentazione aggiornata**: `PIN-MAPPING.md`, `VERA-ATARI-HW-REQUIREMENTS.md` (§2.7, §2.8,
+  nuova §2.9), `firmware/MCU/README.md`, `firmware/MCU/Vera_Module_Analisys.ITA.tex` + PDF,
+  tesi (nuova sezione 3.4, tabella dei pin) + PDF.
+- **Allineamento del gating (stesso giorno)**: requisiti §2.1 (piedinatura di U24/U25), `PIN-MAPPING.md`
+  (nota su `~OE` di U19, ruolo di U23, lati A/B dei 74LVC4245 che erano invertiti: VCCA = 5 V Atari,
+  VCCB = 3,3 V), tesi (sezione 3.2 e figura 3.2 ridisegnate, tabella dei ritardi, conclusioni),
+  `timing_model.py` (4 porte LVC00 dai controlli, 1 da φ2), documento di analisi. Effetto sul modello:
+  dato ESP32 invariato; letture VERA −5 ns; opzione "uscite sempre abilitate" 13,4 → 13,1 cicli.
+- **Verifica dello schema**: script che ricava la connettività dai `.sch` (KiCad 5, librerie dalla
+  cache) e la confronta con la netlist: 239 reti, nessuna differenza. `kicad-cli` (KiCad 8+) non
+  legge i simboli del formato KiCad 5.
+- **U16 (requisiti §2.10), corretto nello schema**: pilotava `~HALT`, `RD4`, `RD5` sul bus Atari da ingressi
+  collegati solo a test point. Ora uscite 3, 4, 5 non collegate, ingressi 19, 20, 21 a GND; i test point
+  (`~HALT1`, `RD5`, `RD4`) sono sulle reti lato Atari. Netlist aggiornata e confrontata con lo schema
+  (0 differenze).
+- **5 V senza diodo (requisiti §2.11), regola d'uso**: niente diodo; programmazione, USB e jack solo con la
+  scheda scollegata dall'Atari (anche per il monitor seriale, salvo adattatore senza VBUS). Scritto in
+  requisiti, `PIN-MAPPING.md` §4, `firmware/MCU/README.md`, `README.md`.
+- **IRQ (requisiti §2.3), corretto nello schema**: il diodo `D1` (BAT43W) era al contrario (catodo su `~IRQ`).
+  Sostituito da `U26` SN74LVC1G07DBVR (LCSC C7829, confermato dall'utente: >50k in stock il 2026-10-26)
+  con `C69` 100 nF. Simbolo aggiunto alla RetroBitLab-Library (non committato) e alla cache del progetto.
+  Netlist aggiornata e confrontata con lo schema (0 differenze).
+- **Aperti**: il 5 V della scheda arriva su CART1.13/ECI1.7 senza diodo (la scheda alimentata
+  da USB/jack alimenta l'Atari spento?); `PIN-MAPPING.md` dice RD4/RD5/HALT su test point, ma
+  nella netlist i canali di riserva di U16 non sono collegati; glitch di uscita all'accensione
+  su GPIO 1, 2, 4–11 contro U6/U19 (U6 resta sempre abilitato).

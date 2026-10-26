@@ -258,6 +258,12 @@ Commander X16 computer but has been adapted for ATARI systems. It provides:
 - **SPI Flash**: On-board 16Mbit storage
 - **USB Port (J4)**: Programming and data transfer
 
+> ⚠ **Program the board only when it is unplugged from the Atari.** The board 5 V rail is tied to the
+> Atari +5 V (cartridge pin 13, ECI pin 7) without a diode: with the USB cable (J4) or the DC jack (J5)
+> connected while the board is in the Atari, the board would power a switched-off Atari or run in
+> parallel with its supply. The same applies to the serial monitor: inside the Atari use a USB adapter
+> without VBUS. See `VERA-ATARI-HW-REQUIREMENTS.md` §2.11.
+
 ### Programming Interfaces
 
 #### ICEPROG Connector (J6)

@@ -161,7 +161,7 @@ di interfaccia faceva contesa sul bus dati in quasi ogni lettura e che il firmwa
 difetti di collocazione in memoria tali da bloccarlo all'avvio.
 
 La tesi presenta le soluzioni adottate: un circuito di abilitazione del traslatore del bus
-dati realizzato con una sola porta 74LVC20, un ciclo principale che decodifica l'indirizzo
+dati realizzato con due SN74LVC00A, un ciclo principale che decodifica l'indirizzo
 durante la fase $\phi_1$ con il percorso critico scritto in assembly, il ciclo eseguito su
 un core dedicato senza interruzioni e la correzione della collocazione in memoria. Secondo
 il modello il nuovo progetto rispetta il setup del 6502 nel caso peggiore finché la latenza
@@ -431,7 +431,7 @@ i due lati: VCCA a $5\,\mathrm{V}$ sul pin 1, VCCB a $3{,}3\,\mathrm{V}$ sui pin
     \node[blk, below=0.35cm of u19] (u16) {U16\\ 74LVC4245};
     \node[blk, right=1.6cm of u34, minimum height=3.4cm, minimum width=2.6cm, yshift=-0.6cm] (esp) {ESP32-S3FN8\\ 240\,MHz\\ \\ Core 1: bus\\ Core 0: log};
     \node[blk, right=1.9cm of esp, minimum height=2.0cm] (vera) {VERA\\ iCE40UP5K\\ HDL 48.0.1};
-    \node[blk, right=0.35cm of u16, yshift=-0.95cm, minimum width=1.9cm, fill=cOk!15] (u24) {U24 74LVC20\\ {\tiny gating $\overline{\text{OE}}$}};
+    \node[blk, right=0.35cm of u16, yshift=-0.95cm, minimum width=1.9cm, fill=cOk!15] (u24) {U24, U25 74LVC00\\ {\tiny gating $\overline{\text{OE}}$}};
     \node[blk, below=0.5cm of u16] (u5) {U5 74HC00\\ {\tiny $\overline{\text{mRE}}$, $\overline{\text{mWE}}$}};
     \draw[bus] (atari.east |- u6) -- node[above, font=\tiny] {$\phi_2$, $R/\overline{W}$} (u6.west);
     \draw[bus] (atari.east |- u34) -- node[above, font=\tiny] {A0--A15} (u34.west);
@@ -451,19 +451,24 @@ i due lati: VCCA a $5\,\mathrm{V}$ sul pin 1, VCCB a $3{,}3\,\mathrm{V}$ sui pin
   \caption[Schema a blocchi del modulo]{Schema a blocchi del modulo Vera-Module-RBL-XE
   con il circuito di abilitazione di U19 (in verde), che riceve dall'ESP32 i tre segnali di
   controllo e da U6 $\phi_2$ e $R/\overline{W}$. Riferimenti dei componenti dalla
-  netlist del 2026-10-23.}
+  netlist del 2026-10-26.}
   \label{fig:blocchi}
 \end{figure}
 
 \begin{description}
   \item[U6] traslatore Atari$\to$scheda per $\phi_2$, $R/\overline{W}$, \sig{D1XX},
         \sig{S4}, \sig{S5}, \sig{CCTL}, \sig{REFRESH};
-  \item[U3, U4] traslatori del bus indirizzi (A8--A15 e A0--A7);
+  \item[U3, U4] traslatori del bus indirizzi (A8--A15 e A0--A7), con $\overline{\text{OE}}$
+        pilotato da GPIO 47 (sezione~\ref{sec:strapping});
   \item[U19] traslatore bidirezionale del bus dati: \sig{DIR} è $\overline{R/W}$ (da U23,
-        74HCT04), $\overline{\text{OE}}$ viene dal circuito di abilitazione U24
+        74HCT04), $\overline{\text{OE}}$ viene dal circuito di abilitazione U24, U25
         (sezione~\ref{sec:gating});
-  \item[U16] traslatore scheda$\to$Atari per \sig{EXTSEL}, \sig{MPD}, \sig{RESET},
-        \sig{HALT}, \sig{RD4}, \sig{RD5}, \sig{IRQ};
+  \item[U16] traslatore scheda$\to$Atari per \sig{EXTSEL}, \sig{MPD} e \sig{RESET}; i canali
+        di riserva hanno gli ingressi a massa e le uscite scollegate (\sig{HALT}, \sig{RD4} e
+        \sig{RD5} hanno solo un test point sul lato Atari);
+  \item[U26] buffer open-drain SN74LVC1G07: l'uscita IRQ della VERA è push-pull e non può
+        pilotare direttamente la linea IRQ dell'Atari, che è open-collector e condivisa con
+        POKEY e PIA~\cite[§2.3]{hwreq};
   \item[U5] porte NAND che generano gli strobe della VERA:
         $\overline{\text{mRE}} = \overline{\phi_2 \cdot R/W}$,
         $\overline{\text{mWE}} = \overline{\phi_2 \cdot \overline{R/W}}$;
@@ -489,38 +494,61 @@ asserito almeno uno fra \sig{DEV\_SEL\_N}, \sig{EXTSEL\_N} e \sig{MPD}:
   \overline{\text{OE}} &= \overline{\phi_2 \cdot \big(\overline{R/W} + \overline{\text{DEV\_SEL\_N}} + \overline{\text{EXTSEL\_N}} + \overline{\text{MPD}}\big)} \nonumber\\
   &= \text{NAND}\big(\phi_2,\ \text{NAND}_4(R/W,\ \text{DEV\_SEL\_N},\ \text{EXTSEL\_N},\ \text{MPD})\big).
 \end{align}
-La seconda forma si realizza con un solo 74LVC20 (due NAND a quattro ingressi), la seconda
-porta usata come NAND a due ingressi con gli ingressi liberi a $3{,}3\,\mathrm{V}$
-(figura~\ref{fig:gating}, tabella~\ref{tab:gating}). I segnali sono presi dal lato a
+La NAND a quattro ingressi si scompone in NAND a due ingressi:
+\begin{align}
+  n_1 &= \text{NAND}(R/W,\ \text{DEV\_SEL\_N}), & n_2 &= \text{NAND}(\text{EXTSEL\_N},\ \text{MPD}), \nonumber\\
+  a_1 &= \text{NAND}(n_1, n_1), & a_2 &= \text{NAND}(n_2, n_2), \nonumber\\
+  B &= \text{NAND}(a_1, a_2), & \overline{\text{OE}} &= \text{NAND}(\phi_2, B).
+\end{align}
+Servono sei porte, cioè due SN74LVC00A (quattro NAND a due ingressi ciascuno, U24 e U25):
+il 74LVC20, che avrebbe realizzato la stessa funzione con due porte, non si trova
+facilmente. Le due porte libere di U25 hanno gli ingressi a massa (figura~\ref{fig:gating},
+tabella~\ref{tab:gating}). Dai segnali di controllo a $\overline{\text{OE}}$ ci sono quattro
+livelli di logica invece di due, ma con la famiglia LVC ($\le 4{,}5\ns$ per porta) il
+circuito resta fuori dal percorso critico (sezione~\ref{sec:lettura-esp}); con una porta 74HC
+alimentata a $3{,}3\,\mathrm{V}$ (fino a circa $40\ns$ per porta) non sarebbe più così. Da
+$\phi_2$ a $\overline{\text{OE}}$ c'è una sola porta. I segnali sono presi dal lato a
 $3{,}3\,\mathrm{V}$, dove esiste \sig{DEV\_SEL\_N}; il pin $\overline{\text{OE}}$ di U19 è
 riferito a VCCA con soglia TTL ($V_{IH} \ge 2{,}0\,\mathrm{V}$) e l'uscita LVC lo pilota
-direttamente. L'uscita di U23 che prima pilotava $\overline{\text{OE}}$ resta scollegata.
+direttamente. L'invertitore di U23 che prima pilotava $\overline{\text{OE}}$ non è più usato.
 
 \begin{figure}[htbp]
   \centering
   \begin{tikzpicture}[circuit logic US, every circuit symbol/.style={thick},
+                      every nand gate/.style={logic gate input sep=0.3cm},
                       lab/.style={font=\scriptsize, anchor=east}]
-    \node[nand gate, inputs=nnnn, logic gate input sep=0.32cm, minimum height=1.5cm] (g1) at (0,0) {};
-    \node[nand gate, inputs=nn, logic gate input sep=0.4cm] (g2) at (3.2,-1.2) {};
-    \node[font=\tiny, above] at (g1.north) {U24A (pin 1, 2, 4, 5 $\to$ 6)};
-    \node[font=\tiny, below] at (g2.south) {U24B (pin 9, 10 $\to$ 8; 12, 13 a 3V3)};
-    \draw (g1.input 1) -- ++(-1.6,0) node[lab] {mR/$\overline{\text{W}}$ \ (U6.18)};
-    \draw (g1.input 2) -- ++(-1.6,0) node[lab] {\sig{$\overline{\text{mVCS0}}$} = DEV\_SEL\_N \ (U7.45)};
-    \draw (g1.input 3) -- ++(-1.6,0) node[lab] {\sig{$\overline{\text{mEXSEL}}$} \ (U7.47)};
-    \draw (g1.input 4) -- ++(-1.6,0) node[lab] {\sig{$\overline{\text{mMPD}}$} \ (U7.48)};
-    \draw (g1.output) -- node[above, font=\scriptsize] {B} ++(0.6,0) |- (g2.input 2);
-    \draw (g2.input 1) -- ++(-0.6,0) |- ++(-4.2,0.0) coordinate (phi) node[lab] {mPHI2 \ (U6.17)};
-    \draw[-{Latex[length=2mm]}] (g2.output) -- ++(1.4,0) node[right, font=\scriptsize, align=left] {U19 pin 22\\ $\overline{\text{OE}}$};
-    % pull-up
-    \foreach \i/\y in {2/0.16, 3/-0.16, 4/-0.48} {
-      \fill ($(g1.input \i)+(-0.9,0)$) circle (1.2pt);
+    \node[nand gate, inputs=nn] (n1) at (0,1.2) {};
+    \node[nand gate, inputs=nn] (n2) at (0,-1.2) {};
+    \node[nand gate, inputs=nn] (a1) at (2.6,1.2) {};
+    \node[nand gate, inputs=nn] (a2) at (2.6,-1.2) {};
+    \node[nand gate, inputs=nn] (b)  at (5.2,0) {};
+    \node[nand gate, inputs=nn] (oe) at (7.6,-0.5) {};
+    \foreach \g/\l in {n1/{U24: 1, 2 $\to$ 3}, a1/{U24: 9, 10 $\to$ 8}, b/{U25: 1, 2 $\to$ 3}}
+      \node[font=\tiny, above=1pt] at (\g.north) {\l};
+    \foreach \g/\l in {n2/{U24: 4, 5 $\to$ 6}, a2/{U24: 12, 13 $\to$ 11}, oe/{U25: 4, 5 $\to$ 6}}
+      \node[font=\tiny, below=1pt] at (\g.south) {\l};
+    \draw (n1.input 1) -- ++(-0.6,0) node[lab] {mR/$\overline{\text{W}}$ (U6.18)};
+    \draw (n1.input 2) -- ++(-0.6,0) node[lab] {\sig{$\overline{\text{mVCS0}}$} (U7.45)};
+    \draw (n2.input 1) -- ++(-0.6,0) node[lab] {\sig{$\overline{\text{mEXSEL}}$} (U7.47)};
+    \draw (n2.input 2) -- ++(-0.6,0) node[lab] {\sig{$\overline{\text{mMPD}}$} (U7.48)};
+    \draw (n1.output) -- node[above, font=\scriptsize] {$n_1$} ++(0.6,0) coordinate (jn1);
+    \draw (n2.output) -- node[below, font=\scriptsize] {$n_2$} ++(0.6,0) coordinate (jn2);
+    \foreach \g/\h in {n1/a1, n2/a2} {
+      \fill (j\g) circle (1.2pt);
+      \draw (j\g) |- (\h.input 1);
+      \draw (j\g) |- (\h.input 2);
     }
-    \draw[densely dotted] ($(g1.input 2)+(-0.9,0)$) -- ++(0,0.9) node[above, font=\tiny, align=center] {10\,k$\Omega$ verso 3V3\\ (una per segnale)};
+    \draw (a1.output) -- node[above, font=\scriptsize] {$a_1$} ++(0.6,0) |- (b.input 1);
+    \draw (a2.output) -- node[below, font=\scriptsize] {$a_2$} ++(0.6,0) |- (b.input 2);
+    \draw (b.output) -- node[above, font=\scriptsize] {$B$} ++(0.6,0) |- (oe.input 1);
+    \draw (oe.input 2) -- ++(-0.45,0) |- (-0.6,-2.4) node[lab] {mPHI2 (U6.17)};
+    \draw[-{Latex[length=2mm]}] (oe.output) -- ++(0.8,0) node[right, font=\scriptsize, align=left] {U19 pin 22\\ $\overline{\text{OE}}$};
   \end{tikzpicture}
-  \caption[Circuito di abilitazione di U19]{Circuito di abilitazione di U19 con un
-  74LVC20 (U24). I tre segnali di controllo hanno ciascuno una resistenza di pull-up da
-  10\,k$\Omega$ verso 3V3, perché durante il reset dell'ESP32 i pin che li pilotano non
-  hanno un livello garantito.}
+  \caption[Circuito di abilitazione di U19]{Circuito di abilitazione di U19 con due
+  SN74LVC00A (U24, U25). Le porte libere di U25 (pin 9, 10, 12, 13) hanno gli ingressi a
+  massa. I tre segnali di controllo hanno ciascuno una resistenza di pull-up da
+  10\,k$\Omega$ verso 3V3 (R36, R53, R65), perché durante il reset dell'ESP32 i pin che li
+  pilotano non hanno un livello garantito.}
   \label{fig:gating}
 \end{figure}
 
@@ -548,11 +576,10 @@ comuni, e le interruzioni della VERA sono gestite via software~\cite[§2.4]{hwre
 
 \section{Assegnazione dei pin dell'ESP32-S3}
 
-La tabella~\ref{tab:pin} riporta l'assegnazione~\cite{pinmap}. Restano liberi solo GPIO 47 e
-48, troppo pochi per usare i segnali di decodifica hardware del connettore: la decodifica
-dell'indirizzo è interamente software. GPIO 3 non è usato dal firmware; essendo un pin di
-strapping senza resistenze interne, sulla scheda ha una resistenza esterna che ne fissa il
-livello all'avvio.
+La tabella~\ref{tab:pin} riporta l'assegnazione~\cite{pinmap}. Resta libero solo GPIO 48,
+troppo poco per usare i segnali di decodifica hardware del connettore: la decodifica
+dell'indirizzo è interamente software. GPIO 47 abilita i traslatori del bus indirizzi
+(sezione~\ref{sec:strapping}); GPIO 3 non è usato dal firmware.
 
 \begin{table}[htbp]
   \centering
@@ -575,6 +602,7 @@ livello all'avvio.
     \sig{EXTSEL\_N}         & 41         & Dedicated GPIO usc.\ 1  & verso il bus via U16 \\
     \sig{MPD}               & 42         & Dedicated GPIO usc.\ 2  & verso il bus via U16 \\
     UART0 TX, RX            & 43, 44     &                        & log di debug \\
+    \sig{ABUS\_OE\_N}       & 47         & uscita                 & $\overline{\text{OE}}$ di U3, U4 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -587,6 +615,32 @@ matrice GPIO collega gli stessi pin anche ai registri ordinari, quindi l'assegna
 richiede modifiche alla scheda. A0--A9 e i dati restano in \code{GPIO.in}, un registro
 del bus delle periferiche: è l'unico accesso di questo tipo necessario per campionare
 l'indirizzo.
+
+\section{Avvio dell'ESP32: pin di strapping}
+\label{sec:strapping}
+
+L'ESP32-S3 campiona quattro pin di strapping a ogni reset del chip (accensione, pin
+\sig{CHIP\_PU}, programmatore): i livelli devono essere validi alla salita di \sig{CHIP\_PU}
+e per $3\,\mathrm{ms}$ dopo~\cite{esp32s3ds}.
+\begin{description}
+  \item[GPIO 0] seleziona il boot dalla flash (alto) o il download (basso). Ha una pull-up
+        da $4{,}7\,\mathrm{k\Omega}$ e $100\,\mathrm{nF}$; \sig{CHIP\_PU} ha
+        $4{,}7\,\mathrm{k\Omega}$ e $1\,\mu\mathrm{F}$, quindi GPIO 0 è già alto quando il
+        reset viene rilasciato.
+  \item[GPIO 3] sceglie la sorgente del JTAG. Non ha resistenze interne e non può restare
+        flottante: una pull-up da $10\,\mathrm{k\Omega}$ lo fissa alto.
+  \item[GPIO 45, 46] sono A14 e A15. GPIO 45 alto alimenterebbe la flash interna a
+        $1{,}8\,\mathrm{V}$ e il chip non si avvierebbe; GPIO 46 alto con GPIO 0 basso è una
+        combinazione non valida e la programmazione fallirebbe.
+\end{description}
+Il 6502 pilota il bus indirizzi anche durante il reset, quindi il livello di A14 e A15 non
+può dipendere dall'Atari. Il pin $\overline{\text{OE}}$ dei traslatori U3 (A8--A15) e U4
+(A0--A7) è collegato a GPIO 47, con una pull-up da $10\,\mathrm{k\Omega}$ per chip: durante il
+reset dell'ESP32 GPIO 47 è in alta impedenza, i traslatori sono spenti e i pull-down interni
+($45\,\mathrm{k\Omega}$) portano GPIO 45 e 46 a livello basso. Il firmware abilita i
+traslatori all'inizio di \code{setup()}, molto dopo i $3\,\mathrm{ms}$, e solo dopo avvia il
+ciclo principale. Spegnere anche U4 evita la contesa con i glitch di uscita che GPIO 12--19
+hanno all'accensione.
 
 \section{Ritardi della logica di interfaccia}
 
@@ -605,7 +659,7 @@ tabella sono interpolati; il valore per la FPGA è una stima del percorso pad--l
     74LVC4245A~\cite{lvc4245} & propagazione $5\leftrightarrow3{,}3\,\mathrm{V}$ & 1{,}0 & 4{,}0 & 6{,}5 \\
     74LVC4245A               & abilitazione uscita                             & 1{,}0 & 5{,}0 & 9{,}0 \\
     74LVC4245A               & disabilitazione uscita                          & 1{,}0 & 4{,}0 & 8{,}0 \\
-    74LVC20~\cite{lvc20}     & propagazione a $3{,}3\,\mathrm{V}$, per porta    & 1{,}0 & 2{,}5 & 4{,}5 \\
+    SN74LVC00A~\cite{lvc00}  & propagazione a $3{,}3\,\mathrm{V}$, per porta    & 1{,}0 & 2{,}5 & 4{,}5 \\
     74HCT04~\cite{hct04}     & propagazione a $5\,\mathrm{V}$                  & 4     & 10    & 24 \\
     74HC00~\cite{hc00}       & propagazione a $3{,}3\,\mathrm{V}$ (interp.)    & 5     & 12    & 30 \\
     iCE40UP5K~\cite{ice40}   & pad $\to$ logica $\to$ pad (stima)              & 6     & 10    & 15 \\
@@ -1006,8 +1060,8 @@ abilitato. Il primo percorso è
 \begin{equation}
   t_{\text{pin}} = t_{\text{camp}} + \big(\NewDec + L_{APB}\big)\,t_c + t_{\text{pad}} + \big(\NewDrive + 2\,L_{APB}\big)\,t_c,
 \end{equation}
-il secondo è l'asserzione del segnale di controllo più due porte del 74LVC20 e il tempo di
-abilitazione del 4245. Il secondo è sempre più breve del primo di almeno $60\ns$: il circuito
+il secondo è l'asserzione del segnale di controllo più quattro porte NAND (U24, U25) e il
+tempo di abilitazione del 4245. Il secondo è sempre più breve del primo di almeno $80\ns$: il circuito
 di abilitazione non è sul percorso critico. La figura~\ref{fig:lettura-new} mostra il ciclo
 nel caso peggiore con latenza nominale, la tabella~\ref{tab:lettura} tutti gli scenari.
 
@@ -1165,7 +1219,7 @@ Il problema non dipende dal firmware ed è una delle questioni aperte
     \busx{-2}{12}{50}
     \node[lbl] at (-22,-3) {U19 $\overline{\text{OE}}$};
     \draw[sig] (-20,-3.25) -- (8-0.5,-3.25) -- (8+0.5,-2.75) -- (50,-2.75);
-    \draw[dim] (0,-3.6) -- node[below, font=\tiny] {U6 + 74LVC20} (8,-3.6);
+    \draw[dim] (0,-3.6) -- node[below, font=\tiny] {U6 + U25} (8,-3.6);
     \draw[cBad, line width=0.6pt] (12,-1.5) -- (12,-2.3);
     \draw[cBad, line width=0.6pt] (16,-1.3) -- (16,-1.5);
     \node[cBad, font=\tiny, anchor=north west] at (16.5,-2.25) {tip.: dato finito a 12\,ns, $\overline{\text{mWE}}\uparrow$ a 16\,ns};
@@ -1355,7 +1409,7 @@ ottimistica, la tabella~\ref{tab:confronto} il confronto con il firmware attuale
     \sig{EXTSEL}/\sig{MPD} asseriti 150--300\,ns dopo la salita di $\phi_2$ &
       asseriti intorno alla salita (sezione~\ref{sec:extsel}) \\
     U19 abilitato in ogni ciclo: contesa sul bus dati in ogni lettura interna &
-      circuito di abilitazione con un 74LVC20 (sezione~\ref{sec:gating}) \\
+      circuito di abilitazione con due SN74LVC00A (sezione~\ref{sec:gating}) \\
     Tick di FreeRTOS sul core del bus: 3--9 cicli persi ogni millisecondo &
       ciclo sul core 1 a interruzioni mascherate, log sul core 0 \\
     \code{bus\_idx\_to\_page()} non espansa, eseguita da flash a ogni scrittura in
@@ -1422,18 +1476,6 @@ sostituire il 74HC00 che genera $\overline{\text{mWE}}$ con un 74LVC00, più vel
 $3{,}3\,\mathrm{V}$, e ritardare la disabilitazione di U19 rispetto alla salita di
 $\overline{\text{mWE}}$, per esempio con un elemento di ritardo sul percorso di
 $\overline{\text{OE}}$ nei soli cicli di scrittura~\cite[§2.2]{hwreq}.
-
-\section{Interruzioni della VERA}
-
-L'uscita IRQ della VERA è push-pull e non può pilotare direttamente la linea IRQ condivisa
-dell'Atari, che è open-collector: serve uno stadio open-drain (74LVC1G07)~\cite[§2.3]{hwreq}.
-
-\section{Strapping dell'ESP32}
-
-A14 e A15 sono collegati a GPIO 45 e 46, due pin di strapping. Con GPIO 45 alto al
-power-on la flash interna verrebbe alimentata a $1{,}8\,\mathrm{V}$ e il chip non si
-avvierebbe. Il livello di A14 al momento del campionamento va verificato; in alternativa si
-può fissare la tensione con gli eFuse \code{VDD\_SPI\_FORCE} e \code{VDD\_SPI\_TIEH}.
 
 \section{Architettura alternativa: logica di bus in FPGA}
 \label{sec:fpga}
@@ -1527,7 +1569,7 @@ firmware conteneva difetti di collocazione in memoria che lo avrebbero bloccato.
 Il progetto attuale sposta la decodifica nella fase $\phi_1$, quando l'indirizzo è già
 stabile, riduce il campionamento a un solo accesso alle periferiche grazie ai canali
 Dedicated GPIO, scrive il percorso critico in assembly e lo esegue su un core dedicato
-senza interruzioni; il circuito di abilitazione di U19, realizzato con un solo 74LVC20,
+senza interruzioni; il circuito di abilitazione di U19, realizzato con due SN74LVC00A,
 elimina la contesa sul bus dati. Secondo il modello il dato rispetta il setup del processore
 nel caso peggiore fino a una latenza APB di circa $\LimNewNTSC$ cicli in NTSC e $\LimNewPAL$
 in PAL, il campionamento delle scritture è corretto in tutti gli scenari e i segnali
@@ -1555,7 +1597,7 @@ margine ampio, lasciando all'ESP32 i compiti non critici.
   \enquote{Dedicated GPIO} e \enquote{Memory Types}; \code{soc/esp32s3/include/soc/soc.h}.
 \bibitem{lvc4245} NXP Semiconductors, \emph{74LVC4245A -- Octal dual supply translating
   transceiver; 3-state}, data sheet.
-\bibitem{lvc20} Nexperia, \emph{74LVC20A -- Dual 4-input NAND gate}, data sheet.
+\bibitem{lvc00} Texas Instruments, \emph{SN74LVC00A Quadruple 2-Input Positive-NAND Gates}, data sheet.
 \bibitem{hct04} Texas Instruments, \emph{SN74HCT04 Hex Inverters}, data sheet.
 \bibitem{hc00} Texas Instruments, \emph{SN74HC00 Quadruple 2-Input Positive-NAND Gates},
   data sheet.
