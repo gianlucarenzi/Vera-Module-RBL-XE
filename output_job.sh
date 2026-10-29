@@ -7,29 +7,42 @@ LOCAL_UTILS_DIR="$(pwd)/utilities"
 EEPLOT_SRC_DIR="eeplot-src" # Relative path for source
 EEPLOT_EXEC="${LOCAL_UTILS_DIR}/bin/eeplot"
 EESHOW_EXEC="${LOCAL_UTILS_DIR}/bin/eeshow" # Assuming eeshow is also built
-EEPLOT_PATCH="$(pwd)/patches/eeplot-page-size.patch"
+EEPLOT_PATCHES=("$(pwd)"/patches/eeplot-*.patch)
+# Patches the installed eeplot was built with (see eeplot_patches_id)
+EEPLOT_STAMP="${LOCAL_UTILS_DIR}/bin/.eeplot-patches"
 
-# Applies our local fix (each schematic sheet keeps its own PDF page size
-# and is drawn flush with its own origin, instead of every page being
-# forced to the size of the largest sheet and left anchored top-left).
+# Applies our local fixes to the eeplot source:
+# - eeplot-page-size.patch: each schematic sheet keeps its own PDF page size
+#   and is drawn flush with its own origin, instead of every page being
+#   forced to the size of the largest sheet and left anchored top-left
+# - eeplot-kicad5-schematics.patch: symbols of a library given without a
+#   directory (e.g. the project -rescue.lib) are found, and embedded images
+#   ($Bitmap) are skipped instead of stopping the plot
 # Safe to call again: it detects an already-applied patch and skips it.
 apply_eeplot_patches() {
-    [ -f "${EEPLOT_PATCH}" ] || return 0
-    if (cd "${EEPLOT_SRC_DIR}" && git apply --check "${EEPLOT_PATCH}" 2>/dev/null); then
-        echo "Applying local patch: $(basename "${EEPLOT_PATCH}")"
-        (cd "${EEPLOT_SRC_DIR}" && git apply "${EEPLOT_PATCH}") || {
-            echo "ERROR: failed to apply ${EEPLOT_PATCH}."
+    local patch
+    for patch in "${EEPLOT_PATCHES[@]}"; do
+        [ -f "${patch}" ] || continue
+        if (cd "${EEPLOT_SRC_DIR}" && git apply --check "${patch}" 2>/dev/null); then
+            echo "Applying local patch: $(basename "${patch}")"
+            (cd "${EEPLOT_SRC_DIR}" && git apply "${patch}") || {
+                echo "ERROR: failed to apply ${patch}."
+                exit 1
+            }
+        elif (cd "${EEPLOT_SRC_DIR}" && git apply --check --reverse "${patch}" 2>/dev/null); then
+            echo "Local patch $(basename "${patch}") already applied, skipping."
+        else
+            echo "--------------------------------------------------------------------"
+            echo "ERROR: ${patch} does not apply cleanly to ${EEPLOT_SRC_DIR}."
+            echo "The upstream eeplot source may have changed; the patch needs a refresh."
+            echo "--------------------------------------------------------------------"
             exit 1
-        }
-    elif (cd "${EEPLOT_SRC_DIR}" && git apply --check --reverse "${EEPLOT_PATCH}" 2>/dev/null); then
-        echo "Local patch $(basename "${EEPLOT_PATCH}") already applied, skipping."
-    else
-        echo "--------------------------------------------------------------------"
-        echo "ERROR: ${EEPLOT_PATCH} does not apply cleanly to ${EEPLOT_SRC_DIR}."
-        echo "The upstream eeplot source may have changed; the patch needs a refresh."
-        echo "--------------------------------------------------------------------"
-        exit 1
-    fi
+        fi
+    done
+}
+
+eeplot_patches_id() {
+    cat "${EEPLOT_PATCHES[@]}" 2>/dev/null | md5sum | cut -d' ' -f1
 }
 
 # System packages needed to build eeplot (fig2dev converts the eeshow icons)
@@ -53,6 +66,13 @@ check_eeplot_deps() {
 # libgit2.so.1.5 after moving from Debian 12 to 13): drop it to rebuild it
 if [ -f "${EEPLOT_EXEC}" ] && ldd "${EEPLOT_EXEC}" | grep -q 'not found'; then
     echo "--- eeplot was built against other system libraries. Rebuilding. ---"
+    rm -f "${EEPLOT_EXEC}" "${EESHOW_EXEC}"
+fi
+
+# Rebuild it also when it was built with other local patches (e.g. a new
+# one was added to patches/)
+if [ -f "${EEPLOT_EXEC}" ] && [ "$(cat "${EEPLOT_STAMP}" 2>/dev/null)" != "$(eeplot_patches_id)" ]; then
+    echo "--- eeplot was built without the current local patches. Rebuilding. ---"
     rm -f "${EEPLOT_EXEC}" "${EESHOW_EXEC}"
 fi
 
@@ -85,6 +105,7 @@ elif [ -d "${EEPLOT_SRC_DIR}" ]; then
     if [ -f "${EEPLOT_SRC_DIR}/eeshow" ]; then
         cp "${EEPLOT_SRC_DIR}/eeshow" "${LOCAL_UTILS_DIR}/bin/" || { echo "ERROR: Copy 'eeshow' failed."; exit 1; }
     fi
+    eeplot_patches_id > "${EEPLOT_STAMP}"
     echo "--- eeplot update and rebuild complete. ---"
 else
     echo "--- eeplot not found locally. Starting one-time setup procedure ---"
@@ -124,6 +145,7 @@ else
     echo "[6/6] Cleaning up source files..."
     rm -rf "${EEPLOT_SRC_DIR}"
 
+    eeplot_patches_id > "${EEPLOT_STAMP}"
     echo "--- eeplot installation complete. ---"
 fi
 
@@ -144,7 +166,20 @@ if [ ! -d "${KICAD5_SYMBOLS}" ]; then
 	KICAD5_SYMBOLS=${HOME}/.cache/kicad5/library
 	if [ ! -d "${KICAD5_SYMBOLS}" ] && command -v kicad5 >/dev/null 2>&1; then
 		echo "Copying the KiCad 5 symbol libraries from the AppImage..."
-		kicad5 --python -c 'import os, shutil, sys; shutil.copytree(os.environ["KICAD_SYMBOL_DIR"], sys.argv[1])' "${KICAD5_SYMBOLS}"
+		kicad5 --python -c 'import os, shutil, sys; shutil.copytree(os.environ["KICAD_SYMBOL_DIR"], sys.argv[1] + ".partial"); os.rename(sys.argv[1] + ".partial", sys.argv[1])' "${KICAD5_SYMBOLS}"
+	fi
+fi
+
+# Official KiCad 5 3D models for kicad-cli: the libraries of KiCad 7+ have no
+# .wrl models, so the ${KISYS3DMOD}/...wrl of these boards would be missing
+# from the STEP/VRML. The system ones (e.g. Debian 11), otherwise a copy
+# taken once from the KiCad 5 AppImage (about 5 GB)
+KICAD5_3DMODELS=/usr/share/kicad/modules/packages3d
+if [ ! -d "${KICAD5_3DMODELS}" ]; then
+	KICAD5_3DMODELS=${HOME}/.cache/kicad5/packages3d
+	if [ ! -d "${KICAD5_3DMODELS}" ] && command -v kicad5 >/dev/null 2>&1; then
+		echo "Copying the KiCad 5 3D models from the AppImage (about 5 GB, only once)..."
+		kicad5 --python -c 'import os, shutil, sys; shutil.copytree(os.environ["KISYS3DMOD"], sys.argv[1] + ".partial"); os.rename(sys.argv[1] + ".partial", sys.argv[1])' "${KICAD5_3DMODELS}"
 	fi
 fi
 
@@ -244,10 +279,10 @@ if ! eeplot -o ${PDFOUTPUT} "${EEPLOT_FILES[@]}"; then
 fi
 
 echo "Creating STEP 3D object..."
-${KICADCLI} pcb export step -o images/${PCBNAME}.step --force --grid-origin --no-dnp --subst-models ${PCBNAME}.kicad_pcb
+KISYS3DMOD=${KICAD5_3DMODELS} ${KICADCLI} pcb export step -o images/${PCBNAME}.step --force --grid-origin --no-dnp --subst-models ${PCBNAME}.kicad_pcb
 
 echo "Creating VRML 3D object..."
-${KICADCLI} pcb export vrml -o images/${PCBNAME}.wrl --force --no-dnp ${PCBNAME}.kicad_pcb
+KISYS3DMOD=${KICAD5_3DMODELS} ${KICADCLI} pcb export vrml -o images/${PCBNAME}.wrl --force --no-dnp ${PCBNAME}.kicad_pcb
 
 # Remove the existing
 rm ${PCBNAMEOUT}.zip 2>/dev/null
