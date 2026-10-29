@@ -292,3 +292,16 @@ Nessuna scheda è stata costruita: tutto è nello schema (`.sch`) e nella netlis
   da USB/jack alimenta l'Atari spento?); `PIN-MAPPING.md` dice RD4/RD5/HALT su test point, ma
   nella netlist i canali di riserva di U16 non sono collegati; glitch di uscita all'accensione
   su GPIO 1, 2, 4–11 contro U6/U19 (U6 resta sempre abilitato).
+
+## 9. Sessione 2026-10-29: A10–A13 rimappati per il routing
+
+- L'utente ha scambiato nello schema (`busdecoder.sch`, commit `dc3c933`) le etichette su U7
+  (ESP32-S3) per semplificare il routing. Lato U3 invariato. Nuova assegnazione, ora in ordine
+  naturale: **A10 = GPIO 33 (pin 38), A11 = GPIO 34 (pin 39), A12 = GPIO 35 (pin 40),
+  A13 = GPIO 36 (pin 41)** (prima A10/A11 = GPIO 35/36, A12/A13 = GPIO 33/34). Netlist e
+  `.kicad_pcb` già coerenti (pad 38–41 di U7 = mA10–mA13).
+- Firmware: cambiano solo i `PIN_A10`…`PIN_A13` in `main.cpp`. Il loop legge A10–A15 dai canali
+  Dedicated GPIO assegnati per nome (`dedic_in_pins[]`), quindi `bus_decode.h` e la maschera
+  `0xFC` non cambiano. Build `esp32s3fn8` e `esp32s3fn8-cctl` OK, test host 0 errori.
+- Documenti aggiornati: `PIN-MAPPING.md`, `firmware/MCU/README.md`, documento di analisi (.tex + PDF).
+  La tesi riportava già "33–36" per A10–A13 senza ordine: nessuna modifica.

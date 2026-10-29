@@ -124,7 +124,7 @@ I canali configurati nel firmware:
 |---------|--------|----------------|-------------|-----------------------|
 | Input   | bit 0  | GPIO 1 (pin 6) | PHI2        | Clock 6502            |
 | Input   | bit 1  | GPIO 2 (pin 7) | R/W         |                       |
-| Input   | bit 2–7 | GPIO 35, 36, 33, 34, 45, 46 | A10–A15 | Anche in `GPIO.in1` |
+| Input   | bit 2–7 | GPIO 33, 34, 35, 36, 45, 46 | A10–A15 | Anche in `GPIO.in1` |
 | Output  | bit 0  | GPIO 40 (pin 45)| DEV\_SEL\_N | Chip-select VERA      |
 | Output  | bit 1  | GPIO 41 (pin 47)| EXTSEL\_N   | Disabilita MMU ATARI  |
 | Output  | bit 2  | GPIO 42 (pin 48)| MPD         | Disabilita Math Pack  |
@@ -140,10 +140,10 @@ I pin GPIO 39–42 erano originariamente riservati a JTAG; vengono liberati in
 | R/W          | 2           | 7          | Input dedicated                   |
 | D0–D7        | 4–11        | 9–16       | Bus dati bidirezionale            |
 | A0–A9        | 12–21       | 17–27      | A0–A7 via U4, A8–A9 via U3; GPIO 19=USB D−, 20=USB D+ (USB disabilitato) |
-| A10          | 35          | 40         | Address bit 10 (via U3)           |
-| A11          | 36          | 41         | Address bit 11 (via U3)           |
-| A12          | 33          | 38         | Address bit 12 (via U3)           |
-| A13          | 34          | 39         | Address bit 13 (via U3)           |
+| A10          | 33          | 38         | Address bit 10 (via U3)           |
+| A11          | 34          | 39         | Address bit 11 (via U3)           |
+| A12          | 35          | 40         | Address bit 12 (via U3)           |
+| A13          | 36          | 41         | Address bit 13 (via U3)           |
 | A14          | 45          | 51         | Address bit 14 (via U3); strapping VDD\_SPI |
 | A15          | 46          | 52         | Address bit 15 (via U3); strapping ROM msg / download |
 | ARESET       | 37          | 42         | System reset ATARI (output)       |

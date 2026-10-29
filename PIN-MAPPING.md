@@ -71,11 +71,12 @@ Firmware data decode: `data = (GPIO.in >> 4) & 0xFF`
 | A6 | 18 | 24 | GPIO18        | 18 | |
 | A7 | 19 | 25 | USB\_D−       | 19 | USB disabilitato; pin condiviso con USB D− |
 
-### A8–A15 (Bank 0/1, GPIO 20–21, 35–36, 33–34, 45–46, via 74LVC4245APW_118 U3)
+### A8–A15 (Bank 0/1, GPIO 20–21, 33–36, 45–46, via 74LVC4245APW_118 U3)
 
 > **Hardware:** un solo chip **U3** (8 canali) copre l'intero bus indirizzi alto A8–A15,
 > unificando quello che nella revisione TXS0108E era diviso su due package separati.
-> GPIO 33/34 (pin 38–39) e GPIO 45/46 (pin 51–52) restano su lati opposti del QFN56.
+> A10–A13 sono su GPIO 33–36 (pin 38–41) in ordine naturale (A10 = pin 38 … A13 = pin 41),
+> scelto per semplificare il routing; GPIO 45/46 (pin 51–52) restano sul lato opposto del QFN56.
 > **Routing PCB:** applicare *length matching* — tutte le tracce di A12–A15 portate alla
 > lunghezza della traccia più lunga (A14 o A15) tramite serpentine, per eliminare lo skew
 > di propagazione tra i quattro bit.
@@ -84,10 +85,10 @@ Firmware data decode: `data = (GPIO.in >> 4) & 0xFF`
 |---|---|---|---|---|---|
 | A8  | 20 | 26 | USB\_D+ | Bank 0 bit 20 | USB disabilitato; pin condiviso con USB D+ |
 | A9  | 21 | 27 | GPIO21  | Bank 0 bit 21 | |
-| A10 | 35 | 40 | GPIO35  | Bank 1 bit 3  | |
-| A11 | 36 | 41 | GPIO36  | Bank 1 bit 4  | |
-| A12 | 33 | 38 | GPIO33  | Bank 1 bit 1  | Ex-spare CONN / libre |
-| A13 | 34 | 39 | GPIO34  | Bank 1 bit 2  | Ex-spare CONN / libre |
+| A10 | 33 | 38 | GPIO33  | Bank 1 bit 1  | Ex-spare CONN / libre |
+| A11 | 34 | 39 | GPIO34  | Bank 1 bit 2  | Ex-spare CONN / libre |
+| A12 | 35 | 40 | GPIO35  | Bank 1 bit 3  | |
+| A13 | 36 | 41 | GPIO36  | Bank 1 bit 4  | |
 | A14 | 45 | 51 | GPIO45  | Bank 1 bit 13 | Strapping pin (VDD_SPI); `U3` spento durante il reset (`~ABUS_OE`) → pull-down → LOW |
 | A15 | 46 | 52 | GPIO46  | Bank 1 bit 14 | Strapping pin (ROM msgs / download); `U3` spento durante il reset → pull-down → LOW |
 
@@ -281,10 +282,10 @@ GPIO 47 è in alta impedenza (nessuna pull interna, nessun glitch), `R7` spegne 
 |---|---|---|
 | A0/B0 | GPIO 20 (pin 26) — A8  | Atari A8 (pin condiviso USB D+) |
 | A1/B1 | GPIO 21 (pin 27) — A9  | Atari A9  |
-| A2/B2 | GPIO 35 (pin 40) — A10 | Atari A10 |
-| A3/B3 | GPIO 36 (pin 41) — A11 | Atari A11 |
-| A4/B4 | GPIO 33 (pin 38) — A12 | Atari A12 |
-| A5/B5 | GPIO 34 (pin 39) — A13 | Atari A13 |
+| A2/B2 | GPIO 33 (pin 38) — A10 | Atari A10 |
+| A3/B3 | GPIO 34 (pin 39) — A11 | Atari A11 |
+| A4/B4 | GPIO 35 (pin 40) — A12 | Atari A12 |
+| A5/B5 | GPIO 36 (pin 41) — A13 | Atari A13 |
 | A6/B6 | GPIO 45 (pin 51) — A14 | Atari A14 |
 | A7/B7 | GPIO 46 (pin 52) — A15 | Atari A15 |
 
@@ -349,7 +350,7 @@ Pin non assegnati al progetto, esclusi strapping e flash in-package.
 | 22–25 | — | — | Non esistono su ESP32-S3 |
 
 > Resta libero solo GPIO 48 (pin 36); GPIO 47 (pin 37) è `ABUS_OE_N`, tutti gli altri GPIO non
-> riservati sono assegnati: GPIO 33, 34, 45, 46 = A12–A15. GPIO 3 non è usato ma è un pin di
+> riservati sono assegnati: GPIO 33–36 = A10–A13, GPIO 45, 46 = A14–A15. GPIO 3 non è usato ma è un pin di
 > strapping: lo fissa `R71` (10 kΩ → 3V3).
 
 **Pin esclusi (non utilizzabili):**
@@ -407,10 +408,10 @@ memoria da Table 2-14 "Pin Mapping Between Chip and Flash or PSRAM" (pag. 31).
 | 35  | GPIO 32 (SPID)   | **Flash in-package (DI) — NC esterno** |
 | 36  | GPIO 48 (SPICLK\_N) | GPIO libero — usato dalla memoria solo in Octal SPI; non usato in questo progetto |
 | 37  | GPIO 47 (SPICLK\_P) | ABUS\_OE\_N output → `~OE` di U3/U4 (rete `~ABUS_OE`, pull-up `R7`/`R34`) |
-| 38  | GPIO 33 | A12 (via U3) |
-| 39  | GPIO 34 | A13 (via U3) |
-| 40  | GPIO 35 | A10 (via U3) |
-| 41  | GPIO 36 | A11 (via U3) |
+| 38  | GPIO 33 | A10 (via U3) |
+| 39  | GPIO 34 | A11 (via U3) |
+| 40  | GPIO 35 | A12 (via U3) |
+| 41  | GPIO 36 | A13 (via U3) |
 | 42  | GPIO 37 | ARESET output (via U16) |
 | 43  | GPIO 38 | CRESET output (diretto VERA) |
 | 44  | GPIO 39 / MTCK | CDONE input (diretto VERA) — ex-JTAG |

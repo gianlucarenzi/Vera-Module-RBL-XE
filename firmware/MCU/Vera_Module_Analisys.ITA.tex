@@ -161,7 +161,7 @@ L'adattamento di livello 5\,V\,$\leftrightarrow$\,3.3\,V è affidato a cinque \t
 \begin{itemize}
     \item {\bfseries U19 — Bus Dati D0--D7 (GPIO\,4--11):} bidirezionale. \texttt{DIR} = NOT R/W\_ tramite \texttt{U23}; \texttt{\textasciitilde OE\_} = NAND(PHI2, NAND4(R/W\_, DEV\_SEL\_N, EXTSEL\_N, MPD)) tramite \texttt{U24}/\texttt{U25}. Il firmware abilita le uscite ESP32 con \texttt{GPIO.enable\_w1ts} solo nei cicli che richiedono risposta dell'ESP32 (ROM \$D800--\$DFFF, RAM \$D600--\$D7FF, RAMbo \$4000--\$7FFF). Prima \texttt{\textasciitilde OE\_} era NOT(PHI2): vedere sezione~\ref{sec:hwverif}.
     \item {\bfseries U4 — Bus Indirizzi A0--A7 (GPIO\,12--19):} ingressi Atari$\rightarrow$ESP32; \texttt{\textasciitilde OE\_} = \texttt{\textasciitilde ABUS\_OE} (GPIO\,47, sezione~\ref{sec:strapping}). GPIO\,19 condivide il pad USB D-; USB CDC è disabilitato nel firmware.
-    \item {\bfseries U3 — Bus Indirizzi A8--A15 (GPIO\,20--21, 35--36, 33--34, 45--46):} ingressi; \texttt{\textasciitilde OE\_} = \texttt{\textasciitilde ABUS\_OE} (GPIO\,47). Applicare \emph{length matching} (serpentine alla traccia più lunga) ad A12--A15; GPIO\,33--34 e GPIO\,45--46 sono su lati opposti del QFN56.
+    \item {\bfseries U3 — Bus Indirizzi A8--A15 (GPIO\,20--21, 33--36, 45--46):} ingressi; \texttt{\textasciitilde OE\_} = \texttt{\textasciitilde ABUS\_OE} (GPIO\,47). Applicare \emph{length matching} (serpentine alla traccia più lunga) ad A12--A15; A10--A13 sono su GPIO\,33--36 (pin\,38--41) in ordine naturale per semplificare il routing; GPIO\,45--46 sono sul lato opposto del QFN56.
     \item {\bfseries U6 — PHI2, R/W\_ (GPIO\,1, 2), più D1XX, S4, S5, CCTL, REFRESH:} ingressi Atari$\rightarrow$scheda. I cinque segnali pre-decodificati sono portati a test point e \emph{non} collegati a GPIO.
     \item {\bfseries U16 — EXTSEL\_N, MPD, ARESET (GPIO\,41, 42, 37):} uscite scheda$\rightarrow$Atari. I canali di riserva hanno gli ingressi a GND e le uscite scollegate; HALT, RD4 e RD5 hanno solo un test point sul lato Atari (prima \texttt{U16} li pilotava da ingressi flottanti). L'IRQ della VERA non passa da \texttt{U16}: buffer open-drain \texttt{U26} (SN74LVC1G07) verso il pin B dell'ECI. I GPIO\,39--42 erano riservati a JTAG: \texttt{setup()} li de-registra con \texttt{gpio\_reset\_pin()} prima di creare il Dedicated GPIO bundle.
     \item {\bfseries U5 (74HC00) — strobe VERA:} \texttt{\textasciitilde mRE} = NAND(PHI2, R/W\_), \texttt{\textasciitilde mWE} = NAND(PHI2, NOT R/W\_) verso la FPGA VERA, che richiede RD\_n e WR\_n distinti.
@@ -206,8 +206,8 @@ A7 & 19 & 25 & USB\_D$-$    & IN & USB CDC disabilitato \\
 \multicolumn{6}{l}{\textit{Bus indirizzi A8--A11 (U3) e controllo (U6: PHI2, R/W\_; U16: EXTSEL\_N, MPD, ARESET)}} \\
 A8  & 20 & 26 & USB\_D$+$ & IN  & USB CDC disabilitato \\
 A9  & 21 & 27 & GPIO21    & IN  & \\
-A10 & 35 & 40 & GPIO35    & IN  & Bank-1 bit\,3 \\
-A11 & 36 & 41 & GPIO36    & IN  & Bank-1 bit\,4 \\
+A10 & 33 & 38 & GPIO33    & IN  & Bank-1 bit\,1 \\
+A11 & 34 & 39 & GPIO34    & IN  & Bank-1 bit\,2 \\
 PHI2     &  1 &  6 & GPIO1  & IN  & Dedicated GPIO input ch\,0; 1.79\,MHz \\
 R/W\_    &  2 &  7 & GPIO2  & IN  & HIGH = lettura \\
 EXTSEL\_N & 41 & 47 & MTDI  & OUT & Dedicated GPIO output ch\,1; ex-JTAG, reclaimed \\
@@ -215,8 +215,8 @@ MPD       & 42 & 48 & MTMS  & OUT & Dedicated GPIO output ch\,2; ex-JTAG, reclai
 ARESET   & 37 & 42 & GPIO37 & OUT & Reset sistema Atari (LOW asserito) \\
 \midrule
 \multicolumn{6}{l}{\textit{Bus indirizzi A12--A15 — input via 74LVC4245 U3 (Bank-1)}} \\
-A12 & 33 & 38 & GPIO33  & IN & Bank-1 bit\,1; length matching con A13--A15 \\
-A13 & 34 & 39 & GPIO34  & IN & Bank-1 bit\,2 \\
+A12 & 35 & 40 & GPIO35  & IN & Bank-1 bit\,3; length matching con A13--A15 \\
+A13 & 36 & 41 & GPIO36  & IN & Bank-1 bit\,4 \\
 A14 & 45 & 51 & GPIO45  & IN & Bank-1 bit\,13; pin di strapping, usato come A14 \\
 A15 & 46 & 52 & GPIO46  & IN & Bank-1 bit\,14; pin di strapping, usato come A15 \\
 \midrule
@@ -417,10 +417,10 @@ Di seguito è riportato un estratto aggiornato del file \texttt{main.cpp} che mo
 #define ABUS_LO_MASK    0x003FF000UL
 
 /* Bank 1 (GPIO.in1.val) */
-#define PIN_A10         35   /* GPIO35, pin 40  -- bank-1 bit 3  */
-#define PIN_A11         36   /* GPIO36, pin 41  -- bank-1 bit 4  */
-#define PIN_A12         33   /* GPIO33, pin 38  -- bank-1 bit 1  */
-#define PIN_A13         34   /* GPIO34, pin 39  -- bank-1 bit 2  */
+#define PIN_A10         33   /* GPIO33, pin 38  -- bank-1 bit 1  */
+#define PIN_A11         34   /* GPIO34, pin 39  -- bank-1 bit 2  */
+#define PIN_A12         35   /* GPIO35, pin 40  -- bank-1 bit 3  */
+#define PIN_A13         36   /* GPIO36, pin 41  -- bank-1 bit 4  */
 #define PIN_A14         45   /* GPIO45, pin 51  -- bank-1 bit 13 */
 #define PIN_A15         46   /* GPIO46, pin 52  -- bank-1 bit 14 */
 #define PIN_ARESET      37   /* GPIO37, pin 42  -- system reset  */
@@ -439,9 +439,9 @@ Di seguito è riportato un estratto aggiornato del file \texttt{main.cpp} che mo
 #define DEDIC_OUT_CTRL_MASK 0x07u
 #define DEDIC_OUT_CTRL_IDLE 0x07u  /* tutti HIGH = deasserted */
 
-/* include/bus_decode.h: indice di pagina A8-A15 nell'ordine dei pin
- *   bit 0,1 = A8,A9 (GPIO20,21)   bit 2,3 = A12,A13 (GPIO33,34)
- *   bit 4,5 = A10,A11 (GPIO35,36) bit 6,7 = A14,A15 (GPIO45,46)   */
+/* include/bus_decode.h: indice di pagina A8-A15 in ordine naturale
+ *   bit 0,1 = A8,A9 (GPIO20,21)   bit 2-5 = A10-A13 (GPIO33-36)
+ *   bit 6,7 = A14,A15 (GPIO45,46)                                 */
 static inline uint32_t bus_page_idx(uint32_t lo, uint32_t hi)
 {
     return ((lo >> 20) & 0x03u) | ((hi << 1) & 0x3Cu) | ((hi >> 7) & 0xC0u);
