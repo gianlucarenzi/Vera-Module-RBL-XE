@@ -25,3 +25,5 @@
 /vera-fpga-flash.sch-bak
 /vera-fpga.sch-bak
 /vga-analog.sch-bak
+# created by kicad-cli (KiCad 7+) when exporting the 3D models
+*.kicad_prl

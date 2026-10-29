@@ -32,22 +32,38 @@ apply_eeplot_patches() {
     fi
 }
 
+# System packages needed to build eeplot (fig2dev converts the eeshow icons)
+check_eeplot_deps() {
+    local missing=""
+    for pkg in libgit2-dev fig2dev; do
+        dpkg -s "${pkg}" >/dev/null 2>&1 || missing="${missing} ${pkg}"
+    done
+    if [ -n "${missing}" ]; then
+        echo "--------------------------------------------------------------------"
+        echo "ERROR: System dependencies not found:${missing}"
+        echo "Please run the following command to install them:"
+        echo "sudo apt-get install${missing}"
+        echo "--------------------------------------------------------------------"
+        exit 1
+    fi
+    echo "Dependencies OK."
+}
+
+# A binary built on another Debian release can miss its libraries (e.g.
+# libgit2.so.1.5 after moving from Debian 12 to 13): drop it to rebuild it
+if [ -f "${EEPLOT_EXEC}" ] && ldd "${EEPLOT_EXEC}" | grep -q 'not found'; then
+    echo "--- eeplot was built against other system libraries. Rebuilding. ---"
+    rm -f "${EEPLOT_EXEC}" "${EESHOW_EXEC}"
+fi
+
 # Check if eeplot is already installed locally
 if [ -f "${EEPLOT_EXEC}" ]; then
     echo "--- eeplot found locally. Skipping setup. ---"
 elif [ -d "${EEPLOT_SRC_DIR}" ]; then
     echo "--- eeplot source found. Updating and rebuilding. ---"
     # 1. Check for system dependencies (still needed for rebuilds)
-            echo "[1/5] Checking system dependencies..."
-            if ! dpkg -s libgit2-dev >/dev/null 2>&1; then
-                echo "--------------------------------------------------------------------"
-                echo "ERROR: System dependency 'libgit2-dev' not found."
-        echo "Please run the following command to install it:"
-        echo "sudo apt-get install libgit2-dev"
-        echo "--------------------------------------------------------------------"
-        exit 1
-    fi
-    echo "Dependencies OK."
+    echo "[1/5] Checking system dependencies..."
+    check_eeplot_deps
 
     # 2. Update source
     echo "[2/5] Updating eeplot source (git pull)..."
@@ -74,15 +90,7 @@ else
     echo "--- eeplot not found locally. Starting one-time setup procedure ---"
     # 1. Check for system dependencies
     echo "[1/6] Checking system dependencies..."
-    if ! dpkg -s libgit2-dev >/dev/null 2>&1; then
-        echo "--------------------------------------------------------------------"
-        echo "ERRORE: Dipendenza di sistema 'libgit2-dev' non trovata."
-        echo "Please run the following command to install it:"
-        echo "sudo apt-get install libgit2-dev"
-        echo "--------------------------------------------------------------------"
-        exit 1
-    fi
-    echo "Dependencies OK."
+    check_eeplot_deps
 
     # 2. Clone the repository
     echo "[2/6] Cloning eeplot repository..."
@@ -126,10 +134,19 @@ export PATH="${LOCAL_UTILS_DIR}/bin:${PATH}"
 
 PCBNAME=VERA-MODULE-RBL
 PCBNAMEOUT=${PCBNAME}-XE
-KICADBOMSCRIPT=${HOME}/.kicad/bom
 PDFOUTPUT=${PCBNAME}.pdf
-XSLTPROC=$(which xsltproc)
 PYTHON3=$(which python3)
+
+# Official KiCad 5 symbol libraries for eeplot: the system ones (e.g. Debian
+# 11), otherwise a copy taken once from the KiCad 5 AppImage
+KICAD5_SYMBOLS=/usr/share/kicad/library
+if [ ! -d "${KICAD5_SYMBOLS}" ]; then
+	KICAD5_SYMBOLS=${HOME}/.cache/kicad5/library
+	if [ ! -d "${KICAD5_SYMBOLS}" ] && command -v kicad5 >/dev/null 2>&1; then
+		echo "Copying the KiCad 5 symbol libraries from the AppImage..."
+		kicad5 --python -c 'import os, shutil, sys; shutil.copytree(os.environ["KICAD_SYMBOL_DIR"], sys.argv[1])' "${KICAD5_SYMBOLS}"
+	fi
+fi
 
 ARGS_NUM=$#
 # Lanciare con la versione del PCB!!
@@ -159,7 +176,7 @@ if [ ! -f ${PCBNAME}.xml ]; then
 fi
 
 # Creiamo la BOM per JLCPCB
-${XSLTPROC} -o ${PCBNAME}.csv ${KICADBOMSCRIPT}/bom2grouped_csv_jlcpcb.xsl ${PCBNAME}.xml
+${PYTHON3} generate_bom.py ${PCBNAME}.xml ${PCBNAME}.csv
 
 echo "Creating BOM for JLCPCB"
 ${PYTHON3} jlcpcb-check-bom.py ${PCBNAME}.csv ${PCBNAMEOUT}-JLCPCB-BOM.csv
@@ -197,29 +214,34 @@ else
 fi
 
 echo "Creating PDF..."
-# Set KICAD_SYMBOL_DIR to help eeplot find libraries (though eeplot takes them as arguments)
-# export KICAD_SYMBOL_DIR="${KILIBPATH}:/usr/share/kicad/library"
-eeplot -o ${PDFOUTPUT} \
-    ${KILIBPATH}/CCAP0603.lib \
-    ${KILIBPATH}/CCAP0805.lib \
-    ${KILIBPATH}/CCAP1206.lib \
-    ${KILIBPATH}/CCAP1210.lib \
-    ${KILIBPATH}/CLED0805.lib \
-    ${KILIBPATH}/CLED1206.lib \
-    ${KILIBPATH}/CLED1210.lib \
-    ${KILIBPATH}/CRES0603.lib \
-    ${KILIBPATH}/CRES0805.lib \
-    ${KILIBPATH}/CRES1206.lib \
-    ${KILIBPATH}/CRES1210.lib \
-    ${KILIBPATH}/PES1-S5-S9-M.lib \
-    ${KILIBPATH}/TCAP3528.lib \
-    /usr/share/kicad/library/Connector.lib \
-    /usr/share/kicad/library/Device.lib \
-    /usr/share/kicad/library/Jumper.lib \
-    /usr/share/kicad/library/Mechanical.lib \
-    /usr/share/kicad/library/power.lib \
-    ${KILIBPATH}/RetroBitLab.lib \
+EEPLOT_FILES=(
+    ${KILIBPATH}/CCAP0603.lib
+    ${KILIBPATH}/CCAP0805.lib
+    ${KILIBPATH}/CCAP1206.lib
+    ${KILIBPATH}/CCAP1210.lib
+    ${KILIBPATH}/CLED0805.lib
+    ${KILIBPATH}/CLED1206.lib
+    ${KILIBPATH}/CLED1210.lib
+    ${KILIBPATH}/CRES0603.lib
+    ${KILIBPATH}/CRES0805.lib
+    ${KILIBPATH}/CRES1206.lib
+    ${KILIBPATH}/CRES1210.lib
+    ${KILIBPATH}/PES1-S5-S9-M.lib
+    ${KILIBPATH}/TCAP3528.lib
+    ${KICAD5_SYMBOLS}/Connector.lib
+    ${KICAD5_SYMBOLS}/Device.lib
+    ${KICAD5_SYMBOLS}/Jumper.lib
+    ${KICAD5_SYMBOLS}/Mechanical.lib
+    ${KICAD5_SYMBOLS}/power.lib
+    ${KILIBPATH}/RetroBitLab.lib
     ${PCBNAME}.sch
+)
+# The table of contents breaks with cairo 1.18 (Debian 13): eeplot aborts
+# with "pdftoc_end: Assertion", so then make the PDF without it (-T)
+if ! eeplot -o ${PDFOUTPUT} "${EEPLOT_FILES[@]}"; then
+	echo "eeplot failed, creating the PDF without table of contents..."
+	eeplot -T -o ${PDFOUTPUT} "${EEPLOT_FILES[@]}" || { echo "Error on creating the PDF."; exit 1; }
+fi
 
 echo "Creating STEP 3D object..."
 ${KICADCLI} pcb export step -o images/${PCBNAME}.step --force --grid-origin --no-dnp --subst-models ${PCBNAME}.kicad_pcb
