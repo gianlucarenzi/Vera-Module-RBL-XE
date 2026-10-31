@@ -393,3 +393,23 @@ Ora `./output_job.sh 4` fa tutto senza passaggi manuali e si ferma al primo erro
   la scheda (ECI1 resta a sinistra in entrambe le viste). Il Gerber non contiene specchiature.
 - **Da fare prima dell'ordine:** nell'anteprima JLCPCB controllare la rotazione dei componenti
   nuovi (U19, Y2, U7 soprattutto).
+
+### 11b. Controllo stock JLCPCB prima di `output_job.sh`
+
+- `./check_jlcpcb_stock.sh [-n SCHEDE]` (default 5): BOM dagli schematici in una cartella
+  temporanea, poi `jlcpcb-stock-check.py` interroga in tempo reale la ricerca parti di jlcpcb.com
+  (servizio non documentato, nessun account). Per ogni riga: stock, quantità con scarto e minimo,
+  Basic/Preferred/Extended, costo; per le parti OUT/SHORT/MISSING propone alternative (stessa
+  categoria e package, stesso valore per i passivi, Basic prima). Esce con 1 se qualcosa non si
+  può montare: va cambiato nello schema prima di `output_job.sh`.
+- Il database **jlcparts** (yaqwsx) è stato provato e scartato: mancano parti che JLCPCB ha
+  (C2913196 ESP32-S3FN8, C2798196 e altre 10), quindi dava falsi "missing".
+- Cambiati (con nuovi simboli in RetroBitLab-Library, CCAP0805/CRES0805):
+  - C36 → `CCAP0805:2.2uF-X5R` C377773 (Basic; prima C7393943, 9 pezzi);
+  - R37–R44 → `CRES0805:47K-125mW` C17713 (Basic; prima C20142780, 82 pezzi).
+  Valori e footprint invariati: il PCB non cambia.
+- **Ancora da risolvere** (controllo del 2026-10-31 per 5 schede):
+  - **J7** jack audio SJ-3523-SMT-TR C4991872: esaurito, serve un altro jack (cambia il footprint);
+  - **U11** WM8524CGEDT C146242: 3 pezzi per 5 schede, nessun equivalente pin a pin
+    (Global Sourcing o 3 schede);
+  - X1 ECS-2033-250-BN C2441279: 6 pezzi, ne servono 5 (avviso).
