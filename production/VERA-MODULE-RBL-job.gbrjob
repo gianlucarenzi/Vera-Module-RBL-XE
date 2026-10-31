@@ -7,7 +7,7 @@
       "Application": "Pcbnew",
       "Version":     "5.1.12-84ad8e8a86~92~ubuntu20.04.1"
     },
-    "CreationDate":  "2026-10-31T03:15:34+01:00"
+    "CreationDate":  "2026-10-31T07:26:20+01:00"
   },
   "GeneralSpecs":
   {
@@ -69,18 +69,13 @@
       "FilePolarity":  "Positive"
     },
     {
-      "Path":  "VERA-MODULE-RBL-F_Paste.gtp",
-      "FileFunction":  "SolderPaste,Top",
-      "FilePolarity":  "Positive"
-    },
-    {
       "Path":  "VERA-MODULE-RBL-B_Paste.gbp",
       "FileFunction":  "SolderPaste,Bot",
       "FilePolarity":  "Positive"
     },
     {
-      "Path":  "VERA-MODULE-RBL-F_SilkS.gto",
-      "FileFunction":  "Legend,Top",
+      "Path":  "VERA-MODULE-RBL-F_Paste.gtp",
+      "FileFunction":  "SolderPaste,Top",
       "FilePolarity":  "Positive"
     },
     {
@@ -89,13 +84,18 @@
       "FilePolarity":  "Positive"
     },
     {
-      "Path":  "VERA-MODULE-RBL-F_Mask.gts",
-      "FileFunction":  "SolderMask,Top",
-      "FilePolarity":  "Negative"
+      "Path":  "VERA-MODULE-RBL-F_SilkS.gto",
+      "FileFunction":  "Legend,Top",
+      "FilePolarity":  "Positive"
     },
     {
       "Path":  "VERA-MODULE-RBL-B_Mask.gbs",
       "FileFunction":  "SolderMask,Bot",
+      "FilePolarity":  "Negative"
+    },
+    {
+      "Path":  "VERA-MODULE-RBL-F_Mask.gts",
+      "FileFunction":  "SolderMask,Top",
       "FilePolarity":  "Negative"
     },
     {
