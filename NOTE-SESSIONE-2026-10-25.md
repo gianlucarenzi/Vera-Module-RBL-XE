@@ -356,3 +356,40 @@ Tutto committato e pushato fino a `7ec9431` (resta solo questa nota). Nessuna sc
     alla scheda: scartarlo se la scheda non è cambiata;
   - file di lavoro non tracciati nella radice: `VERA-MODULE-RBL.dsn`, `.ses`, `.kicad_pcb.bak`,
     `report.drc.rpt`, `bom/`.
+
+## 11. Sessione 2026-10-31 (mattina): `output_job.sh` genera tutto dai sorgenti
+
+**Correzione al §10:** le uscite v4 di `d69c2d4` non erano buone. La BOM JLCPCB veniva da un
+`VERA-MODULE-RBL.xml` del 2025-11-05 (export manuale da Eeschema mai rifatto): mancavano
+U19, U23–U26, Y2, SW3, L2, R69–R77, C61–C69, c'erano ancora U1 e SW2, e i codici erano vecchi
+(U7 ESP32-PICO-D4 invece di ESP32-S3FN8, U3/U4/U6/U16 TXS0108 invece di 74LVC4245, U5 CD4011B
+invece di 74HC00, molti valori R/C). JLCPCB lo ha segnalato al caricamento del CPL. Inoltre i
+Gerber **non** li generava lo script: lo zip prendeva quelli esportati a mano in `production/`.
+
+Ora `./output_job.sh 4` fa tutto senza passaggi manuali e si ferma al primo errore:
+
+- `sch2bomxml.py`: rigenera ogni volta `VERA-MODULE-RBL.xml` leggendo i `.sch` KiCad 5 dalla
+  gerarchia del foglio radice (`addressdecoder.sch` non è usato e viene ignorato), riferimenti da
+  `AR Path`. Errore se un componente non è annotato o se un riferimento è usato da due parti
+  diverse. `kicad-cli sch export python-bom` (KiCad 10) su un `.sch` KiCad 5 scrive un XML senza
+  componenti: non usabile.
+- `jlcpcb-sync-cpl.py`: allinea il CPL alla BOM. Toglie le righe senza BOM (oggi JP2 senza LCSC e
+  R49 DNP) e si ferma se un componente della BOM non è nel CPL (non piazzato sul PCB).
+- `generate_gerbers.py` (via `run_pcbnew.sh`, pcbnew KiCad 5 di sistema o AppImage `kicad5`):
+  Gerber, job file, Excellon (pollici, decimale, PTH/NPTH separati), mappe PostScript e report,
+  con le impostazioni di stampa salvate nel `.kicad_pcb`. `production/` viene svuotata prima
+  (resta `.gitignore`). Zone usate come salvate; `REFILL_ZONES=1 ./output_job.sh 4` le riempie
+  di nuovo prima della stampa (il `.kicad_pcb` non viene scritto). Non si usa `kicad-cli` per i
+  Gerber: non supporta più la strategia di riempimento zone di KiCad 5.
+  - nota tecnica: `PLOT_CONTROLLER` di KiCad 5 parte dalle opzioni di default, non da quelle della
+    scheda: lo script le copia (coppie Get/Set). Con le estensioni Protel attive `OpenPlotfile`
+    dà già `.gtl`, `.g2`, ecc.
+  - verificato contro l'export manuale delle 03:15: rame, piani, maschere e forature identici a
+    parte le date; serigrafie, paste, Edge.Cuts e job file con lo stesso contenuto in ordine diverso.
+- Uscite v4 rigenerate: BOM 65 righe e CPL 191 componenti con gli stessi designator; zip
+  `VERA-MODULE-RBL-XE-v4.zip` (17 file). CSV `-v4` e zip restano non tracciati.
+- **Silkscreen bottom nel visualizzatore JLCPCB:** nella vista "Bottom" il testo si legge
+  rovesciato. È corretto: quel visualizzatore mostra il lato inferiore visto da sopra, senza girare
+  la scheda (ECI1 resta a sinistra in entrambe le viste). Il Gerber non contiene specchiature.
+- **Da fare prima dell'ordine:** nell'anteprima JLCPCB controllare la rotazione dei componenti
+  nuovi (U19, Y2, U7 soprattutto).
