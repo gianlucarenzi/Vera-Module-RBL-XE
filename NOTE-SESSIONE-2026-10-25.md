@@ -465,3 +465,16 @@ Ora `./output_job.sh 4` fa tutto senza passaggi manuali e si ferma al primo erro
   tracciata). Stock C64 per 5 schede: tutto OK, U11 GLOBAL.
 - **PCB C64 da aggiornare a mano** come l'XE: footprint di J7 (PJ-313D).
 - Netlist XE rigenerata da Eeschema (10:35): ora anche C36/R37–R44 hanno i nuovi codici.
+
+### 11g. fastroute installato dal pacchetto Debian
+
+- Fork **github.com/gianlucarenzi/fastroute** (ramo predefinito `deb`, sopra `main` 0.1.14 di
+  parisxmas): aggiunge `scripts/build-deb.sh` e un README per il pacchetto. Il router non cambia.
+  In `~/packages/fastroute`: `origin` = fork, `upstream` = parisxmas.
+- `scripts/build-deb.sh` compila con cargo-zigbuild contro glibc 2.17 → un solo `.deb` per
+  Debian 11, Ubuntu 20.04 e successive (verifica max glibc 2.31). `--native` = toolchain di
+  sistema. Su questo PC: zig 0.13.0 in `~/.local/opt` (link `~/.local/bin/zig`),
+  cargo-zigbuild 0.21.8 (l'ultima per rustc 1.85). Prova: SES identici al binario nativo.
+- Installazione: `sudo apt install ~/packages/fastroute/dist/fastroute_0.1.14_amd64.deb`
+  (da fare su entrambi i PC). `tools/route.sh` usa solo il `fastroute` di sistema (o
+  `FASTROUTE=...`) e si ferma con le istruzioni se non è installato.
