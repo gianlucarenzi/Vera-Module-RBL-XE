@@ -485,11 +485,14 @@ pio run -e esp32s3fn8 --target upload
 
 ## 📁 Project Structure
 
+The design workflow, from the schematic to the JLCPCB order (stock check, library update, ERC, netlist, PCB and net classes, DRC, `output_job.sh`, files to send), is described in [WORKFLOW.md](WORKFLOW.md) (in Italian).
+
 ### Repository Organization
 
 ```
 Vera-Module-RBL-XE/
 ├── 📄 README.md                    # This documentation
+├── 📄 WORKFLOW.md                  # Design workflow, schematic to JLCPCB order
 ├── 📄 PIN-MAPPING.md               # ESP32-S3 / level-shifter pin mapping
 ├── 📄 VERA-ATARI-HW-REQUIREMENTS.md # Hardware requirements & bring-up plan (from driver/emulator work)
 ├── 📄 LICENSE                      # GPL v3 license
@@ -1102,11 +1105,14 @@ pio run -e esp32s3fn8 --target upload
 
 ## 📁 Struttura Progetto
 
+Il workflow di progetto, dallo schematico all'ordine JLCPCB (disponibilità dei componenti, aggiornamento della libreria, ERC, netlist, PCB e netclass, DRC, `output_job.sh`, file da consegnare), è descritto in [WORKFLOW.md](WORKFLOW.md).
+
 ### Organizzazione Repository
 
 ```
 Vera-Module-RBL-XE/
 ├── 📄 README.md                    # Questa documentazione
+├── 📄 WORKFLOW.md                  # Workflow di progetto, dallo schema all'ordine JLCPCB
 ├── 📄 LICENSE                      # Licenza GPL v3
 ├── ⚙️ VERA-MODULE-RBL.pro         # File progetto KiCad
 ├── 📄 VERA-MODULE-RBL.sch         # Schema principale
