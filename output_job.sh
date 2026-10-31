@@ -18,6 +18,9 @@ EEPLOT_STAMP="${LOCAL_UTILS_DIR}/bin/.eeplot-patches"
 # - eeplot-kicad5-schematics.patch: symbols of a library given without a
 #   directory (e.g. the project -rescue.lib) are found, and embedded images
 #   ($Bitmap) are skipped instead of stopping the plot
+# - eeplot-pdf14-toc.patch: the PDF with the table of contents is written as
+#   PDF 1.4, because cairo 1.18 (Debian 13) otherwise uses cross-reference
+#   streams and the TOC writer aborts with "pdftoc_end: Assertion"
 # Safe to call again: it detects an already-applied patch and skips it.
 apply_eeplot_patches() {
     local patch
@@ -271,8 +274,8 @@ EEPLOT_FILES=(
     ${KILIBPATH}/RetroBitLab.lib
     ${PCBNAME}.sch
 )
-# The table of contents breaks with cairo 1.18 (Debian 13): eeplot aborts
-# with "pdftoc_end: Assertion", so then make the PDF without it (-T)
+# Should the table of contents still fail (e.g. an eeplot built without
+# eeplot-pdf14-toc.patch), make the PDF without it (-T)
 if ! eeplot -o ${PDFOUTPUT} "${EEPLOT_FILES[@]}"; then
 	echo "eeplot failed, creating the PDF without table of contents..."
 	eeplot -T -o ${PDFOUTPUT} "${EEPLOT_FILES[@]}" || { echo "Error on creating the PDF."; exit 1; }
