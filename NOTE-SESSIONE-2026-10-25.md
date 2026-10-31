@@ -468,9 +468,12 @@ Ora `./output_job.sh 4` fa tutto senza passaggi manuali e si ferma al primo erro
 
 ### 11g. fastroute installato dal pacchetto Debian
 
-- Fork **github.com/gianlucarenzi/fastroute** (ramo predefinito `deb`, sopra `main` 0.1.14 di
-  parisxmas): aggiunge `scripts/build-deb.sh` e un README per il pacchetto. Il router non cambia.
-  In `~/packages/fastroute`: `origin` = fork, `upstream` = parisxmas.
+- Fork **github.com/gianlucarenzi/fastroute**, ramo `main` (0.1.14 di parisxmas più
+  `scripts/build-deb.sh` e un README per il pacchetto; il ramo `deb` usato all'inizio è stato
+  unito in `main` e cancellato). Il router non cambia.
+  In `~/packages/fastroute`: `origin` = fork (`main` segue `origin/main`), `upstream` =
+  parisxmas. Nuova versione upstream: `git fetch upstream && git merge upstream/main`, poi
+  `scripts/build-deb.sh`.
 - `scripts/build-deb.sh` compila con cargo-zigbuild contro glibc 2.17 → un solo `.deb` per
   Debian 11, Ubuntu 20.04 e successive (verifica max glibc 2.31). `--native` = toolchain di
   sistema. Su questo PC: zig 0.13.0 in `~/.local/opt` (link `~/.local/bin/zig`),
