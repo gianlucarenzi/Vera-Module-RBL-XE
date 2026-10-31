@@ -1,5 +1,5 @@
 Drill report for /home/debian/Progetti/ATARI/Vera-Module-RBL-XE/VERA-MODULE-RBL.kicad_pcb
-Created on Sat 31 Oct 2026 03:03:49 AM CET
+Created on Sat 31 Oct 2026 03:15:24 AM CET
 
 Copper Layer Stackup:
     =============================================================
@@ -13,13 +13,13 @@ Drill file 'VERA-MODULE-RBL-PTH.drl' contains
     plated through holes:
     =============================================================
     T1  0.200mm  0.0079"  (25 holes)
-    T2  0.400mm  0.0157"  (547 holes)
+    T2  0.400mm  0.0157"  (568 holes)
     T3  0.650mm  0.0256"  (4 holes)  (with 4 slots)
     T4  1.000mm  0.0394"  (2 holes)
     T5  1.100mm  0.0433"  (15 holes)
     T6  3.250mm  0.1280"  (2 holes)
 
-    Total plated holes count 595
+    Total plated holes count 616
 
 
 Drill file 'VERA-MODULE-RBL-NPTH.drl' contains
