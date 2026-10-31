@@ -288,9 +288,9 @@
     <comp ref="C36">
       <value>2.2uF</value>
       <footprint>Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder</footprint>
-      <datasheet>https://lcsc.com/datasheet/lcsc_datasheet_2410121534_CCTC-TCC0805X7R225M500FT_C7393943.pdf</datasheet>
+      <datasheet>https://www.lcsc.com/datasheet/C377773.pdf</datasheet>
       <fields>
-        <field name="LCSC">C7393943</field>
+        <field name="LCSC">C377773</field>
       </fields>
     </comp>
     <comp ref="C37">
@@ -692,20 +692,13 @@
       </fields>
     </comp>
     <comp ref="J7">
-      <value>SJ-3523-SMT-TR</value>
-      <footprint>RetroBitLab:CONN_AUDIO_CUI_SJ-3523-SMT-TR</footprint>
-      <datasheet>https://www.lcsc.com/datasheet/C4991872.pdf</datasheet>
+      <value>PJ-313D</value>
+      <footprint>RetroBitLab:jack_3.5_pj313d-smt</footprint>
+      <datasheet>https://www.lcsc.com/datasheet/C668608.pdf</datasheet>
       <fields>
-        <field name="MF">Same Sky</field>
-        <field name="Description">\n                        \n                            3.5 mm, Stereo, Right Angle, Surface Mount (SMT), 3 Conductors, 0 Internal Switches, Audio Jack Connector\n                        \n</field>
-        <field name="Package">None</field>
-        <field name="Price">None</field>
-        <field name="Check_prices">https://www.snapeda.com/parts/SJ-3523-SMT-TR/Same+Sky/view-part/?ref=eda</field>
-        <field name="SnapEDA_Link">https://www.snapeda.com/parts/SJ-3523-SMT-TR/Same+Sky/view-part/?ref=snap</field>
-        <field name="MP">SJ-3523-SMT-TR</field>
-        <field name="Availability">In Stock</field>
-        <field name="MANUFACTURER">CUI Inc</field>
-        <field name="LCSC">C4991872</field>
+        <field name="MF">SHOU HAN</field>
+        <field name="MP">PJ-313D</field>
+        <field name="LCSC">C668608</field>
       </fields>
     </comp>
     <comp ref="JP1">
@@ -1117,65 +1110,65 @@
     <comp ref="R37">
       <value>47K</value>
       <footprint>Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder</footprint>
-      <datasheet>https://www.lcsc.com/datasheet/C20142780.pdf</datasheet>
+      <datasheet>https://www.lcsc.com/datasheet/C17713.pdf</datasheet>
       <fields>
-        <field name="LCSC">C20142780</field>
+        <field name="LCSC">C17713</field>
       </fields>
     </comp>
     <comp ref="R38">
       <value>47K</value>
       <footprint>Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder</footprint>
-      <datasheet>https://www.lcsc.com/datasheet/C20142780.pdf</datasheet>
+      <datasheet>https://www.lcsc.com/datasheet/C17713.pdf</datasheet>
       <fields>
-        <field name="LCSC">C20142780</field>
+        <field name="LCSC">C17713</field>
       </fields>
     </comp>
     <comp ref="R39">
       <value>47K</value>
       <footprint>Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder</footprint>
-      <datasheet>https://www.lcsc.com/datasheet/C20142780.pdf</datasheet>
+      <datasheet>https://www.lcsc.com/datasheet/C17713.pdf</datasheet>
       <fields>
-        <field name="LCSC">C20142780</field>
+        <field name="LCSC">C17713</field>
       </fields>
     </comp>
     <comp ref="R40">
       <value>47K</value>
       <footprint>Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder</footprint>
-      <datasheet>https://www.lcsc.com/datasheet/C20142780.pdf</datasheet>
+      <datasheet>https://www.lcsc.com/datasheet/C17713.pdf</datasheet>
       <fields>
-        <field name="LCSC">C20142780</field>
+        <field name="LCSC">C17713</field>
       </fields>
     </comp>
     <comp ref="R41">
       <value>47K</value>
       <footprint>Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder</footprint>
-      <datasheet>https://www.lcsc.com/datasheet/C20142780.pdf</datasheet>
+      <datasheet>https://www.lcsc.com/datasheet/C17713.pdf</datasheet>
       <fields>
-        <field name="LCSC">C20142780</field>
+        <field name="LCSC">C17713</field>
       </fields>
     </comp>
     <comp ref="R42">
       <value>47K</value>
       <footprint>Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder</footprint>
-      <datasheet>https://www.lcsc.com/datasheet/C20142780.pdf</datasheet>
+      <datasheet>https://www.lcsc.com/datasheet/C17713.pdf</datasheet>
       <fields>
-        <field name="LCSC">C20142780</field>
+        <field name="LCSC">C17713</field>
       </fields>
     </comp>
     <comp ref="R43">
       <value>47K</value>
       <footprint>Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder</footprint>
-      <datasheet>https://www.lcsc.com/datasheet/C20142780.pdf</datasheet>
+      <datasheet>https://www.lcsc.com/datasheet/C17713.pdf</datasheet>
       <fields>
-        <field name="LCSC">C20142780</field>
+        <field name="LCSC">C17713</field>
       </fields>
     </comp>
     <comp ref="R44">
       <value>47K</value>
       <footprint>Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder</footprint>
-      <datasheet>https://www.lcsc.com/datasheet/C20142780.pdf</datasheet>
+      <datasheet>https://www.lcsc.com/datasheet/C17713.pdf</datasheet>
       <fields>
-        <field name="LCSC">C20142780</field>
+        <field name="LCSC">C17713</field>
       </fields>
     </comp>
     <comp ref="R45">

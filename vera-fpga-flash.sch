@@ -947,23 +947,16 @@ Wire Wire Line
 Text Label 5565 1060 2    39   ~ 0
 SD_SSEL_N
 $Comp
-L RetroBitLab:SJ-3523-SMT-TR J7
+L RetroBitLab:CONN_AUDIO_JACK_3.5_PJ313D J7
 U 1 1 6912EA11
 P 5970 5865
 F 0 "J7" H 5342 5806 50  0000 R CNN
-F 1 "SJ-3523-SMT-TR" H 6165 6180 50  0000 R CNN
-F 2 "RetroBitLab:CONN_AUDIO_CUI_SJ-3523-SMT-TR" H 5970 5865 50  0001 L BNN
-F 3 "https://www.lcsc.com/datasheet/C4991872.pdf" H 5970 5865 50  0001 L BNN
-F 4 "Same Sky" H 5970 5865 50  0001 L BNN "MF"
-F 5 "\\n                        \\n                            3.5 mm, Stereo, Right Angle, Surface Mount (SMT), 3 Conductors, 0 Internal Switches, Audio Jack Connector\\n                        \\n" H 5970 5865 50  0001 L BNN "Description"
-F 6 "None" H 5970 5865 50  0001 L BNN "Package"
-F 7 "None" H 5970 5865 50  0001 L BNN "Price"
-F 8 "https://www.snapeda.com/parts/SJ-3523-SMT-TR/Same+Sky/view-part/?ref=eda" H 5970 5865 50  0001 L BNN "Check_prices"
-F 9 "https://www.snapeda.com/parts/SJ-3523-SMT-TR/Same+Sky/view-part/?ref=snap" H 5970 5865 50  0001 L BNN "SnapEDA_Link"
-F 10 "SJ-3523-SMT-TR" H 5970 5865 50  0001 L BNN "MP"
-F 11 "In Stock" H 5970 5865 50  0001 L BNN "Availability"
-F 12 "CUI Inc" H 5970 5865 50  0001 L BNN "MANUFACTURER"
-F 13 "C4991872" H 5970 5865 50  0001 C CNN "LCSC"
+F 1 "PJ-313D" H 6165 6180 50  0000 R CNN
+F 2 "RetroBitLab:jack_3.5_pj313d-smt" H 5970 5865 50  0001 L BNN
+F 3 "https://www.lcsc.com/datasheet/C668608.pdf" H 5970 5865 50  0001 L BNN
+F 4 "SHOU HAN" H 5970 5865 50  0001 L BNN "MF"
+F 5 "PJ-313D" H 5970 5865 50  0001 L BNN "MP"
+F 6 "C668608" H 5970 5865 50  0001 C CNN "LCSC"
 	1    5970 5865
 	-1   0    0    1   
 $EndComp

@@ -413,3 +413,19 @@ Ora `./output_job.sh 4` fa tutto senza passaggi manuali e si ferma al primo erro
   - **U11** WM8524CGEDT C146242: 3 pezzi per 5 schede, nessun equivalente pin a pin
     (Global Sourcing o 3 schede);
   - X1 ECS-2033-250-BN C2441279: 6 pezzi, ne servono 5 (avviso).
+
+### 11c. J7: jack audio sostituito con PJ-313D
+
+- J7 → `RetroBitLab:CONN_AUDIO_JACK_3.5_PJ313D` (nuovo simbolo in RetroBitLab-Library),
+  SHOU HAN PJ-313D **C668608** (Extended, ~23.000 a magazzino; seconda fonte Korean Hroparts
+  PJ-313D-6A C95463). Footprint `RetroBitLab:jack_3.5_pj313d-smt` (già in libreria).
+- Pin come il vecchio SJ-3523: 1 manicotto (A, vicino all'apertura), 2 punta (C), 3 anello (B),
+  uguali ai pad del footprint: nello schema i collegamenti non cambiano.
+- Aggiornati schema, netlist, `VERA-MODULE-RBL.xml/.csv`. **Il PCB va aggiornato a mano**
+  (footprint nuovo, importare la netlist), poi `./output_job.sh 4` per CPL e Gerber.
+- Da controllare sul PCB: distanza tra le due file di pad del footprint (centri a 6,6 mm) contro
+  il datasheet (quote 9,0 e 5,5 mm, di interpretazione incerta); il passo tra colonne
+  (3,2 + 3,5 mm) corrisponde.
+- Nota: AUD1L va all'anello (pin 3) e AUD1R alla punta (pin 2), al contrario della convenzione
+  (punta = sinistro). Era così anche prima; da decidere se scambiare le etichette.
+- Stock dopo il cambio: resta solo **U11** (3 su 5) come errore, X1 come avviso.
