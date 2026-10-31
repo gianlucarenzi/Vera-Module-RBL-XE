@@ -440,3 +440,15 @@ Ora `./output_job.sh 4` fa tutto senza passaggi manuali e si ferma al primo erro
 - `jlcpcb-global-sourcing.txt`: codici LCSC presi con Global Sourcing. `jlcpcb-stock-check.py`
   li segna GLOBAL (non errore) e li elenca a fine controllo. Ora contiene solo C146242.
 - Con questo `./check_jlcpcb_stock.sh` passa (exit 0); resta l'avviso LOW su X1 (6 pezzi per 5).
+
+### 11e. X1: oscillatore 25 MHz YXC al posto dell'ECS-2033
+
+- X1 ECS-2033-250-BN (C2441279, 6 pezzi) → **YXC OT3EL89CJI-111YLC-25M C7471623** (~24.000 a
+  magazzino), stesso package 2520: piedinatura uguale (1 tri-state, 2 GND, 3 OUT, 4 VDD), pin 1
+  alto o scollegato = uscita attiva (sul PCB è scollegato), pad consigliati entro 0,05 mm dal
+  footprint attuale. ±20 ppm invece di ±50.
+- Scelta dell'utente: modificato **in place** il simbolo `RetroBitLab:ECS-2033-250-BN` (nome,
+  pin, footprint `OSC_ECS-2033-250-BN` e 3D invariati; cambiati valore, LCSC, datasheet,
+  produttore, descrizione). Il PCB non cambia.
+- **Vera-Module-RBL-C64** usa lo stesso simbolo e ha ancora C2441279 nello schema: da allineare.
+- Stock dopo il cambio: tutto OK, U11 GLOBAL (Global Sourcing).

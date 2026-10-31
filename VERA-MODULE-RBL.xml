@@ -1690,14 +1690,12 @@
       </fields>
     </comp>
     <comp ref="X1">
-      <value>ECS-2033-250-BN</value>
+      <value>OT3EL89CJI-111YLC-25M</value>
       <footprint>RetroBitLab:OSC_ECS-2033-250-BN</footprint>
-      <datasheet>https://www.lcsc.com/datasheet/C2441279.pdf</datasheet>
+      <datasheet>https://www.lcsc.com/datasheet/C7471623.pdf</datasheet>
       <fields>
-        <field name="PARTREV">11/15/13</field>
-        <field name="MANUFACTURER">ECS Inc</field>
-        <field name="STANDARD">Manufacturer Recommendations</field>
-        <field name="LCSC">C2441279</field>
+        <field name="MANUFACTURER">YXC</field>
+        <field name="LCSC">C7471623</field>
       </fields>
     </comp>
     <comp ref="Y1">
