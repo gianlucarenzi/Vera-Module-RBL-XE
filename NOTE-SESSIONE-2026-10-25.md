@@ -452,3 +452,16 @@ Ora `./output_job.sh 4` fa tutto senza passaggi manuali e si ferma al primo erro
   produttore, descrizione). Il PCB non cambia.
 - **Vera-Module-RBL-C64** usa lo stesso simbolo e ha ancora C2441279 nello schema: da allineare.
 - Stock dopo il cambio: tutto OK, U11 GLOBAL (Global Sourcing).
+
+### 11f. Vera-Module-RBL-C64 allineato all'XE
+
+- Copiati nel repo C64 gli script dell'XE: `output_job.sh` (BOM, CPL, Gerber dai sorgenti),
+  `sch2bomxml.py`, `jlcpcb-sync-cpl.py`, `generate_gerbers.py`, `run_pcbnew.sh`,
+  `check_jlcpcb_stock.sh`, `jlcpcb-stock-check.py`, `jlcpcb-global-sourcing.txt`,
+  `patches/eeplot-pdf14-toc.patch`, `tools/` (fastroute). Unica differenza in `output_job.sh`:
+  `PCBNAMEOUT=${PCBNAME}-C64` (prima era rimasto `-XE`, i file d'ordine si chiamavano XE).
+- Schema C64: C36, R37–R44, J7, X1 erano identici a quelli XE prima delle modifiche, sostituiti
+  con i blocchi XE attuali. Allineate netlist e cache della libreria (nel C64 la cache è
+  tracciata). Stock C64 per 5 schede: tutto OK, U11 GLOBAL.
+- **PCB C64 da aggiornare a mano** come l'XE: footprint di J7 (PJ-313D).
+- Netlist XE rigenerata da Eeschema (10:35): ora anche C36/R37–R44 hanno i nuovi codici.
