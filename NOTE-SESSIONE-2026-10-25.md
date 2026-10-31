@@ -332,8 +332,9 @@ Tutto committato e pushato fino a `7ec9431` (resta solo questa nota). Nessuna sc
   - il length tuning (`--tune`) ha sovrapposto piste: non usarlo;
   - il router lascia pezzetti di pista < 0,2 mm all'ingresso dei pad nonostante
     `--router.min_trace_width_um=200`: controllare il `.ses` prima dell'import;
-  - gli script di supporto (preparazione DSN, via ai piani, dedup del `.ses`, via termici) erano
-    nella cartella temporanea di Claude e **non sono nel repo**.
+  - gli script sono in `tools/` (`7652964`): `tools/route.sh WORKDIR` rifà tutto il routing dal
+    DSN esportato (preparazione, via ai piani, bus, resto, dedup, controllo piste sottili);
+    `thermal_vias.py` per i via sotto le alette di U13/U15.
 - **Footprint** (RetroBitLab-Library `aa15c43`, pushato):
   - `IC_ESP32-S3FN8-QFN40P700X700X90-57N`: 9 via termici 0,3/0,2 mm nell'EP (pad 57). U7 va
     aggiornato con "Update Footprint" (il nome non cambia, "Update PCB from Schematic" non lo fa);
