@@ -15,6 +15,11 @@ Status of a row:
   SHORT    0 < stock < needed                                     (error)
   OUT      stock 0                                                (error)
   MISSING  the code is not in the JLCPCB library                  (error)
+  GLOBAL   OUT, SHORT or MISSING, but listed in the Global Sourcing file:
+           JLCPCB buys it from another distributor, so it is not an error
+
+Global Sourcing file (default jlcpcb-global-sourcing.txt next to the
+script, if present): one LCSC code per line, '#' starts a comment.
 
 The jlcparts database (yaqwsx) was tried first and dropped: it misses parts
 that JLCPCB has (e.g. C2913196 ESP32-S3FN8, C2798196), so it gave false
@@ -25,11 +30,12 @@ not reachable.
 
 Only the standard library is used.
 
-Usage: jlcpcb-stock-check.py [--boards N] <bom.csv>
+Usage: jlcpcb-stock-check.py [--boards N] [--global-sourcing FILE] <bom.csv>
 """
 import argparse
 import csv
 import json
+import os
 import re
 import sys
 import time
@@ -144,16 +150,36 @@ def alternatives(part, need):
     return [c for _, c in scored[:ALTERNATIVES]]
 
 
+def read_global_sourcing(path):
+    codes = {}
+    if not path or not os.path.exists(path):
+        return codes
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            note = line.split("#", 1)
+            code = note[0].strip().upper()
+            if code:
+                codes[code] = note[1].strip() if len(note) > 1 else ""
+    return codes
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--boards", type=int, default=5,
                     help="boards to assemble (default 5)")
+    ap.add_argument("--global-sourcing", default=os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "jlcpcb-global-sourcing.txt"),
+        help="LCSC codes bought by JLCPCB Global Sourcing "
+             "(default jlcpcb-global-sourcing.txt)")
     ap.add_argument("bom", help="JLCPCB BOM (Comment,Designator,Footprint,LCSC)")
     args = ap.parse_args()
 
     with open(args.bom, newline="", encoding="utf-8") as f:
         bom = list(csv.DictReader(f))
 
+    global_codes = read_global_sourcing(args.global_sourcing)
+    global_used = []
     errors = 0
     extended = 0
     total = 0.0
@@ -169,9 +195,17 @@ def main():
             label = "%s (%s)" % (b["Comment"], ",".join(refs))
             part = lookup(code)
             if part is None:
+                status = "MISSING"
+                if code.upper() in global_codes:
+                    status = "GLOBAL"
+                    global_used.append((code, label))
+                    print("%-8s %-10s %-9s %7d %9s %7s  %s" % (
+                        status, code, "-", len(refs) * args.boards, "-", "-",
+                        label))
+                    continue
                 errors += 1
                 print("%-8s %-10s %-9s %7d %9s %7s  %s" % (
-                    "MISSING", code, "-", len(refs) * args.boards, "-", "-",
+                    status, code, "-", len(refs) * args.boards, "-", "-",
                     label))
                 report.append((code, label, None, []))
                 continue
@@ -191,6 +225,9 @@ def main():
                 status = "LOW"
             else:
                 status = "OK"
+            if status in ("OUT", "SHORT") and code.upper() in global_codes:
+                status = "GLOBAL"
+                global_used.append((code, label))
             print("%-8s %-10s %-9s %7d %9d %7s  %s" % (
                 status, code, lib_type(part), need, stock,
                 "%.2f" % (price * need) if price is not None else "-", label))
@@ -203,6 +240,12 @@ def main():
 
     print("\n%d rows, %d Extended (setup fee each, Preferred and Basic have "
           "none), parts about %.2f USD" % (len(bom), extended, total))
+
+    if global_used:
+        print("\nGlobal Sourcing (choose it for these rows when ordering):")
+        for code, label in global_used:
+            note = global_codes.get(code.upper())
+            print("  %s %s%s" % (code, label, "  # " + note if note else ""))
 
     if report:
         print("\nParts to change:")

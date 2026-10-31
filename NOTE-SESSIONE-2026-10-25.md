@@ -429,3 +429,14 @@ Ora `./output_job.sh 4` fa tutto senza passaggi manuali e si ferma al primo erro
 - Nota: AUD1L va all'anello (pin 3) e AUD1R alla punta (pin 2), al contrario della convenzione
   (punta = sinistro). Era così anche prima; da decidere se scambiare le etichette.
 - Stock dopo il cambio: resta solo **U11** (3 su 5) come errore, X1 come avviso.
+
+### 11d. U11 resta WM8524, con Global Sourcing
+
+- Il WM8524CGEDT **non** è NRND: DigiKey, Octopart e altri lo danno attivo. Il problema è solo lo
+  stock JLCPCB (C146242, 3 pezzi). Deciso: si tiene, e per arrivare a 5 schede (e per la
+  produzione finale) si usa il **Global Sourcing** di JLCPCB su quella riga della BOM.
+- Alternativa valutata e messa da parte: TI PCM5102APWR C107671 (TSSOP-20, 3,3 V, uscita 2,1 Vrms
+  riferita a massa; PCM5101A/PCM5100A stessi pin). Non pin-compatibile: serve rifare quella zona.
+- `jlcpcb-global-sourcing.txt`: codici LCSC presi con Global Sourcing. `jlcpcb-stock-check.py`
+  li segna GLOBAL (non errore) e li elenca a fine controllo. Ora contiene solo C146242.
+- Con questo `./check_jlcpcb_stock.sh` passa (exit 0); resta l'avviso LOW su X1 (6 pezzi per 5).
