@@ -305,3 +305,53 @@ Nessuna scheda è stata costruita: tutto è nello schema (`.sch`) e nella netlis
   `0xFC` non cambiano. Build `esp32s3fn8` e `esp32s3fn8-cctl` OK, test host 0 errori.
 - Documenti aggiornati: `PIN-MAPPING.md`, `firmware/MCU/README.md`, documento di analisi (.tex + PDF).
   La tesi riportava già "33–36" per A10–A13 senza ordine: nessuna modifica.
+
+## 10. Sessione 2026-10-30/31: PCB sbrogliato con fastroute
+
+Tutto committato e pushato fino a `7ec9431` (resta solo questa nota). Nessuna scheda costruita.
+
+- **Meandri tolti** dai bus `mA*`/`mD*` con `tools/unmeander.py` (`96fa4ad`). Il length matching
+  non serve: bus 6502 a 1,79 MHz, 60 mm di differenza ≈ 0,4 ns su centinaia di ns di ciclo.
+- **Routing rifatto da zero** con fastroute (`~/packages/fastroute/target/release/fastroute`),
+  commit `500c89e`:
+  - layer interni **GND e POWER (3V3) piani pieni**, senza piste. La prima prova con POWER "misto"
+    lasciava 146 tratti di segnale sul piano 3V3 e lo spezzava in isole (39 non connessi al DRC);
+  - ogni pad SMD GND/3V3 ha il suo via verso il piano (235 via con moncherino), messi da script
+    prima del routing e fissati nel DSN;
+  - due fasi: prima solo `AddressBus`/`DataBus`, poi il resto partendo da quel cablaggio;
+  - risultato: 626/634 collegamenti, 0 violazioni; gli 8 mancanti (mA0 ×2, mA4, ~mWE, SPI_SSEL_N,
+    VSYSCLK, D−, 3V3 U7.46–U7.55) erano da tracciare a mano in pcbnew: **verificare con il DRC**
+    che siano stati fatti;
+  - bus: mD0–mD7 76–90 mm, mA1–mA4 69–83 mm, mA5–mA15 15–31 mm.
+- **Lezioni su fastroute 0.1.14** (per un prossimo routing):
+  - via e piste con `(type fix)` non finiscono nel `.ses`: usare `(type protect)`;
+  - una sessione importata con `--initial-session` **non** resta fissa: se il DSN contiene già gli
+    stessi via, vengono caricati due volte (centinaia di "violazioni" via/via sulla stessa net); se
+    non li contiene, il router li può rimuovere. Soluzione usata: via fissi nel DSN e tolti dalla
+    sessione;
+  - il length tuning (`--tune`) ha sovrapposto piste: non usarlo;
+  - il router lascia pezzetti di pista < 0,2 mm all'ingresso dei pad nonostante
+    `--router.min_trace_width_um=200`: controllare il `.ses` prima dell'import;
+  - gli script di supporto (preparazione DSN, via ai piani, dedup del `.ses`, via termici) erano
+    nella cartella temporanea di Claude e **non sono nel repo**.
+- **Footprint** (RetroBitLab-Library `aa15c43`, pushato):
+  - `IC_ESP32-S3FN8-QFN40P700X700X90-57N`: 9 via termici 0,3/0,2 mm nell'EP (pad 57). U7 va
+    aggiornato con "Update Footprint" (il nome non cambia, "Update PCB from Schematic" non lo fa);
+  - nuovo `SSOP-20_5.3x7.2mm_P0.65mm_Pad0.45` per U12 (CH340T): pad 0,45 mm, 0,20 mm tra i pad
+    invece di esattamente la clearance di 0,15 mm. Simbolo `USBCH340T` e `powersupply.sch` aggiornati.
+- **Via termici sul PCB** (`6f2a52b`): 16 sotto l'aletta GND di U15 (L7805), 6 sotto l'aletta 3V3 di
+  U13 (AMS1117). Via liberi, footprint KiCad standard non modificati (scelta dell'utente).
+- **Uscite v4** (`./output_job.sh 4`, `d69c2d4`): BOM/CPL JLCPCB, Gerber, STEP/WRL, zip
+  `VERA-MODULE-RBL-XE-v4.zip`. Versione "4" come la documentazione (il cartiglio dice ancora Rev 1.0).
+  I CSV `-v4` e lo zip non sono tracciati, come le versioni precedenti.
+- **eeplot** (`7ec9431`): con cairo 1.18 (Debian 13) l'indice del PDF dello schema andava in
+  asserzione (`pdftoc_end`). Nuova `patches/eeplot-pdf14-toc.patch`: il PDF con indice è scritto
+  in PDF 1.4. `output_job.sh` ricompila eeplot da solo quando cambiano le patch.
+- **Aperti**:
+  - DRC: courtyard sovrapposti **H3/J1** (F.Cu, ~1 mm) e **C23/R71** (B.Cu): da verificare se
+    corretti dopo il routing;
+  - cartiglio di schema e PCB ancora "Rev 1.0" contro "Rev 4" della documentazione;
+  - `images/VERA-MODULE-RBL.step` cambia a ogni esecuzione di `output_job.sh` anche senza modifiche
+    alla scheda: scartarlo se la scheda non è cambiata;
+  - file di lavoro non tracciati nella radice: `VERA-MODULE-RBL.dsn`, `.ses`, `.kicad_pcb.bak`,
+    `report.drc.rpt`, `bom/`.
