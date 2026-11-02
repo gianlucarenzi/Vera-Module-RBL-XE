@@ -433,7 +433,9 @@ Il driver e i test già le seguono, ma valgono per qualunque programma futuro:
   dall'ESP32 (`PIN-MAPPING.md`, `firmware/MCU`) oppure dalla BRAM di un'FPGA di interfaccia
   (`firmware/FPGA`, `C6502_Interface.vhd`). Va stabilita quale è quella attuale e allineata la
   documentazione.
-- Presenza o meno di una decodifica hardware (`addressdecoder.sch`: 74LVC138, `~dD1XX`,
-  `~dROMSEL`, `~dRAMSEL`) accanto alla decodifica software dell'ESP32.
+- Presenza o meno di una decodifica hardware (74LVC138, `~dD1XX`, `~dROMSEL`, `~dRAMSEL`)
+  accanto alla decodifica software dell'ESP32. Il foglio `addressdecoder.sch`, fuori dalla
+  gerarchia, è stato tolto dal repository il 2026-11-02: si recupera dalla storia git
+  (`git log --diff-filter=D -- addressdecoder.sch`).
 - Compatibilità ECI del 130XE: confermare che l'ECI porti `MPD`, `EXTSEL`, `IRQ` e `D1XX`, e che
   l'OS XE esegua la scansione PBI (`$D1FF`, `$D803`, `$D80B`) come l'OS XL.
