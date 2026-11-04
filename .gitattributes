@@ -1,1 +1,2 @@
 images/VERA-MODULE-RBL.step filter=lfs diff=lfs merge=lfs -text
+images/VERA-MODULE-RBL.wrl filter=lfs diff=lfs merge=lfs -text
