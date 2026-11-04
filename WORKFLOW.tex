@@ -244,6 +244,31 @@ scripts/build-deb.sh
 sudo apt install ./dist/fastroute_*.deb
 \end{lstlisting}
 
+\file{tools/route.sh} sbroglia \textbf{da zero} (cancella tutte le piste). Per
+completare solo i collegamenti mancanti di una scheda già sbrogliata si usa
+\file{tools/route\_incremental.sh WORKDIR} (KiCad chiuso, DSN esportato dalla
+scheda salvata con le aree riempite): le piste esistenti restano fisse e il
+risultato è \file{VERA-MODULE-RBL.ses}. Due cose da sapere:
+
+\begin{itemize}[leftmargin=*]
+  \item KiCad 5 esporta i segmenti consecutivi come un'unica polilinea e mette
+    le giunzioni a T sui vertici intermedi; fastroute collega le piste solo agli
+    estremi e vedrebbe interrotte net già complete.
+    \file{tools/split\_dsn\_wires.py} spezza le polilinee in segmenti.
+  \item L'import della sessione in KiCad 5 \textbf{sostituisce tutte} le piste e
+    le via: \file{tools/filter\_ses.py} tiene lo sbroglio esistente una sola
+    volta e con la larghezza originale, aggiunge il nuovo solo sulle net
+    incomplete (\file{tools/unrouted\_nets.py}) e rifiuta una sessione a cui
+    manca qualcosa.
+\end{itemize}
+
+Per far ottimizzare a fastroute (lunghezza delle piste, numero di via) solo lo
+sbroglio aggiunto dopo un commit, lasciando fisso quello già validato, si usa
+\file{tools/optimize\_new.sh COMMIT WORKDIR}. Prima dell'import della sessione
+si tolgono le teardrop, dopo si rimettono. Il report di fastroute è più severo
+del DRC di KiCad (controlla anche il rame della stessa net e vede via ed
+estremità delle piste come ottagoni): il riferimento resta il DRC.
+
 % ---------------------------------------------------------------------------
 \section{Riempimento delle aree e DRC}
 
