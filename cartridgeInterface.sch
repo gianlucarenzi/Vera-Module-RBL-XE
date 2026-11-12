@@ -694,8 +694,6 @@ Text GLabel 8940 6935 2    33   Output ~ 0
 mREFRESH
 Wire Wire Line
 	8780 6935 8940 6935
-Text GLabel 11680 6835 2    33   Input ~ 0
-GND
 Text GLabel 11680 6735 2    33   Input ~ 0
 ~mMPD
 Text GLabel 11680 6635 2    33   Input ~ 0
@@ -783,8 +781,6 @@ DATA BUS
 NoConn ~ 9980 7735
 Wire Wire Line
 	11680 7035 11530 7035
-Wire Wire Line
-	8780 7035 8895 7035
 Wire Wire Line
 	10130 7935 9975 7935
 Wire Wire Line
@@ -1886,9 +1882,26 @@ Wire Wire Line
 	7380 7735 7205 7735
 Text GLabel 7205 7735 0    33   Input ~ 0
 ~RST
-Wire Wire Line
-	8895 7035 8955 7035
 Text GLabel 8955 7035 2    33   Output ~ 0
 ~mRST
-NoConn ~ 10130 7535
+NoConn ~ 9975 7535
+Wire Wire Line
+	8780 7035 8955 7035
+Wire Wire Line
+	9975 7535 10130 7535
+$Comp
+L CRES0805:CREZ08051% R74
+U 1 1 6AFA7CEA
+P 11785 6835
+F 0 "R74" V 11785 6830 30  0000 C CNN
+F 1 "CREZ08051%" V 11785 6890 30  0001 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" H 11785 6835 50  0001 C CNN
+F 3 "https://www.lcsc.com/datasheet/C328378.pdf?spm=wm.sxq.inf.ggs&lcsc_vid=QAIPVVVVRlJXV1FQQABeBQAAQQNaVFMAR1IIXwYHFlgxVlNfRFFfVlJfTlRXVDsOAxUeFF5JWBYZEEoKFBINSQcJGk4%3D" H 11785 6835 50  0001 C CNN
+F 4 "C328378" H 11785 6835 50  0001 C CNN "LCSC"
+	1    11785 6835
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	11880 6835 11880 6935
+Connection ~ 11880 6935
 $EndSCHEMATC
