@@ -25,9 +25,9 @@ le modalità.
 
 ### Sequenza di startup
 
-`setup()` (Core 1) abbassa **ARESET** e **CRESET** immediatamente dopo il reclaim
-dei pin JTAG, garantendo che Atari e FPGA VERA rimangano in reset per tutta la
-durata dell'inizializzazione ESP32. Poi:
+`setup()` (Core 1) abbassa **CRESET** immediatamente dopo il reclaim dei pin JTAG,
+così la FPGA VERA resta in reset durante l'inizializzazione dell'ESP32. L'Atari non
+si può tenere in reset: il 130XE pilota `RST` (ECI pin 2) direttamente con l'uscita totem-pole dell'NE555 `U19` (service manual, figura 2-1). La scheda legge `RST` su GPIO 48 (`U6` A7→B7). Poi:
 
 1. crea `LogTask` sul **Core 0**, che apre `Serial` (l'interrupt della UART va
    sul core che chiama `Serial.begin`);
@@ -40,8 +40,9 @@ durata dell'inizializzazione ESP32. Poi:
    reset interno della VERA, che parte solo dopo `CDONE`;
 6. crea `MonitorTask` sul **Core 1** con priorità massima: il task prende il core
    e `setup()` non riprende più. `MonitorTask` crea i bundle Dedicated GPIO,
-   disattiva il watchdog delle interruzioni, maschera le interruzioni e porta
-   **ARESET → HIGH**: da questo momento il bus è live.
+   disattiva il watchdog delle interruzioni e maschera le interruzioni: da questo
+   momento il bus è live. Se l'Atari è già partito prima, il dispositivo PBI si vede
+   dopo un RESET.
 
 ### Divisione dei core
 
@@ -146,7 +147,7 @@ I pin GPIO 39–42 erano originariamente riservati a JTAG; vengono liberati in
 | A13          | 36          | 41         | Address bit 13 (via U3)           |
 | A14          | 45          | 51         | Address bit 14 (via U3); strapping VDD\_SPI |
 | A15          | 46          | 52         | Address bit 15 (via U3); strapping ROM msg / download |
-| ARESET       | 37          | 42         | System reset ATARI (output)       |
+| ARST_IN      | 48          | 36         | RST Atari (input, via U6 A7→B7)   |
 | BOOT0        | 0           | 5          | Pulsante BOOT / auto-reset (non usato dal firmware) |
 | CRESET       | 38          | 43         | Chip reset VERA (output)          |
 | CDONE        | 39          | 44         | VERA programmata (input)          |

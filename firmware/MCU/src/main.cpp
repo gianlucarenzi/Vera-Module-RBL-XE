@@ -51,7 +51,10 @@
 #define PIN_A11         34   /* Address Bit 11 (Pin 39) */
 #define PIN_A12         35   /* Address Bit 12 (Pin 40) */
 #define PIN_A13         36   /* Address Bit 13 (Pin 41) */
-#define PIN_ARESET      37   /* Atari System Reset Output (Pin 42) */
+/* GPIO 37 (Pin 42): not used.  The 130XE drives RST (ECI pin 2) straight from
+ * the NE555 U19 output (totem-pole, service manual fig. 2-1): a card must
+ * never drive it, so the board cannot hold the Atari in reset.  RST is read
+ * on PIN_ARST_IN instead; R70 pulls GPIO 37 down. */
 #define PIN_CRESET      38   /* Vera Chip Reset Output (Pin 43) */
 #define PIN_CDONE       39   /* Vera Programmed Status Input (Pin 44) */
 #define PIN_DEV_SEL_N   40   /* Vera Chip Select Output (Pin 45, active LOW) */
@@ -60,6 +63,7 @@
 #define PIN_A14         45   /* Address Bit 14 (Pin 51) */
 #define PIN_A15         46   /* Address Bit 15 (Pin 52) */
 #define PIN_ABUS_OE_N   47   /* ~OE of U3 (A8-A15) and U4 (A0-A7), 10 kΩ pull-ups R7/R34 (Pin 37, active LOW) */
+#define PIN_ARST_IN     48   /* Atari RST input, through U6 A7->B7 (Pin 36, active LOW, read only) */
 
 /* Serial Debug (UART0 default pins on ESP32-S3 QFN56) */
 #define PIN_UART_TX     43   /* UART0 TX (Pin 49) */
@@ -185,7 +189,7 @@ static inline __attribute__((always_inline)) uint8_t decode_data(uint32_t lo)
 #define VERA_TRACE_REGS 0
 #endif
 
-/* Delay between CDONE high and the release of the Atari reset (VERA POR). */
+/* Delay between CDONE high and the start of the bus loop (VERA POR). */
 #ifndef VERA_POST_CDONE_DELAY_US
 #define VERA_POST_CDONE_DELAY_US 1000u
 #endif
@@ -497,8 +501,8 @@ static void IRAM_ATTR MonitorTask(void *arg)
     bus_int_wdt_disable();
     portDISABLE_INTERRUPTS();
 
-    /* The VERA is configured (setup()): release the Atari, the bus goes live. */
-    GPIO.out1_w1ts.val = (1UL << (PIN_ARESET - 32));
+    /* The VERA is configured (setup()): the bus goes live.  The Atari may
+     * already be running: the card cannot hold its RST (see PIN_ARST_IN). */
 
     /* Align to the end of a PHI2-high phase. */
     wait_phi2_high();
@@ -843,10 +847,8 @@ void setup(void)
     gpio_reset_pin((gpio_num_t)PIN_EXTSEL_N);  /* GPIO 41 */
     gpio_reset_pin((gpio_num_t)PIN_MPD);       /* GPIO 42 */
 
-    /* Hold Atari and VERA in reset immediately — the VERA is released below,
-     * the Atari only by MonitorTask once the bus loop is ready. */
-    pinMode(PIN_ARESET, OUTPUT);
-    digitalWrite(PIN_ARESET, LOW);
+    /* Hold the VERA in reset immediately; it is released below.  The Atari
+     * cannot be held (RST is the 130XE NE555 output, see PIN_ARST_IN). */
     pinMode(PIN_CRESET, OUTPUT);
     digitalWrite(PIN_CRESET, LOW);
 
@@ -883,11 +885,11 @@ void setup(void)
     cfg.pin_bit_mask = (1ULL << PIN_PHI2) | (1ULL << PIN_RW) | DBUS_MASK | ABUS_LO_MASK;
     gpio_config(&cfg);
 
-    /* Bank 1 inputs: A10-A15, CDONE */
+    /* Bank 1 inputs: A10-A15, CDONE, Atari RST */
     cfg.pin_bit_mask = (1ULL << PIN_A10) | (1ULL << PIN_A11) |
                        (1ULL << PIN_A12) | (1ULL << PIN_A13) |
                        (1ULL << PIN_A14) | (1ULL << PIN_A15) |
-                       (1ULL << PIN_CDONE);
+                       (1ULL << PIN_CDONE) | (1ULL << PIN_ARST_IN);
     gpio_config(&cfg);
 
     /* Strapping pins latched: enable the address translators U3/U4. */
@@ -908,7 +910,7 @@ void setup(void)
      * VERA bring-up:
      *  1. Release the VERA FPGA from reset → it loads the bitstream from SPI flash.
      *  2. Poll CDONE until HIGH (ICE40UP5K typically < 100 ms).
-     *  3. Wait for the VERA power-on reset; MonitorTask then releases the Atari.
+     *  3. Wait for the VERA power-on reset; then MonitorTask serves the bus.
      */
     digitalWrite(PIN_CRESET, HIGH);
     Serial.println("[VeraX16] VERA: released from reset, waiting CDONE...");
@@ -928,7 +930,8 @@ void setup(void)
     delayMicroseconds(VERA_POST_CDONE_DELAY_US);
 
     Serial.printf("[VeraX16] Bus loop on Core 1 (settle %u ns, write sample %u ns); "
-                  "ATARI leaves reset\n", BUS_ADDR_SETTLE_NS, BUS_WR_SAMPLE_NS);
+                  "Atari RST is %s\n", BUS_ADDR_SETTLE_NS, BUS_WR_SAMPLE_NS,
+                  digitalRead(PIN_ARST_IN) ? "high (running)" : "LOW (in reset)");
     Serial.flush();
 
     /* MonitorTask takes Core 1 over (highest priority, never yields): this

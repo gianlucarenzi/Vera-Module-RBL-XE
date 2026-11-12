@@ -136,7 +136,7 @@ tramite il **Dedicated GPIO** (istruzioni TIE Xtensa `ee.get_gpio_in` / `ee.wr_m
 Con A0–A15 completi il decode è esatto: nessuna ambiguità di pagina.
 
 > **Perché non i chip-select hardware:** sull'ESP32-S3FN8 resta libero un solo GPIO
-> (GPIO 48, § 7; GPIO 47 è `ABUS_OE_N`), non abbastanza per i quattro chip-select hardware disponibili sui
+> (GPIO 48, § 7, oggi usato per leggere `RST`; GPIO 47 è `ABUS_OE_N`), non abbastanza per i quattro chip-select hardware disponibili sui
 > connettori Atari (`/D1XX`, `/S4`, `/S5`, `/CCTL`). Inoltre l'emulazione RAMbo 256 KB richiede comunque di leggere l'intero
 > bus indirizzi A0–A15 (per decodificare la finestra $4000–$7FFF) e di intercettare le
 > scritture su PORTB ($D301), quindi anche con GPIO disponibili i chip-select hardware
@@ -154,7 +154,7 @@ attivi; in CCTL mode solo DEV\_SEL\_N è usato. La RAMbo 320K (256 KB a `$4000�
 | EXTSEL\_N | 41 | 47 | MTDI | **Output** | LOW | via U16 | Disabilita MMU/Freddie per $D1xx, $D6xx e finestra RAMbo $4000–$7FFF. **Solo PBI mode** per VERA; RAMbo in entrambe le modalità. Ex-JTAG, reclaimed. |
 | DEV\_SEL\_N | 40 | 45 | MTDO | **Output** | LOW | **direct** | VERA chip select (3.3 V); PBI: VERA regs $D1xx; CCTL: range $D5xx. Ex-JTAG, reclaimed. |
 | MPD | 42 | 48 | MTMS | **Output** | LOW | via U16 | Math Pack Disable — disabilita ROM Atari $D800–$DFFF — **solo PBI mode**. Ex-JTAG, reclaimed. |
-| ARESET | 37 | 42 | GPIO37 | **Output** | LOW | via U16 | Atari System Reset — pilota /RESET bus Atari (open-drain + pull-up consigliati). |
+| ARST\_IN | 48 | 36 | SPICLK\_N | Input | LOW | via U6 (A7→B7) | `RST` Atari (ECI pin 2), solo lettura. Il 130XE pilota `RST` (ECI pin 2) direttamente con l'uscita totem-pole dell'NE555 `U19` (service manual, figura 2-1): la scheda non deve mai pilotarlo, quindi non può tenere l'Atari in reset. GPIO 37 non è più usato (solo pull-down `R70`). |
 | CRESET | 38 | 43 | GPIO38 | **Output** | LOW | **direct** | VERA FPGA Reset — 3.3 V, diretto al chip FPGA. |
 | CDONE | 39 | 44 | MTCK | Input | HIGH | **direct** | VERA FPGA configured status — HIGH = configurazione completata. Ex-JTAG, reclaimed. |
 | ABUS\_OE\_N | 47 | 37 | SPICLK\_P | **Output** | LOW | **direct** | Rete `~ABUS_OE`: `~OE` di `U3` (A8–A15) e `U4` (A0–A7), pull-up `R7`/`R34` 10 kΩ → 3V3. Alto (traslatori spenti) durante il reset dell'ESP32, così GPIO 45/46 leggono LOW; il firmware lo porta basso in `setup()`. Dominio VDD\_SPI = 3,3 V. |
@@ -296,6 +296,7 @@ GPIO 47 è in alta impedenza (nessuna pull interna, nessun glitch), `R7` spegne 
 | — | GPIO 1 (pin 6) — PHI2 | Atari PHI2 | Clock fase 2, 1.79 MHz |
 | — | GPIO 2 (pin 7) — R/W\_ | Atari R/W\_ | Read / Not-Write |
 | — | — | D1XX\_N, S4\_N, S5\_N, CCTL\_N, REFRESH | Canali liberi, portati a test point — **non collegati a un GPIO in questo progetto** |
+| A7/B7 | GPIO 48 (pin 36) — `~mRST` | Atari `RST` (ECI pin 2) | Solo lettura del reset (prima A7 era a GND con `R74`, tolta) |
 
 ### U16 — Control signals, MCU → 6502 (fisso, output)
 
@@ -303,7 +304,7 @@ GPIO 47 è in alta impedenza (nessuna pull interna, nessun glitch), `R7` spegne 
 |---|---|---|---|
 | — | GPIO 41 (pin 47) — EXTSEL\_N | Atari EXTSEL | Output, active LOW |
 | — | GPIO 42 (pin 48) — MPD | Atari ECI MPD | Output, active LOW |
-| — | GPIO 37 (pin 42) — ARESET | Atari /RESET | Output, active LOW |
+| — | GND (pin 16, B5) | non collegato (pin 8, A5) | Non pilota più `RST`: il 130XE pilota `RST` (ECI pin 2) direttamente con l'uscita totem-pole dell'NE555 `U19` (service manual, figura 2-1) |
 | — | GND con una 0 Ω ciascuno (pin 19 `R73`, 20 `R76`, 21 `R77`, 14 `R72`, 15 `R75`) | non collegati (pin 5, 4, 3, 9, 10) | Canali di riserva. RD4, RD5 e HALT non passano da `U16`: hanno test point (`RD4`, `RD5`, `~HALT1`) direttamente sulle reti lato Atari (`VERA-ATARI-HW-REQUIREMENTS.md` §2.10) |
 | — | `~mVIRQ` (FPGA `U2` pin 32) | Atari IRQ (`ECI1` pin B) | **Non passa da `U16`**: buffer open-drain `U26` SN74LVC1G07DBVR (A pin 2 ← `~mVIRQ`, Y pin 4 → `~IRQ`), 3V3 con `C69` 100 nF. Vedere `VERA-ATARI-HW-REQUIREMENTS.md` §2.3 |
 
@@ -349,8 +350,8 @@ Pin non assegnati al progetto, esclusi strapping e flash in-package.
 | 48 | 36 | SPICLK\_N | Libero. Dominio VDD\_SPI (3.3 V sulla FN8, datasheet Table 1-1); usato dalla memoria solo in Octal SPI |
 | 22–25 | — | — | Non esistono su ESP32-S3 |
 
-> Resta libero solo GPIO 48 (pin 36); GPIO 47 (pin 37) è `ABUS_OE_N`, tutti gli altri GPIO non
-> riservati sono assegnati: GPIO 33–36 = A10–A13, GPIO 45, 46 = A14–A15. GPIO 3 non è usato ma è un pin di
+> GPIO 48 (pin 36) legge `RST` dell'Atari; GPIO 37 non è più usato (solo `R70`); GPIO 47 (pin 37) è
+> `ABUS_OE_N`; tutti gli altri GPIO non riservati sono assegnati: GPIO 33–36 = A10–A13, GPIO 45, 46 = A14–A15. GPIO 3 non è usato ma è un pin di
 > strapping: lo fissa `R71` (10 kΩ → 3V3).
 
 **Pin esclusi (non utilizzabili):**
@@ -406,13 +407,13 @@ memoria da Table 2-14 "Pin Mapping Between Chip and Flash or PSRAM" (pag. 31).
 | 33  | GPIO 30 (SPICLK) | **Flash in-package (CLK) — NC esterno** |
 | 34  | GPIO 31 (SPIQ)   | **Flash in-package (DO) — NC esterno** |
 | 35  | GPIO 32 (SPID)   | **Flash in-package (DI) — NC esterno** |
-| 36  | GPIO 48 (SPICLK\_N) | GPIO libero — usato dalla memoria solo in Octal SPI; non usato in questo progetto |
+| 36  | GPIO 48 (SPICLK\_N) | `~mRST` input (RST Atari via U6 A7→B7); usato dalla memoria solo in Octal SPI |
 | 37  | GPIO 47 (SPICLK\_P) | ABUS\_OE\_N output → `~OE` di U3/U4 (rete `~ABUS_OE`, pull-up `R7`/`R34`) |
 | 38  | GPIO 33 | A10 (via U3) |
 | 39  | GPIO 34 | A11 (via U3) |
 | 40  | GPIO 35 | A12 (via U3) |
 | 41  | GPIO 36 | A13 (via U3) |
-| 42  | GPIO 37 | ARESET output (via U16) |
+| 42  | GPIO 37 | Non usato (pull-down `R70`) |
 | 43  | GPIO 38 | CRESET output (diretto VERA) |
 | 44  | GPIO 39 / MTCK | CDONE input (diretto VERA) — ex-JTAG |
 | 45  | GPIO 40 / MTDO | DEV\_SEL\_N output (diretto VERA) — ex-JTAG |

@@ -66,7 +66,7 @@ con possibili errori di lettura in tutto il sistema.
 Richiesta: `~OE_` di `U19` deve essere attivo **solo** quando la scheda risponde in lettura
 (registri VERA, RAM `$D600-$D7FF`, ROM `$D800-$DFFF`, finestra RAMbo), oppure in scrittura
 (Atari→scheda, dove `U19` pilota solo il lato scheda). **Non** va collegato a `CDONE`: quello
-segnala solo la configurazione dell'FPGA ed è già usato per rilasciare `ARESET`. Il gating è
+segnala solo la configurazione dell'FPGA ed è già usato per avviare il loop del bus. Il gating è
 ciclo per ciclo.
 
 I segnali che indicano "la scheda risponde" esistono già: il firmware abbassa `DEV_SEL_N` (registri
@@ -211,8 +211,8 @@ chiamare. Con la scheda attuale non è realizzabile:
   lascerebbe D0-D6 del lato scheda non pilotati, e `U19` li porterebbe sul bus Atari a un livello
   casuale, in contesa con i bit di eventuali altri device PBI. Con la regola di §2.1 `U19` non viene
   nemmeno abilitato per `$D1FF`.
-- `~mVIRQ` non arriva all'ESP32. L'unico GPIO libero è GPIO 48 (`PIN-MAPPING.md` §7; GPIO 47 è
-  `ABUS_OE_N`, §2.9); anche portando lì `~mVIRQ`, servirebbe comunque un buffer tri-state separato per pilotare solo D7. Per questo il filo `~mVIRQ`→GPIO0 e l'opzione firmware `VERA_HAS_VIRQ_SENSE` sono
+- `~mVIRQ` non arriva all'ESP32. GPIO 48 ora legge `RST` (§3) e GPIO 47 è `ABUS_OE_N` (§2.9); anche
+  con un GPIO libero per `~mVIRQ`, servirebbe comunque un buffer tri-state separato per pilotare solo D7. Per questo il filo `~mVIRQ`→GPIO0 e l'opzione firmware `VERA_HAS_VIRQ_SENSE` sono
   stati **eliminati** (il documento `HW-MOD-GPIO0-VIRQ.md` non esiste più).
 
 **Soluzione adottata: gancio software sul vettore IRQ.** I registri VERA sono sempre leggibili
@@ -290,9 +290,10 @@ di §2.1 anche l'invertitore 3→4 non serve più. Nello schema ora vanno a GND:
 - `U23` pin 3, 5, 9, 11, 13 (le uscite 4, 6, 8, 10, 12 restano libere);
 - gli ingressi dei canali di riserva dei 74LVC4245, **ciascuno con una propria resistenza da 0 Ω**
   (CREZ0805, LCSC C328378) verso GND, così ogni canale si può riusare togliendo una resistenza:
-  `U6` pin 10 (A7, lato Atari) → `R74`; `U16` pin 14 → `R72`, 15 → `R75`, 19 → `R73`, 20 → `R76`,
-  21 → `R77` (lato scheda). Le uscite corrispondenti (`U6` pin 14, `U16` pin 3, 4, 5, 9, 10) restano
-  libere. Le masse di `U6` (pin 11–13) vanno direttamente a GND.
+  `U16` pin 14 → `R72`, 15 → `R75`, 19 → `R73`, 20 → `R76`,
+  21 → `R77` (lato scheda). Le uscite corrispondenti (`U16` pin 3, 4, 5, 9, 10) restano libere.
+  `U6` A7/B7 (pin 10/14) non è più di riserva: porta `RST` a GPIO 48 (§3), `R74` è stata tolta.
+  Anche `U16` A5/B5 (pin 8/16) è libero: B5 a GND, A5 non collegato. Le masse di `U6` (pin 11–13) vanno direttamente a GND.
 
 ### 2.9 [A] Strapping dell'ESP32-S3 — **corretto nello schema e nel firmware (2026-10-26)**
 
@@ -359,11 +360,11 @@ l'ESP32 e la flash della VERA e per le prove a banco, con la scheda fuori dall'A
 
 | # | Requisito | Stato nel firmware attuale |
 |---|---|---|
-| 1 | Tenere l'Atari in reset (`ARESET` basso) fino a CONFIG_DONE della VERA | **già così**: `ARESET`, `CRESET` bassi in `setup()`; `CRESET` alto, attesa `CDONE`, poi `ARESET` alto |
+| 1 | Tenere l'Atari in reset fino a CONFIG_DONE della VERA | **non realizzabile**: Il 130XE pilota `RST` (ECI pin 2) direttamente con l'uscita totem-pole dell'NE555 `U19` (service manual, figura 2-1): la scheda non deve mai pilotarlo, quindi non può tenere l'Atari in reset. Prima `U16` lo pilotava push-pull (contesa con il 555); ora `RST` è solo letto su GPIO 48 (`U6` A7→B7). Se all'accensione la scheda non è pronta quando l'OS cerca i dispositivi PBI, basta premere RESET |
 | 2 | Il blocco vale **solo al power-on** | la sequenza è eseguita una volta: **non** deve essere rieseguita se `CDONE` scende dopo una riconfigurazione (CTRL bit 7) |
-| 3 | Ritardo dopo `CDONE` prima di rilasciare `ARESET` (~1 ms) | **fatto**: `delayMicroseconds(VERA_POST_CDONE_DELAY_US)`, default 1000 µs (la VERA ha un POR interno di 128 cicli di `clk25`, ~5 µs, più `reset_sync`) |
-| 4 | `ARESET` open-drain con pull-up | il tasto RESET Atari deve continuare a funzionare; mai pilotare la linea in alto |
-| 5 | Timeout se `CDONE` non arriva (oggi 5 s, solo log) | decidere: rilasciare comunque `ARESET`? Il software ha un timeout di ~0,7 s in `WAIT_VERA`: prosegue senza VERA ed emette **tre beep** dall'altoparlante della console (un colore sullo schermo ANTIC non resta: l'OS reimposta i colori dopo l'`INIT` PBI) |
+| 3 | Ritardo dopo `CDONE` prima di avviare il loop del bus (~1 ms) | **fatto**: `delayMicroseconds(VERA_POST_CDONE_DELAY_US)`, default 1000 µs (la VERA ha un POR interno di 128 cicli di `clk25`, ~5 µs, più `reset_sync`) |
+| 4 | Non pilotare `RST` | **fatto (2026-11-12)**: nemmeno open-drain, perché forzare basso l'uscita alta del 555 è un cortocircuito; `U16` non lo pilota più |
+| 5 | Timeout se `CDONE` non arriva (oggi 5 s, solo log) | decidere: avviare comunque il loop del bus? Il software ha un timeout di ~0,7 s in `WAIT_VERA`: prosegue senza VERA ed emette **tre beep** dall'altoparlante della console (un colore sullo schermo ANTIC non resta: l'OS reimposta i colori dopo l'`INIT` PBI) |
 | 6 | Scrittura di `$80` in CTRL (`$D105`) | **protezione consigliata**: far mascherare al firmware/glue il bit 7 delle scritture a `$D105`, perché la riconfigurazione distrugge VRAM e blocca il bus ~100 ms. In alternativa il software non deve mai scriverlo (i test già non lo fanno). **Non implementato nel firmware ESP32**: il dato è valido solo a metà di PHI2, quindi `DEV_SEL_N` andrebbe asserito in ritardo solo per `$D105`; ritirarlo dopo la lettura non basta, perché la VERA registra la scrittura alla fine di `bus_write` comunque. Senza hardware per misurarlo, un errore di temporizzazione farebbe perdere scritture legittime a CTRL (cambi di DCSEL): rischio peggiore del problema |
 
 Durante una riconfigurazione il bus VERA non è pilotato: le letture danno valori casuali.
@@ -409,10 +410,10 @@ Il driver e i test già le seguono, ma valgono per qualunque programma futuro:
 
 ## 6. Piano di bring-up consigliato
 
-1. **Senza Atari**: alimentare la scheda, verificare `CDONE`, la sequenza `CRESET`→`ARESET`
-   (tempi) e i livelli sul bus con `ARESET` scollegato.
+1. **Senza Atari**: alimentare la scheda, verificare `CDONE`, la sequenza `CRESET`→avvio del loop
+   (tempi) e i livelli sul bus.
 2. **Con l'Atari, scheda scollegata dal bus dati** (`U19` disabilitato): verificare che
-   l'Atari parta normalmente con `ARESET` rilasciato dalla scheda.
+   l'Atari parta normalmente e che GPIO 48 segua `RST` (basso durante il RESET).
 3. **Con `U19` abilitato**: controllare con l'oscilloscopio che non ci sia contesa nelle letture
    di RAM/ROM (§2.1) e il margine di hold sulle scritture (§2.2).
 4. **Rilevamento**: dal DOS, `vera_detect()` (CTRL=`$7E`, `$D109`=`'V'`, `$D10A`=47) via

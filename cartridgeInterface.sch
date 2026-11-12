@@ -159,8 +159,6 @@ Wire Wire Line
 	13650 7645 13545 7645
 Wire Wire Line
 	13545 7745 13650 7745
-Text GLabel 9980 7535 0    33   Output ~ 0
-~RST
 Text GLabel 9980 7435 0    33   Output ~ 0
 ~MPD
 Text GLabel 3890 7535 0    39   Input ~ 0
@@ -601,8 +599,6 @@ Wire Wire Line
 Wire Wire Line
 	9980 7435 10130 7435
 Wire Wire Line
-	9980 7535 10130 7535
-Wire Wire Line
 	9980 7635 10130 7635
 Wire Wire Line
 	9980 7735 10130 7735
@@ -699,7 +695,7 @@ mREFRESH
 Wire Wire Line
 	8780 6935 8940 6935
 Text GLabel 11680 6835 2    33   Input ~ 0
-~ATARI_RESET
+GND
 Text GLabel 11680 6735 2    33   Input ~ 0
 ~mMPD
 Text GLabel 11680 6635 2    33   Input ~ 0
@@ -789,7 +785,6 @@ Wire Wire Line
 	11680 7035 11530 7035
 Wire Wire Line
 	8780 7035 8895 7035
-NoConn ~ 8895 7035
 Wire Wire Line
 	10130 7935 9975 7935
 Wire Wire Line
@@ -1867,29 +1862,6 @@ F 3 "" H 7225 8280 50  0001 C CNN
 	1    7225 8280
 	1    0    0    -1  
 $EndComp
-$Comp
-L CRES0805:CREZ08051% R74
-U 1 1 6AF33B96
-P 7285 7735
-F 0 "R74" V 7285 7735 30  0000 C CNN
-F 1 "CREZ08051%" V 7285 7790 30  0001 C CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" H 7285 7735 50  0001 C CNN
-F 3 "https://www.lcsc.com/datasheet/C328378.pdf?spm=wm.sxq.inf.ggs&lcsc_vid=QAIPVVVVRlJXV1FQQABeBQAAQQNaVFMAR1IIXwYHFlgxVlNfRFFfVlJfTlRXVDsOAxUeFF5JWBYZEEoKFBINSQcJGk4%3D" H 7285 7735 50  0001 C CNN
-F 4 "C328378" H 7285 7735 50  0001 C CNN "LCSC"
-	1    7285 7735
-	0    1    1    0   
-$EndComp
-$Comp
-L power:GND #PWR0122
-U 1 1 6B2A000C
-P 7180 7735
-F 0 "#PWR0122" H 7180 7485 50  0001 C CNN
-F 1 "GND" H 7055 7635 50  0000 C CNN
-F 2 "" H 7180 7735 50  0001 C CNN
-F 3 "" H 7180 7735 50  0001 C CNN
-	1    7180 7735
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	11880 6335 11880 6435
 Wire Wire Line
@@ -1910,4 +1882,13 @@ Wire Wire Line
 	3825 6940 4020 6940
 Wire Wire Line
 	4020 6835 4020 6940
+Wire Wire Line
+	7380 7735 7205 7735
+Text GLabel 7205 7735 0    33   Input ~ 0
+~RST
+Wire Wire Line
+	8895 7035 8955 7035
+Text GLabel 8955 7035 2    33   Output ~ 0
+~mRST
+NoConn ~ 10130 7535
 $EndSCHEMATC

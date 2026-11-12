@@ -730,8 +730,6 @@ Wire Notes Line
 	15230 6790 15230 8740
 Text GLabel 9765 6020 2    33   BiDi ~ 0
 ~FPGA_RESET
-Text GLabel 10610 5920 2    33   BiDi ~ 0
-~ATARI_RESET
 Text GLabel 5875 4820 0    33   BiDi ~ 0
 ~mMPD
 Text GLabel 5850 4720 0    33   BiDi ~ 0
@@ -837,8 +835,6 @@ Text Label 7025 4620 2    39   ~ 0
 DEV_SEL_N
 Wire Wire Line
 	5875 4820 6180 4820
-Wire Wire Line
-	10610 5920 10365 5920
 Wire Wire Line
 	9765 6020 9085 6020
 Wire Wire Line
@@ -994,7 +990,6 @@ F 3 "" H 9415 6420 50  0001 C CNN
 $EndComp
 Wire Wire Line
 	9085 6420 9415 6420
-NoConn ~ 7085 5420
 NoConn ~ 7085 5620
 NoConn ~ 7085 5720
 NoConn ~ 7085 5820
@@ -1284,7 +1279,6 @@ Wire Wire Line
 	10365 5535 10715 5535
 Wire Wire Line
 	10365 5825 10365 5920
-Connection ~ 10365 5920
 Wire Wire Line
 	10365 5920 9085 5920
 $Comp
@@ -1729,4 +1723,8 @@ Wire Wire Line
 	7015 5320 7085 5320
 Text GLabel 7015 5320 0    39   Output ~ 0
 ~ABUS_OE
+Wire Wire Line
+	7085 5420 6935 5420
+Text GLabel 6935 5420 0    33   Input ~ 0
+~mRST
 $EndSCHEMATC
