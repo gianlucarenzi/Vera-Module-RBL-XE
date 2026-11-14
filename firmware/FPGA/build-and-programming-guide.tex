@@ -226,10 +226,10 @@ This suite includes \cmd{yosys}, \cmd{nextpnr-ice40}, \cmd{icepack}, \cmd{icepro
 On newer distributions, you can try:
 
 \begin{lstlisting}[style=shell]
-sudo apt install fpga-icestorm nextpnr-ice40 yosys ghdl
+sudo apt install fpga-icestorm nextpnr-ice40 yosys ghdl iverilog
 \end{lstlisting}
 
-\textbf{Note:} if installing via \cmd{apt}, you will likely need to build the \cmd{ghdl-yosys-plugin} from source as described below, because it is rarely packaged.
+\textbf{Note:} Debian packages \cmd{ghdl} and \cmd{yosys} but not the \cmd{ghdl-yosys-plugin}. Without it the Makefile lets GHDL write Verilog (\cmd{ghdl synth --out=verilog}) and Yosys reads that, with the same \cmd{synth\_ice40}. To use the plugin instead, build it from source:
 
 \begin{lstlisting}[style=shell]
 git clone https://github.com/ghdl/ghdl-yosys-plugin
@@ -378,13 +378,13 @@ eliminates the PBI RAM/ROM logic (0 EBR).  Measured values after place-and-route
 \toprule
 \textbf{Resource} & \textbf{PBI} & \textbf{CCTL} & \textbf{Available} & \textbf{\% (PBI)} \\
 \midrule
-ICESTORM\_LC (total)     &  77 & 45 & 5280 &  1\% \\
+ICESTORM\_LC (total)     & 109 & 68 & 5280 &  2\% \\
 \midrule
 ICESTORM\_RAM (EBR)      &   5 &  0 &   30 & 16\% \\
-SB\_IO (I/O buffers)     &  39 & 39 &   39 & 100\% \\
+SB\_IO (I/O buffers)     &  38 & 38 &   39 & 97\% \\
 ICESTORM\_SPRAM          &   0 &  0 &    4 &  0\% \\
 \midrule
-\textbf{Fmax (CLK)}      & \multicolumn{4}{l}{\textbf{72.88\,MHz} PBI, \textbf{95.56\,MHz} CCTL (PASS at 25\,MHz)} \\
+\textbf{Fmax (CLK)}      & \multicolumn{4}{l}{\textbf{55.52\,MHz} PBI, \textbf{70.62\,MHz} CCTL (PASS at 25\,MHz)} \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -420,17 +420,17 @@ nextpnr reports timing after routing.  Measured results:
 \toprule
 \textbf{Path type} & \textbf{Description} & \textbf{Worst delay} \\
 \midrule
-CLK $\to$ CLK   & Registered path (Fmax) & 13.72\,ns (72.88\,MHz) \\
-async $\to$ async & Combinational (PHI2 gate) & 23.06\,ns \\
-async $\to$ CLK  & Input setup time        & 20.20\,ns \\
-CLK $\to$ async  & Clock-to-output         & 18.98\,ns \\
+CLK $\to$ CLK   & Registered path (Fmax) & 18.01\,ns (55.52\,MHz) \\
+async $\to$ async & Combinational (PHI2 gate) & 24.67\,ns \\
+async $\to$ CLK  & Input setup time        & 20.16\,ns \\
+CLK $\to$ async  & Clock-to-output         & 19.06\,ns \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-The 25\,MHz system clock (period 40\,ns) has \textbf{26.28\,ns of slack}
+The 25\,MHz system clock (period 40\,ns) has \textbf{21.99\,ns of slack}
 on the registered path.  The combinational PHI2-gated outputs settle in
-at most 23.06\,ns after address/control inputs change --- well within the
+at most 24.67\,ns after address/control inputs change --- well within the
 6502 PHI2-high window of $\approx$279\,ns at 1.79\,MHz.
 
 \subsection{Step 4 -- Pack the bitstream}

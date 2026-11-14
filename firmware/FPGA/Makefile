@@ -39,6 +39,25 @@ VHDL_SRCS = \
 
 GHDL_STD = --std=08
 
+# Synthesis: with the ghdl-yosys-plugin when yosys has it, otherwise GHDL
+# writes Verilog (ghdl synth --out=verilog) and yosys reads that; Debian
+# packages ghdl and yosys but not the plugin.  Same synth_ice40 either way.
+GHDL_PLUGIN := $(shell yosys -m ghdl -p '' >/dev/null 2>&1 && echo yes)
+ifeq ($(GHDL_PLUGIN),yes)
+define synth
+	yosys -m ghdl -p \
+	    "ghdl $(GHDL_STD) -gVERA_IS_PBI=$(1) $(VHDL_SRCS) -e $(TOP); \
+	     synth_ice40 -top $(TOP) -json $@"
+endef
+else
+define synth
+	mkdir -p work
+	ghdl synth $(GHDL_STD) --workdir=work -gVERA_IS_PBI=$(1) --out=verilog \
+	    $(VHDL_SRCS) -e $(TOP) > $(basename $@).v
+	yosys -p "read_verilog $(basename $@).v; synth_ice40 -top $(TOP) -json $@"
+endef
+endif
+
 .PHONY: all pbi cctl \
         flash-pbi flash-cctl flash-pbi-iceprog flash-cctl-iceprog \
         doc clean fpga-rom
@@ -51,9 +70,7 @@ all: fpga-rom pbi cctl
 pbi: fpga-rom $(TOP_PBI).bin
 
 $(TOP_PBI).json: $(VHDL_SRCS)
-	yosys -m ghdl -p \
-	    "ghdl $(GHDL_STD) -gVERA_IS_PBI=true $(VHDL_SRCS) -e $(TOP); \
-	     synth_ice40 -top $(TOP) -json $@"
+	$(call synth,true)
 
 $(TOP_PBI).asc: $(TOP_PBI).json $(PCF)
 	nextpnr-ice40 \
@@ -72,9 +89,7 @@ $(TOP_PBI).bin: $(TOP_PBI).asc
 cctl: fpga-rom $(TOP_CCTL).bin
 
 $(TOP_CCTL).json: $(VHDL_SRCS)
-	yosys -m ghdl -p \
-	    "ghdl $(GHDL_STD) -gVERA_IS_PBI=false $(VHDL_SRCS) -e $(TOP); \
-	     synth_ice40 -top $(TOP) -json $@"
+	$(call synth,false)
 
 $(TOP_CCTL).asc: $(TOP_CCTL).json $(PCF)
 	nextpnr-ice40 \
@@ -123,5 +138,7 @@ $(DOC).pdf: $(DOC).tex
 clean:
 	$(RM) $(TOP_PBI).json  $(TOP_PBI).asc  $(TOP_PBI).bin
 	$(RM) $(TOP_CCTL).json $(TOP_CCTL).asc $(TOP_CCTL).bin
+	$(RM) $(TOP_PBI).v $(TOP_CCTL).v
+	$(RM) -r work
 	$(RM) $(DOC).aux $(DOC).log $(DOC).out $(DOC).toc $(DOC).pdf
 	$(MAKE) -C ../MCU/6502 clean

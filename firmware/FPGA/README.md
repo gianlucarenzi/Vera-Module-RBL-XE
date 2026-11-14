@@ -151,11 +151,13 @@ This suite includes `yosys`, `nextpnr-ice40`, `icepack`, `iceprog`, and `ghdl` w
 
 ```bash
 # Debian / Ubuntu
-sudo apt install fpga-icestorm nextpnr-ice40 yosys ghdl
+sudo apt install fpga-icestorm nextpnr-ice40 yosys ghdl iverilog
 ```
 
-The `ghdl-yosys-plugin` is required for VHDL synthesis and is usually not
-packaged — build it from source:
+Debian packages `ghdl` and `yosys` but not the `ghdl-yosys-plugin`. Without it
+the Makefile and `sim/post.sh` let GHDL write Verilog (`ghdl synth --out=verilog`)
+and Yosys reads that, with the same `synth_ice40`; `iverilog` is needed only for
+`sim/post.sh`. To use the plugin instead, build it from source:
 
 ```bash
 git clone https://github.com/ghdl/ghdl-yosys-plugin
@@ -268,17 +270,17 @@ make flash-cctl-iceprog   # equivalent to: iceprog C6502_Interface_CCTL.bin
 ### 4. Clean
 
 ```bash
-make clean      # removes .json, .asc, .bin and LaTeX intermediates
+make clean      # removes .v, .json, .asc, .bin and LaTeX intermediates
 ```
 
 ### Measured synthesis results
 
 | Resource | PBI | CCTL | Available |
 |----------|-----|------|-----------|
-| ICESTORM\_LC | 77 | 45 | 5280 |
+| ICESTORM\_LC | 109 | 68 | 5280 |
 | EBR (BRAM) | 5 | 0 | 30 |
 | User I/O | 38 | 38 | 39 |
-| Fmax (CLK) | **72.88 MHz** | **95.56 MHz** | target 25 MHz |
+| Fmax (CLK) | **55.52 MHz** | **70.62 MHz** | target 25 MHz |
 | Bitstream size | ~104 KB | ~104 KB | — |
 
 In CCTL mode Yosys eliminates the PBI RAM/ROM logic (0 EBR).
