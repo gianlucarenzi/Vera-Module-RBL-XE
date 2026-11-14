@@ -4,7 +4,7 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![KiCad](https://img.shields.io/badge/KiCad-5.1.9-blue.svg)](https://www.kicad.org/)
-[![Status: Work in progress](https://img.shields.io/badge/status-WORK_IN_PROGRESS_%E2%80%94_NOT_WORKING-red.svg)](#)
+[![Version](https://img.shields.io/badge/version-1.0_pre--production-orange.svg)](#)
 [![ATARI XL/XE](https://img.shields.io/badge/ATARI-XL%2FXE-red.svg)](https://atari.com)
 [![ESP32](https://img.shields.io/badge/ESP32--S3-FN8-yellow.svg)](https://www.espressif.com/)
 
@@ -13,10 +13,10 @@
 </div>
 
 > [!WARNING]
-> **WORK IN PROGRESS — NOT WORKING.**
-> This project is under development and does **not** work yet. The board has not been built or
-> tested; firmware (ESP32, FPGA) and documentation have only been checked in simulation or on
-> paper and may contain errors. Do not manufacture the PCB or rely on this design yet.
+> **v1.0 — PRE-PRODUCTION.**
+> The PCB is routed and passes KiCad's DRC; the first boards are being made and are **not tested
+> yet**. Firmware (ESP32, FPGA) and documentation have only been checked in simulation or on
+> paper and may contain errors.
 
 <div align="center">
 
@@ -39,14 +39,13 @@ of two original demo games, not captures from the board**; `tools/make_demo_shot
 *IRONHOLD (side-scrolling action) and CIRCUIT RUNNER (maze chase)*
 </div>
 
-## 🆕 What's new in v2.3
+## 📦 v1.0 — pre-production
 
-- **USB: CH340C instead of CH340T** (the CH340T is out of stock at JLCPCB). Same signals and
-  ESP32 auto-reset, internal clock: the 12 MHz crystal Y1 and its capacitors C39, C41 are gone.
+- **USB:** CH340C USB-serial (internal clock, no crystal) on USB-C, with ESP32 auto-reset.
 - **U11 WM8524** (C146242) is short at JLCPCB: it is in `jlcpcb-global-sourcing.txt`; choose
   **Global Sourcing** for that row when ordering.
 - The BOM XML comes straight from the KiCad 5 schematic (`utilities/kicadcli`), which stops on
-  parts without annotation; `./output_job.sh 2.3` makes the JLCPCB files.
+  parts without annotation; `./output_job.sh 1.0` makes the JLCPCB files.
 
 ---
 
@@ -694,10 +693,10 @@ If you find this project useful, please consider:
 </div>
 
 > [!WARNING]
-> **LAVORO IN CORSO — NON FUNZIONANTE.**
-> Il progetto è in fase di sviluppo e **non** funziona ancora. La scheda non è stata realizzata né
-> provata; firmware (ESP32, FPGA) e documentazione sono stati verificati solo in simulazione o sulla
-> carta e possono contenere errori. Non produrre il PCB e non fare affidamento su questo progetto.
+> **v1.0 — PRE-PRODUZIONE.**
+> Il PCB è sbrogliato e passa il DRC di KiCad; le prime schede sono in produzione e **non sono
+> ancora collaudate**. Firmware (ESP32, FPGA) e documentazione sono stati verificati solo in
+> simulazione o sulla carta e possono contenere errori.
 
 <div align="center">
 
@@ -716,14 +715,13 @@ giochi originali, non catture dalla scheda**; le disegna `tools/make_demo_shots.
 <img src="images/demo/demo-circuit-runner-atarixe.png" alt="CIRCUIT RUNNER" width="32%">
 </div>
 
-## 🆕 Novità della v2.3
+## 📦 v1.0 — pre-produzione
 
-- **USB: CH340C al posto del CH340T** (il CH340T è esaurito da JLCPCB). Stessi segnali e reset
-  automatico dell'ESP32, clock interno: spariscono il quarzo da 12 MHz Y1 e i condensatori C39, C41.
+- **USB:** CH340C USB-seriale (clock interno, senza quarzo) su USB-C, con reset automatico dell'ESP32.
 - **U11 WM8524** (C146242) scarseggia da JLCPCB: è in `jlcpcb-global-sourcing.txt`; nell'ordine si
   sceglie **Global Sourcing** per quella riga.
 - L'XML della BOM viene direttamente dallo schema KiCad 5 (`utilities/kicadcli`), che si ferma sui
-  componenti non annotati; `./output_job.sh 2.3` produce i file per JLCPCB.
+  componenti non annotati; `./output_job.sh 1.0` produce i file per JLCPCB.
 
 ---
 

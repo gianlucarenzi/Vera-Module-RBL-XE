@@ -7,7 +7,7 @@ module READMEs (they are mock-ups, not captures from the board):
   IRONHOLD        side-scrolling fantasy action: an axe warrior in front of
                   a castle at sunset
 
-usage: make_shots.py OUTDIR PLATFORM [PLATFORM ...]   (e.g. "APPLE II")
+usage: make_demo_shots.py OUTDIR PLATFORM [PLATFORM ...]   (e.g. "ATARI XE")
 """
 import math
 import os
