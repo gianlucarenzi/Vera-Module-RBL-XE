@@ -38,9 +38,7 @@ use work.pbi_rom_pkg.all;
 -- Hardware pins (common to both modes):
 --   PBI_ID_SEL  FPGA pin wired via jumper to chosen D[n] on PCB.
 --               Sampled on wr_strobe when $D1FF is written (PBI mode only).
---   RAMBO_EN    Pullup = RAMbo active, pulldown = RAMbo completely disabled.
---               Gates RAMbo independently from the PORTB[4] software enable.
---               RAMBO_EN=1 and PORTB[4]=0 are both needed for RAMbo to respond.
+--   RAMbo is always present: only PORTB[4] (software) enables the window.
 --
 -- PCB wiring (no extra FPGA pins needed):
 --   6502 A[13:0] -> SRAM A[13:0]  (same net, 16 KB window)
@@ -82,7 +80,6 @@ entity C6502_Interface is
 
         -- Hardware configuration inputs
         PBI_ID_SEL  : in    std_logic;  -- jumper to chosen D[n]; used in PBI mode only
-        RAMBO_EN    : in    std_logic;  -- pullup = enabled, pulldown = disabled
 
         -- PBI / bus control outputs
         VERA_CS     : out   std_logic;  -- VERA chip-select (active low)
@@ -173,7 +170,7 @@ architecture Behavioral of C6502_Interface is
     -- -------------------------------------------------------------------------
     signal rambo_bank   : std_logic_vector(3 downto 0);
     signal rambo_sw     : std_logic;   -- software enable: PORTB[4] = 0
-    signal rambo_active : std_logic;   -- RAMBO_EN AND rambo_sw
+    signal rambo_active : std_logic;   -- RAMbo window enabled (PORTB[4] = 0)
 
     -- -------------------------------------------------------------------------
     -- Data bus pads.  Instantiated explicitly: the GHDL/Yosys flow does not
@@ -204,12 +201,11 @@ begin
 
     -- =========================================================================
     -- RAMbo bank and enable
-    -- Both the hardware jumper (RAMBO_EN=1) and the software bit (PORTB[4]=0)
-    -- must be asserted for RAMbo to respond.
+    -- RAMbo is always present: the window responds when PORTB[4] = 0.
     -- =========================================================================
     rambo_bank   <= portb_reg(6) & portb_reg(5) & portb_reg(3) & portb_reg(2);
     rambo_sw     <= not portb_reg(4);
-    rambo_active <= RAMBO_EN and rambo_sw;
+    rambo_active <= rambo_sw;
 
     sel_rambo <= '1' when A(15)='0' and A(14)='1' and rambo_active='1' else '0';
 

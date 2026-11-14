@@ -224,7 +224,7 @@ A15 & 46 & 52 & GPIO46  & IN & Bank-1 bit\,14; pin di strapping, usato come A15 
 DEV\_SEL\_N & 40 & 45 & MTDO  & OUT & VERA /CS; Dedicated GPIO output ch\,0; ex-JTAG \\
 CRESET     & 38 & 43 & GPIO38 & OUT & VERA /RESET \\
 CDONE      & 39 & 44 & MTCK  & IN  & VERA configurata (HIGH = OK); ex-JTAG \\
-RAMBO\_EN  &  3 &  8 & GPIO3  & IN  & RAMbo enable: pull-up 10\,k$\Omega$→VCC = presente \\
+GPIO3 & 3 & 8 & GPIO3 & -- & non usato (strapping JTAG, pull-up \texttt{R71} 10\,k$\Omega$); RAMbo sempre presente \\
 BOOT0 & 0 & 5 & GPIO0 & IN & pulsante BOOT / auto-reset (rete \texttt{BOOT0}); non usato dal firmware \\
 \midrule
 \multicolumn{6}{l}{\textit{Debug}} \\
@@ -429,7 +429,6 @@ Di seguito è riportato un estratto aggiornato del file \texttt{main.cpp} che mo
 #define PIN_DEV_SEL_N   40   /* GPIO40, pin 45  -- Dedicated out ch 0 */
 #define PIN_EXTSEL_N    41   /* GPIO41, pin 47  -- Dedicated out ch 1 */
 #define PIN_MPD         42   /* GPIO42, pin 48  -- Dedicated out ch 2 */
-#define PIN_RAMBO_EN     3   /* GPIO3,  pin  8  -- RAMbo enable  */
 
 /* Dedicated GPIO channel masks */
 #define DEDIC_IN_PHI2       (1u << 0)
@@ -516,7 +515,7 @@ static void IRAM_ATTR MonitorTask(void *arg)   /* Core 0 */
                 else if (off8 == 0x01 && (pbctl & 0x04)) {
                     portb     = data;
                     rambo_off = bus_rambo_bank(portb) << 14;
-                    rambo_on  = rambo_hw_enabled && !(portb & 0x10);
+                    rambo_on  = !(portb & 0x10);   /* RAMbo sempre presente */
                 }
             }
             ctrl_cur = bus_ctrl[bus_state(selected, rambo_on)];

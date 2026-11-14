@@ -495,13 +495,10 @@ The operating mode is selected at compile time via `VERA_BOARD_IS_PBI` in `main.
 | `1` (default) | PBI | $D100–$D1FF, $D600–$D7FF, $D800–$DFFF | write `0x80` to $D1FF |
 | `0`           | CCTL | $D500–$D5FF                           | write `0x80` to $D5FF |
 
-The **RAMbo 256 KB** emulator is always compiled in and enabled at runtime via **GPIO 3**
-(`PIN_RAMBO_EN`, QFN56 pin 8) — no recompilation needed:
-
-| GPIO 3 at boot | Effect |
-|----------------|--------|
-| Pull-up 10 kΩ → VCC (HIGH) | RAMbo enabled — 256 KB bank-switched at $4000–$7FFF; PORTB ($D301) bit 4 selects active/inactive |
-| Pull-down 10 kΩ → GND (LOW) | RAMbo disabled — $4000–$7FFF not intercepted |
+The **RAMbo 256 KB** emulator is always present: no GPIO, jumper or build option turns it on
+or off. PORTB (`$D301`) bit 4 = 0 opens the 256 KB bank-switched window at $4000–$7FFF; with
+bit 4 = 1 the Atari internal RAM responds as usual. GPIO 3 is not used by the firmware (it only
+has the `R71` strapping pull-up).
 
 Works in both PBI and CCTL mode. The hot loop snoops both **PBCTL** (`$D303`) and
 **PORTB** (`$D301`): writes to `$D301` update the bank-selection register **only when**
@@ -1164,13 +1161,10 @@ La modalità operativa è scelta a **tempo di compilazione** tramite `VERA_BOARD
 | `1` (default) | PBI  | $D100–$D1FF, $D600–$D7FF, $D800–$DFFF | write `0x80` su $D1FF |
 | `0`           | CCTL | $D500–$D5FF                           | write `0x80` su $D5FF |
 
-L'emulatore **RAMbo 256 KB** è sempre compilato nel firmware e abilitato a runtime tramite
-**GPIO 3** (`PIN_RAMBO_EN`, QFN56 pin 8) — nessuna ricompilazione necessaria:
-
-| GPIO 3 al boot | Effetto |
-|----------------|---------|
-| Pull-up 10 kΩ → VCC (HIGH) | RAMbo abilitato — 256 KB bank-switched a $4000–$7FFF; bit 4 di PORTB ($D301) seleziona attivo/inattivo |
-| Pull-down 10 kΩ → GND (LOW) | RAMbo disabilitato — $4000–$7FFF non intercettato |
+L'emulatore **RAMbo 256 KB** è sempre presente: nessun GPIO, ponticello o opzione di
+compilazione lo accende o lo spegne. Il bit 4 di PORTB (`$D301`) a 0 apre la finestra da
+256 KB a banchi a $4000–$7FFF; con il bit 4 a 1 risponde come sempre la RAM interna
+dell'Atari. Il GPIO 3 non è usato dal firmware (ha solo il pull-up di strapping `R71`).
 
 Funziona in entrambe le modalità PBI e CCTL. Il hot loop snoopa sia **PBCTL** (`$D303`)
 sia **PORTB** (`$D301`): le write a `$D301` aggiornano il registro di selezione banco

@@ -53,7 +53,7 @@ Recommended: **AS6C4008-55SIN** (Alliance Memory, SOP-32).
 | WE# | FPGA `SRAM_WE_N` |
 
 This wiring uses only **7 new FPGA pins** for the full 256 KB RAMbo.
-The total design occupies all 39 user I/O pins of the SG48 package.
+The total design occupies 38 of the 39 user I/O pins of the SG48 package.
 
 ### SPI flash (FPGA configuration)
 Any **SPI NOR flash** compatible with the iCE40 boot protocol, e.g.
@@ -277,7 +277,7 @@ make clean      # removes .json, .asc, .bin and LaTeX intermediates
 |----------|-----|------|-----------|
 | ICESTORM\_LC | 77 | 45 | 5280 |
 | EBR (BRAM) | 5 | 0 | 30 |
-| User I/O | 39 | 39 | 39 |
+| User I/O | 38 | 38 | 39 |
 | Fmax (CLK) | **72.88 MHz** | **95.56 MHz** | target 25 MHz |
 | Bitstream size | ~104 KB | ~104 KB | — |
 
@@ -309,9 +309,10 @@ Valid GB pins on the iCE40UP5K SG48 package: 20, 28, 31, 38, 41, 43, 48.
 Pins 1, 5, 7, 8, 22, 24, 29, 30, 33 are power/ground or reserved —
 nextpnr rejects them with an error.
 
-**I/O budget:** the design uses all 39 available pins.  The mode (PBI vs CCTL)
-is compiled into the bitstream via `VERA_IS_PBI`, freeing pins 27–28 for
-dedicated hardware functions: `PBI_ID_SEL` and `RAMBO_EN`.
+**I/O budget:** the design uses 38 of the 39 available pins.  The mode (PBI vs
+CCTL) is compiled into the bitstream via `VERA_IS_PBI`, freeing pin 27 for
+`PBI_ID_SEL`; pin 28 is free.  RAMbo has no hardware enable: it is always
+present.
 
 ### Pin table
 
@@ -348,7 +349,6 @@ dedicated hardware functions: `PBI_ID_SEL` and `RAMBO_EN`.
 | `MPD` | Out | 31 | Machine Program Data — blocks Atari from driving D bus for `$D800–$DFFF` reads (card selected) |
 | `EXTSEL` | Out | 37 | External Select — blocks Atari internal RAM for `$D100–$D1FE` and PBI RAM (card selected) and RAMbo accesses |
 | `PBI_ID_SEL` | In | 27 | Hardware jumper to one of D[0..7]; sampled at `$D1FF` write (PBI mode only); `1` selects VERA, `0` deselects. Ignored in CCTL build. |
-| `RAMBO_EN` | In | 28 | Pullup (VCC) = RAMbo enabled (follows PORTB[4]); pulldown (GND) = RAMbo disabled hardware override |
 | `SRAM_A_BANK[0]` | Out | 19 | SRAM A[14] — bank bit 0 = PORTB[2] |
 | `SRAM_A_BANK[1]` | Out | 20 | SRAM A[15] — bank bit 1 = PORTB[3] |
 | `SRAM_A_BANK[2]` | Out | 21 | SRAM A[16] — bank bit 2 = PORTB[5] |
@@ -388,8 +388,7 @@ bank[3:2] = PORTB[6:5]
 → SRAM A[17:14] = { PORTB[6], PORTB[5], PORTB[3], PORTB[2] }
 ```
 
-RAMbo is active only when `RAMBO_EN` (pin 28, hardware pullup to VCC)
-**and** `PORTB[4] = 0`.  With `PORTB[4] = 1` (OS default `PORTB = $FF`) the
+RAMbo is always present: the window is active when `PORTB[4] = 0`.  With `PORTB[4] = 1` (OS default `PORTB = $FF`) the
 Atari internal RAM responds at `$4000–$7FFF` as usual.
 
 Writes to `$D301` update the snooped PORTB **only when** `PBCTL[2] = 1`: with
@@ -422,8 +421,7 @@ write) and an Atari bus model (6502 at 1.79 MHz, internal RAM gated by
 
 Tests: PIA init with internal RAM at `$4000–$7FFF` (T1), DDR writes ignored
 (T2), signature in all 16 banks with physical-address check (T3), read-back
-with no aliasing (T4), internal RAM untouched (T5), `RAMBO_EN=0` override
-(T6), select latch, `VERA_CS`/`MPD`/`EXTSEL` per address with the card
+with no aliasing (T4), internal RAM untouched (T5), select latch, `VERA_CS`/`MPD`/`EXTSEL` per address with the card
 selected and deselected, PBI RAM/ROM (T7).
 
 ```bash

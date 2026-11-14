@@ -172,8 +172,8 @@ used in the previous design.
           (pin~27) is wired via PCB jumper to one of D[0..7]; the
           sampled bit value sets the card select latch in PBI mode
           (\cmd{card\_sel\_n <= not PBI\_ID\_SEL}).
-          \sig{RAMBO\_EN} (pin~28) with pullup (VCC) enables RAMbo;
-          with pulldown (GND) disables it regardless of PORTB[4].
+          RAMbo has no hardware enable: it is always present and
+          follows PORTB[4].
 \end{itemize}
 
 \subsection{Memory map}
@@ -390,11 +390,10 @@ ICESTORM\_SPRAM          &   0 &  0 &    4 &  0\% \\
 \end{center}
 
 \textbf{I/O budget note:} the iCE40UP5K-SG48 exposes exactly 39 user I/O
-pins, and this design uses all 39.  The mode selection (PBI vs.\ CCTL)
+pins, and this design uses 38.  The mode selection (PBI vs.\ CCTL)
 is compiled into the bitstream via \cmd{VERA\_IS\_PBI} rather than being
-a runtime input, freeing the two former \sig{DIP\_SEL} pins for
-dedicated hardware functions: \sig{PBI\_ID\_SEL} (pin~27) and
-\sig{RAMBO\_EN} (pin~28).
+a runtime input, freeing the two former \sig{DIP\_SEL} pins:
+\sig{PBI\_ID\_SEL} uses pin~27, pin~28 is free.
 
 \subsection{Step 3 -- Place \& Route}
 
@@ -736,11 +735,7 @@ error.
     Hardware jumper to one of D[0..7] on PCB.  Sampled when \hex{D1FF}
     is written (PBI mode only); \texttt{card\_sel\_n <= not PBI\_ID\_SEL}.
     Logic~1 on the chosen bit selects VERA, logic~0 deselects.
-    Ignored in CCTL build. \\
-\sig{RAMBO\_EN}     & In    & 28* & LVCMOS33 &
-    Tie to VCC (pullup) to enable RAMbo hardware; tie to GND (pulldown)
-    to disable RAMbo completely, overriding PORTB[4].  RAMbo responds
-    only with \sig{RAMBO\_EN} high and PORTB[4] low. \\[2pt]
+    Ignored in CCTL build. \\[2pt]
 
 % --- External SRAM ---
 \sig{SRAM\_A\_BANK[0]} & Out & 19* & LVCMOS33 &
@@ -753,7 +748,7 @@ error.
     SRAM address bit 17 (bank MSB). \\
 \sig{SRAM\_CE\_N}   & Out   & 23* & LVCMOS33 &
     SRAM chip enable (active low). Asserted during PHI2-high when
-    address is in \hex{4000}--\hex{7FFF} and RAMbo is enabled. \\
+    address is in \hex{4000}--\hex{7FFF} and PORTB[4] is low. \\
 \sig{SRAM\_OE\_N}   & Out   & 39* & LVCMOS33 &
     SRAM output enable (active low). Asserted on read cycles only. \\
 \sig{SRAM\_WE\_N}   & Out   & 25* & LVCMOS33 &
@@ -800,8 +795,7 @@ bank[3:2] = PORTB[6:5]
 => SRAM A[17:14] = { PORTB[6], PORTB[5], PORTB[3], PORTB[2] }
 \end{lstlisting}
 
-RAMbo is active only when \sig{RAMBO\_EN} (pin~28 tied to VCC) is high
-and PORTB[4] is low; with PORTB[4] high (OS default \texttt{\$FF}) the
+RAMbo is always present: the window is active when PORTB[4] is low; with PORTB[4] high (OS default \texttt{\$FF}) the
 Atari internal RAM responds at \hex{4000}--\hex{7FFF}.  Writes to
 \hex{D301} update the snooped PORTB only when PBCTL[2] is 1; with
 PBCTL[2] at 0 the address is the PIA data direction register and the

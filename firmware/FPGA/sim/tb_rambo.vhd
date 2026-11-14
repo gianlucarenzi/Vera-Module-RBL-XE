@@ -12,7 +12,7 @@ use ieee.numeric_std.all;
 --   * PORTB bit 4 (RAME) = 0 -> extended RAM visible at $4000-$7FFF,
 --                         = 1 -> Atari internal RAM visible.
 --   * bank = { PORTB[6], PORTB[5], PORTB[3], PORTB[2] }  -> SRAM A[17:14]
---   * RAMBO_EN pin = 0 disables everything.
+--   * RAMbo has no hardware enable: it is always present.
 --
 -- 6502 bus model (Atari PHI2 = 1.79 MHz):
 --   address/RNW valid tADS after PHI2 fall, write data valid tMDS after
@@ -52,7 +52,6 @@ architecture sim of tb_rambo is
     signal D          : std_logic_vector(7 downto 0)  := (others => 'Z');
     signal RNW        : std_logic := '1';
     signal PBI_ID_SEL : std_logic;
-    signal RAMBO_EN   : std_logic := '1';
 
     signal vera_cs_i, mpd_i, extsel_i       : std_logic;
     signal bank_i                           : std_logic_vector(3 downto 0);
@@ -91,7 +90,7 @@ begin
         generic map (VERA_IS_PBI => VERA_IS_PBI)
         port map (
             CLK => CLK, A => A, D => D, RNW => RNW, PHI2 => PHI2,
-            PBI_ID_SEL => PBI_ID_SEL, RAMBO_EN => RAMBO_EN,
+            PBI_ID_SEL => PBI_ID_SEL,
             VERA_CS => vera_cs_i, MPD => mpd_i, EXTSEL => extsel_i,
             SRAM_A_BANK => bank_i,
             SRAM_CE_N => ce_n_i, SRAM_OE_N => oe_n_i, SRAM_WE_N => we_n_i);
@@ -324,19 +323,6 @@ begin
         end loop;
         rd_chk(x"3FFF", x"A1", "T5 $3FFF (outside window)");
         rd_chk(x"8000", x"1A", "T5 $8000 (outside window)");
-
-        report "--- T6: RAMBO_EN=0 hardware override";
-        RAMBO_EN <= '0';
-        wr(x"D301", portb_ext(5));
-        ce_prev := sram_ce_count;
-        wr(x"4000", x"77");
-        rd_chk(x"4000", x"77", "T6 RAMBO_EN=0");
-        check(sram_ce_count = ce_prev, "T6: SRAM selected with RAMBO_EN=0");
-        wr(x"4000", sig(99, 0));             -- restore main RAM
-        RAMBO_EN <= '1';
-        wr(x"D301", portb_ext(5));
-        rd_chk(x"4000", sig(5, 0), "T6 bank 5 intact after override");
-        wr(x"D301", x"FF");
 
         -- ------------------------------------------ select latch / chip selects
         -- VERA_CS only for the VERA registers with the card selected, never

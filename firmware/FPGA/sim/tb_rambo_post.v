@@ -2,7 +2,7 @@
 // =============================================================================
 // tb_rambo_post  --  post-synthesis check of the Yosys iCE40 netlist
 //
-// Same scenario as tb_rambo.vhd (T1-T7), run on the mapped netlist with the
+// Same scenario as tb_rambo.vhd (T1-T5, T7), run on the mapped netlist with the
 // Yosys cells_sim.v primitives, so it covers what RTL simulation cannot:
 // SB_IO tri-state on D[7:0], BRAM mapping, register init values.
 // The SRAM and Atari RAM models are functional (no timing checks).
@@ -27,7 +27,6 @@ module tb_rambo_post;
     reg         RNW = 1;
     reg  [7:0]  cpu_d = 8'h00;
     reg         cpu_oe = 0;
-    reg         RAMBO_EN = 1;
     wire [7:0]  D;
     wire        VERA_CS, MPD, EXTSEL, CE_N, OE_N, WE_N;
     wire [3:0]  BANK;
@@ -36,7 +35,7 @@ module tb_rambo_post;
 
     C6502_Interface dut (
         .CLK(CLK), .A(A), .D(D), .RNW(RNW), .PHI2(PHI2),
-        .PBI_ID_SEL(D[7]), .RAMBO_EN(RAMBO_EN),
+        .PBI_ID_SEL(D[7]),
         .VERA_CS(VERA_CS), .MPD(MPD), .EXTSEL(EXTSEL),
         .SRAM_A_BANK(BANK), .SRAM_CE_N(CE_N), .SRAM_OE_N(OE_N), .SRAM_WE_N(WE_N));
 
@@ -178,19 +177,6 @@ module tb_rambo_post;
         for (k = 0; k < 4; k = k + 1) rd_chk(win[k], sig(99, k), "T5 main RAM");
         rd_chk(16'h3FFF, 8'hA1, "T5 $3FFF");
         rd_chk(16'h8000, 8'h1A, "T5 $8000");
-
-        // T6: RAMBO_EN=0
-        RAMBO_EN = 0;
-        wr(16'hD301, portb_ext(5));
-        ce_prev = ce_cnt;
-        wr(16'h4000, 8'h77);
-        rd_chk(16'h4000, 8'h77, "T6 RAMBO_EN=0");
-        chk(ce_cnt == ce_prev, "T6 SRAM selected with RAMBO_EN=0");
-        wr(16'h4000, sig(99, 0));
-        RAMBO_EN = 1;
-        wr(16'hD301, portb_ext(5));
-        rd_chk(16'h4000, sig(5, 0), "T6 bank 5 intact");
-        wr(16'hD301, 8'hFF);
 
         // T7: select latch, VERA_CS / MPD / EXTSEL (+ PBI RAM / ROM in PBI mode)
         if (PBI) begin
