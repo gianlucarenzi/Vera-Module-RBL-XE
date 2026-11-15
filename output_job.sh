@@ -347,7 +347,8 @@ elif command -v freecad >/dev/null 2>&1 && command -v xvfb-run >/dev/null 2>&1 &
 	rm -f "${WRLLOG}"
 	[ ${WRLRC} -eq 0 ] || { echo "Error on creating the VRML file."; exit 1; }
 else
-	echo "Error: no kicad-cli, nor FreeCAD and Xvfb, for the VRML file."; exit 1
+	# as before (e.g. Debian 11 without FreeCAD): the build goes on without it
+	echo "Warning: no kicad-cli, nor FreeCAD and Xvfb: no VRML file."
 fi
 
 # Remove the existing
