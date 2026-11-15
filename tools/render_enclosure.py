@@ -12,6 +12,7 @@ Environment (all optional):
   RENDER_POSE     open (top shell lifted, panel out) or closed
   RENDER_COLOR    case colour, sRGB hex (default E3D9C6, RAL 1013 Oyster white)
   RENDER_SAMPLES  Cycles samples (default 128), RENDER_RES  WxH (1920x1080)
+  RENDER_LIGHT    multiplier of the light powers (default 1.0)
   HDMI_DIR        the VERA-HDMI-Expansion (default ../Vera-HDMI-Expansion)
 
 The VRML is read by a small parser of its own (Transform, Group, Shape,
@@ -361,13 +362,13 @@ radius = (hi - lo).length / 2
 
 bpy.ops.mesh.primitive_plane_add(size=40, location=(centre.x, centre.y, lo.z))
 floor = bpy.context.active_object
-floor.data.materials.append(principled("floor", (0.85, 0.85, 0.86), 0.6))
+floor.data.materials.append(principled("floor", (0.55, 0.55, 0.56), 0.6))
 
 world = bpy.data.worlds.new("studio")
 scene.world = world
 world.use_nodes = True
-world.node_tree.nodes["Background"].inputs["Color"].default_value = (0.85, 0.86, 0.88, 1)
-world.node_tree.nodes["Background"].inputs["Strength"].default_value = 0.35
+world.node_tree.nodes["Background"].inputs["Color"].default_value = (0.60, 0.61, 0.63, 1)
+world.node_tree.nodes["Background"].inputs["Strength"].default_value = 0.12
 
 
 def area_light(name, power, size, direction, dist):
@@ -382,9 +383,11 @@ def area_light(name, power, size, direction, dist):
     return ob
 
 
-area_light("key", 120, 0.6, (0.8, 0.5, 1.0), 0.8)
-area_light("fill", 40, 1.0, (-0.9, 0.7, 0.5), 0.9)
-area_light("rim", 80, 0.5, (-0.3, -1.0, 0.8), 0.8)
+# powers for a subject of about 15 cm, lights at 0.6-0.9 m (W)
+LIGHT = float(env("RENDER_LIGHT", "1.0"))
+area_light("key", 14 * LIGHT, 0.6, (0.8, 0.5, 1.0), 0.8)
+area_light("fill", 5 * LIGHT, 1.0, (-0.9, 0.7, 0.5), 0.9)
+area_light("rim", 9 * LIGHT, 0.5, (-0.3, -1.0, 0.8), 0.8)
 
 # camera: three quarters from the port side, above
 cam_dir = Vector((0.55, 0.65, 0.52)).normalized()
@@ -395,8 +398,17 @@ cam_ob = bpy.data.objects.new("cam", cam)
 scene.collection.objects.link(cam_ob)
 scene.camera = cam_ob
 w, h = (int(x) for x in env("RENDER_RES", "1920x1080").split("x"))
-fov = 2 * math.atan(cam.sensor_width / 2 / cam.lens) * min(1.0, h / w)
-cam_ob.location = centre + cam_dir * (radius / math.sin(fov / 2) * 1.02)
+# distance that fits the subject's box, projected on the image plane
+right = Vector((0, 0, 1)).cross(cam_dir).normalized()
+up = cam_dir.cross(right)
+corners = [Vector((x, y, z)) for x in (lo.x, hi.x) for y in (lo.y, hi.y) for z in (lo.z, hi.z)]
+half_w = max(abs((c - centre).dot(right)) for c in corners)
+half_h = max(abs((c - centre).dot(up)) for c in corners)
+depth = max((c - centre).dot(cam_dir) for c in corners)
+tan_w = cam.sensor_width / 2 / cam.lens
+tan_h = tan_w * h / w
+MARGIN = 1.12
+cam_ob.location = centre + cam_dir * (max(half_w / tan_w, half_h / tan_h) * MARGIN + depth)
 cam_ob.rotation_euler = (-cam_dir).to_track_quat("-Z", "Y").to_euler()
 cam.clip_start = 0.01
 cam.clip_end = 20
