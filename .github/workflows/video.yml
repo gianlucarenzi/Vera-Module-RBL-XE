@@ -1,19 +1,14 @@
 # Photorealistic assembly video of the enclosure: the frames of
 # tools/render_enclosure.py (RENDER_MODE=anim, Blender and Cycles) split over
-# many parallel jobs, then tools/make_video.sh: GIF, MP4 and a teaser MP4
-# with the music and the end card. By hand only: Actions > Video > Run
-# workflow. Results in the "video" artifact.
+# many parallel jobs, then tools/make_video.sh: GIF, MP4 and a silent teaser
+# (credits and end card). The teaser with music: the Teaser workflow on the
+# frames of this run. By hand only: Actions > Video > Run workflow. Results
+# in the "video" artifact.
 name: Video
 
 on:
   workflow_dispatch:
     inputs:
-      music:
-        description: "music URL for the teaser (empty: silent)"
-        default: ""
-      music_start:
-        description: "start of the music in the track (s)"
-        default: "0"
       seconds:
         description: "animation length (s)"
         default: "12"
@@ -37,12 +32,6 @@ on:
       color:
         description: "case colour, sRGB hex (E3D9C6 = RAL 1013 Oyster white)"
         default: E3D9C6
-      title:
-        description: "end card, big and bold"
-        default: COMING SOON
-      subtitle:
-        description: "end card, at the bottom"
-        default: Available Q1 2027
 
 permissions:
   contents: read
@@ -192,7 +181,7 @@ jobs:
         run: |
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-            git ca-certificates curl ffmpeg fonts-dejavu-core
+            git ca-certificates curl ffmpeg fonts-dejavu-core python3 python3-pil
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
@@ -201,20 +190,11 @@ jobs:
           merge-multiple: true
       - name: GIF, MP4 and teaser
         env:
-          MUSIC_URL: ${{ inputs.music }}
-          MUSIC_START: ${{ inputs.music_start }}
           FPS: ${{ inputs.fps }}
-          TITLE: ${{ inputs.title }}
-          SUBTITLE: ${{ inputs.subtitle }}
           NAME: ${{ github.event.repository.name }}
         run: |
           test "$(ls frames/f*.png | wc -l)" -eq "${{ needs.plan.outputs.total }}"
-          MUSIC=
-          if [ -n "$MUSIC_URL" ]; then
-            curl -fsSL -o music.mp3 "$MUSIC_URL"
-            MUSIC=music.mp3
-          fi
-          tools/make_video.sh frames "video/$NAME" $MUSIC
+          tools/make_video.sh frames "video/$NAME"
       - uses: actions/upload-artifact@v4
         with:
           name: video
