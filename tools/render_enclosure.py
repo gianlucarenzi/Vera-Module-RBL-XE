@@ -13,8 +13,11 @@ Environment (all optional):
   RENDER_COLOR    case colour, sRGB hex (default E3D9C6, RAL 1013 Oyster white)
   RENDER_SAMPLES  Cycles samples (default 128), RENDER_RES  WxH (1920x1080)
   RENDER_LIGHT    multiplier of the light powers (default 1.0)
-  RENDER_MASK     solder mask colour of the module, sRGB hex (default 1F4F36)
+  RENDER_MASK     solder mask colour of a module VRML made from the STEP,
+                  sRGB hex (default 1F4F36)
   HDMI_DIR        the VERA-HDMI-Expansion (default ../Vera-HDMI-Expansion)
+  RENDER_WRL, RENDER_HDMI_WRL   the VRML of the module and of the HDMI board
+                  (default images/*.wrl of each project)
 
 The VRML is read by a small parser of its own (Transform, Group, Shape,
 IndexedFaceSet, DEF/USE): the VRML importer is not part of Blender 4.x.
@@ -323,14 +326,19 @@ bpy.ops.wm.read_factory_settings(use_empty=True)
 scene = bpy.context.scene
 
 print("reading the board VRML")
-board, pcb = place_board(read_vrml("images/VERA-MODULE-RBL.wrl"), data["outline"], 0.0)
-# the board of a VRML made from the STEP has a flat light green: the solder
-# mask colour of the KiCad VRML instead (RENDER_MASK, sRGB hex)
-mask = env("RENDER_MASK", "1F4F36")
-board[pcb] = ((tuple(int(mask[i:i + 2], 16) / 255.0 for i in (0, 2, 4)), 0.9, 0.0),) + board[pcb][1:]
+WRL = env("RENDER_WRL") or "images/VERA-MODULE-RBL.wrl"
+board, pcb = place_board(read_vrml(WRL), data["outline"], 0.0)
+if "step2wrl" in open(WRL, errors="replace").read(400):
+    # a VRML made from the STEP (no kicad-cli) has a flat light green board,
+    # in more than one shape: the solder mask colour of the KiCad VRML
+    # instead (RENDER_MASK, sRGB hex)
+    mask = env("RENDER_MASK", "1F4F36")
+    green = tuple(int(mask[i:i + 2], 16) / 255.0 for i in (0, 2, 4))
+    pcb_key = board[pcb][0]
+    board = [((green, 0.9, 0.0),) + b[1:] if b[0] == pcb_key else b for b in board]
 board_obs = board_objects("board", board)
 hdmi_obs = []
-hdmi_wrl = os.path.join(HDMI_DIR, "images", "VERA-HDMI-Expansion.wrl")
+hdmi_wrl = env("RENDER_HDMI_WRL") or os.path.join(HDMI_DIR, "images", "VERA-HDMI-Expansion.wrl")
 if "hdmi" in data and os.path.isfile(hdmi_wrl):
     print("reading the HDMI VRML")
     hdmi, _ = place_board(read_vrml(hdmi_wrl), data["hdmi"]["outline"], T + STANDOFF)
@@ -391,11 +399,12 @@ def area_light(name, power, size, direction, dist):
     return ob
 
 
-# powers for a subject of about 15 cm, lights at 0.6-0.9 m (W)
+# far and large lights (even light, soft shadows) for a subject of about
+# 15 cm: about 3/4 of the light of 0.8 m and 14 W for the key (W)
 LIGHT = float(env("RENDER_LIGHT", "1.0"))
-area_light("key", 14 * LIGHT, 0.6, (0.8, 0.5, 1.0), 0.8)
-area_light("fill", 5 * LIGHT, 1.0, (-0.9, 0.7, 0.5), 0.9)
-area_light("rim", 9 * LIGHT, 0.5, (-0.3, -1.0, 0.8), 0.8)
+area_light("key", 42 * LIGHT, 1.2, (0.8, 0.5, 1.0), 1.6)
+area_light("fill", 15 * LIGHT, 2.0, (-0.9, 0.7, 0.5), 1.8)
+area_light("rim", 27 * LIGHT, 1.0, (-0.3, -1.0, 0.8), 1.6)
 
 # camera: three quarters from the port side, above
 cam_dir = Vector((0.55, 0.65, 0.52)).normalized()

@@ -1,7 +1,12 @@
-# Photorealistic still of the enclosure (tools/render_enclosure.py): Blender
-# and Cycles in a debian:latest container, the boards from their VRML, the
-# shells and the back panel from enclosure/*.stl. By hand only: Actions >
-# Render > Run workflow. The PNG is in the "render" artifact.
+# Photorealistic still of the enclosure (tools/render_enclosure.py).
+#   vrml:   the VRML of the module and of the HDMI board made here with
+#           kicad-cli (the official KiCad image, the same version as on the
+#           PCs) and the KiCad 5 3D models (tools/make_vrml.sh): parts and
+#           board layers, the best looking VRML
+#   render: Blender and Cycles in a debian:latest container, with those VRML
+#           and the shells and back panel from enclosure/*.stl
+# By hand only: Actions > Render > Run workflow. The PNG is in the "render"
+# artifact, the VRML in "vrml".
 name: Render
 
 on:
@@ -32,6 +37,10 @@ permissions:
 
 env:
   HDMI_REPO: gianlucarenzi/Vera-HDMI-Expansion
+  LIB_REPO: gianlucarenzi/RetroBitLab-Library
+  KICAD_IMAGE: kicad/kicad:10.0.6
+  KICAD5_APPIMAGE: KiCad-5.1.12-2.2.0-x86_64.AppImage
+  KICAD5_URL: https://github.com/gianlucarenzi/kicad_appimage_builder/releases/download/v2.2.0/KiCad-5.1.12-2.2.0-x86_64.AppImage
   # the official build: the Debian one has no OpenImageDenoise (denoiser)
   BLENDER: blender-4.2.23-linux-x64
   BLENDER_URL: https://download.blender.org/release/Blender4.2/blender-4.2.23-linux-x64.tar.xz
@@ -41,16 +50,70 @@ defaults:
     shell: bash
 
 jobs:
+  vrml:
+    runs-on: ubuntu-latest
+    container:
+      image: kicad/kicad:10.0.6
+      options: --user root
+    timeout-minutes: 60
+    steps:
+      - name: Packages (curl for the AppImage)
+        run: |
+          command -v curl >/dev/null || { apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends curl ca-certificates; }
+
+      - uses: actions/checkout@v4
+
+      - name: VERA-HDMI-Expansion (PCB of the add-on board)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.HDMI_REPO }}
+          path: Vera-HDMI-Expansion
+
+      - name: RetroBitLab-Library (KILIBPATH)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.LIB_REPO }}
+          path: RetroBitLab-Library
+
+      - name: KiCad 5 AppImage (cached, shared with the Enclosure workflow)
+        id: kicad5
+        uses: actions/cache@v4
+        with:
+          path: /opt/kicad5/${{ env.KICAD5_APPIMAGE }}
+          key: ${{ env.KICAD5_APPIMAGE }}
+
+      - name: Download KiCad 5 AppImage
+        if: steps.kicad5.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p /opt/kicad5
+          curl -fsSL -o "/opt/kicad5/$KICAD5_APPIMAGE" "$KICAD5_URL"
+
+      - name: VRML of the module and of the HDMI board
+        env:
+          KILIBPATH: ${{ github.workspace }}/RetroBitLab-Library
+        run: |
+          chmod +x "/opt/kicad5/$KICAD5_APPIMAGE"
+          export KICAD5_APPIMAGE="/opt/kicad5/$KICAD5_APPIMAGE"
+          tools/make_vrml.sh VERA-MODULE-RBL.kicad_pcb vrml/VERA-MODULE-RBL.wrl
+          tools/make_vrml.sh Vera-HDMI-Expansion/VERA-HDMI-Expansion.kicad_pcb vrml/VERA-HDMI-Expansion.wrl
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vrml
+          path: vrml/*.wrl
+          if-no-files-found: error
+
   render:
+    needs: vrml
     runs-on: ubuntu-latest
     container: debian:latest
     timeout-minutes: 120
     steps:
-      - name: Packages (Git LFS, libraries of the official Blender)
+      - name: Packages (libraries of the official Blender)
         run: |
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-            git git-lfs ca-certificates curl xz-utils zstd \
+            git ca-certificates curl xz-utils zstd \
             libx11-6 libxi6 libxxf86vm1 libxfixes3 libxrender1 libxkbcommon0 libsm6 libice6 \
             libgl1 libegl1 libglu1-mesa libwayland-client0 libwayland-cursor0 libwayland-egl1 libdecor-0-0
 
@@ -65,20 +128,17 @@ jobs:
         if: steps.blender.outputs.cache-hit != 'true'
         run: curl -fsSL "$BLENDER_URL" | tar -xJ -C /opt
 
-      - uses: actions/checkout@v4
-        with:
-          lfs: true       # images/*.wrl
+      - uses: actions/checkout@v4      # no LFS: the VRML come from the vrml job
 
-      - name: VERA-HDMI-Expansion (VRML of the add-on board)
-        uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
         with:
-          repository: ${{ env.HDMI_REPO }}
-          path: Vera-HDMI-Expansion
-          lfs: true
+          name: vrml
+          path: vrml
 
       - name: Render
         env:
-          HDMI_DIR: ${{ github.workspace }}/Vera-HDMI-Expansion
+          RENDER_WRL: ${{ github.workspace }}/vrml/VERA-MODULE-RBL.wrl
+          RENDER_HDMI_WRL: ${{ github.workspace }}/vrml/VERA-HDMI-Expansion.wrl
           RENDER_POSE: ${{ inputs.pose }}
           RENDER_VARIANT: ${{ inputs.variant }}
           RENDER_COLOR: ${{ inputs.color }}
