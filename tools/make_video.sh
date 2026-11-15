@@ -4,14 +4,16 @@
 #   OUT-assembly.mp4   the animation, H.264
 #   OUT-teaser.mp4     the animation fading to black in the last second, then
 #                      a black end card (TITLE, big and bold, in the centre,
-#                      SUBTITLE at the bottom) fading out in CARD seconds;
+#                      SUBTITLE at the bottom) of CARD seconds, fading out
+#                      in its last CARD_FADE seconds;
 #                      with MUSIC (from MUSIC_START s, loudness normalised
 #                      to -16 LUFS), the track fades in over 1.5 s and fades
 #                      out with the picture
 #
 # Usage: tools/make_video.sh FRAMES_DIR OUT [MUSIC]
 # Environment: FPS (24), TITLE ("COMING SOON"), SUBTITLE ("Available Q1 2027"),
-#              CARD (5 s), FONT (DejaVu Sans Bold), MUSIC_START (0 s)
+#              CARD (5 s), CARD_FADE (3 s), FONT (DejaVu Sans Bold),
+#              MUSIC_START (0 s)
 set -e -o pipefail
 FRAMES=${1:?usage: $0 FRAMES_DIR OUT [MUSIC]}
 OUT=${2:?usage: $0 FRAMES_DIR OUT [MUSIC]}
@@ -21,6 +23,7 @@ TITLE=${TITLE:-COMING SOON}
 SUBTITLE=${SUBTITLE:-Available Q1 2027}
 CARD=${CARD:-5}
 MUSIC_START=${MUSIC_START:-0}
+CARD_FADE=${CARD_FADE:-3}
 FONT=${FONT:-/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf}
 [ -f "${FONT}" ] || { echo "font ${FONT} missing (apt install fonts-dejavu-core)"; exit 1; }
 
@@ -39,10 +42,10 @@ ffmpeg -v error -y -framerate "${FPS}" -i "${FRAMES}/f%04d.png" \
 	-vf "fps=12,scale=720:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=160[p];[b][p]paletteuse=dither=bayer:bayer_scale=3" \
 	-loop 0 "${OUT}-assembly.gif"
 
-# the end card: both lines fade out together over CARD seconds
+# the end card: both lines fade out together in the last CARD_FADE seconds
 esc() { printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e "s/'/\\\\'/g" -e 's/:/\\:/g' -e 's/%/\\%/g'; }
-TXT="drawtext=fontfile=${FONT}:text='$(esc "${TITLE}")':fontcolor=white:fontsize=h/6.5:x=(w-text_w)/2:y=(h-text_h)/2:alpha='1-t/${CARD}'"
-SUB="drawtext=fontfile=${FONT}:text='$(esc "${SUBTITLE}")':fontcolor=white:fontsize=h/20:x=(w-text_w)/2:y=h-h/9-text_h:alpha='1-t/${CARD}'"
+TXT="drawtext=fontfile=${FONT}:text='$(esc "${TITLE}")':fontcolor=white:fontsize=h/6.5:x=(w-text_w)/2:y=(h-text_h)/2:alpha='if(lt(t,${CARD}-${CARD_FADE}),1,(${CARD}-t)/${CARD_FADE})'"
+SUB="drawtext=fontfile=${FONT}:text='$(esc "${SUBTITLE}")':fontcolor=white:fontsize=h/20:x=(w-text_w)/2:y=h-h/9-text_h:alpha='if(lt(t,${CARD}-${CARD_FADE}),1,(${CARD}-t)/${CARD_FADE})'"
 VIDEO="[0:v]fade=t=out:st=${FADE_AT}:d=1,format=yuv420p,setsar=1[a];[1:v]${TXT},${SUB},format=yuv420p,setsar=1[c];[a][c]concat=n=2:v=1:a=0[v]"
 if [ -n "${MUSIC}" ]; then
 	ffmpeg -v error -y -framerate "${FPS}" -i "${FRAMES}/f%04d.png" \
