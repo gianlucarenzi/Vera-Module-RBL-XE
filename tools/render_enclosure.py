@@ -13,6 +13,7 @@ Environment (all optional):
   RENDER_COLOR    case colour, sRGB hex (default E3D9C6, RAL 1013 Oyster white)
   RENDER_SAMPLES  Cycles samples (default 128), RENDER_RES  WxH (1920x1080)
   RENDER_LIGHT    multiplier of the light powers (default 1.0)
+  RENDER_MASK     solder mask colour of the module, sRGB hex (default 1F4F36)
   HDMI_DIR        the VERA-HDMI-Expansion (default ../Vera-HDMI-Expansion)
 
 The VRML is read by a small parser of its own (Transform, Group, Shape,
@@ -201,7 +202,8 @@ def place_board(shapes, outline, z0):
     ys = [-p[1] for p in outline]
     s = (max(xs) - min(xs)) / (b[1] - b[0])
     off = Vector((min(xs) - b[0] * s, min(ys) - b[2] * s, z0 - b[4] * s))
-    return [(k, [tuple((Vector(p) * s + off) * MM) for p in v], f) for k, v, f in shapes]
+    out = [(k, [tuple((Vector(p) * s + off) * MM) for p in v], f) for k, v, f in shapes]
+    return out, i
 
 
 # ---------------------------------------------------------------- materials
@@ -321,13 +323,17 @@ bpy.ops.wm.read_factory_settings(use_empty=True)
 scene = bpy.context.scene
 
 print("reading the board VRML")
-board = place_board(read_vrml("images/VERA-MODULE-RBL.wrl"), data["outline"], 0.0)
+board, pcb = place_board(read_vrml("images/VERA-MODULE-RBL.wrl"), data["outline"], 0.0)
+# the board of a VRML made from the STEP has a flat light green: the solder
+# mask colour of the KiCad VRML instead (RENDER_MASK, sRGB hex)
+mask = env("RENDER_MASK", "1F4F36")
+board[pcb] = ((tuple(int(mask[i:i + 2], 16) / 255.0 for i in (0, 2, 4)), 0.9, 0.0),) + board[pcb][1:]
 board_obs = board_objects("board", board)
 hdmi_obs = []
 hdmi_wrl = os.path.join(HDMI_DIR, "images", "VERA-HDMI-Expansion.wrl")
 if "hdmi" in data and os.path.isfile(hdmi_wrl):
     print("reading the HDMI VRML")
-    hdmi = place_board(read_vrml(hdmi_wrl), data["hdmi"]["outline"], T + STANDOFF)
+    hdmi, _ = place_board(read_vrml(hdmi_wrl), data["hdmi"]["outline"], T + STANDOFF)
     hdmi_obs = board_objects("hdmi", hdmi)
 else:
     print("no VERA-HDMI-Expansion VRML in", HDMI_DIR)
@@ -349,8 +355,10 @@ if POSE == "open":
     if panel:
         panel.location.y += 30 * MM
 
-# floor, lights, world
-objs = [o for o in scene.objects if o.type == "MESH"]
+# floor, lights, world: framed on the enclosure pieces (the boards are inside
+# them, and a VRML may carry stray parts far from its board)
+objs = [o for o in (bottom, top, panel) if o is not None]
+bpy.context.view_layer.update()             # matrix_world after the moves above
 lo = Vector((min(min((o.matrix_world @ Vector(c)).x for c in o.bound_box) for o in objs),
              min(min((o.matrix_world @ Vector(c)).y for c in o.bound_box) for o in objs),
              min(min((o.matrix_world @ Vector(c)).z for c in o.bound_box) for o in objs)))
