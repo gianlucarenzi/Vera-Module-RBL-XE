@@ -408,11 +408,19 @@ cam.dof.aperture_fstop = 11
 scene.render.engine = "CYCLES"
 scene.cycles.device = "CPU"
 scene.cycles.samples = int(env("RENDER_SAMPLES", "128"))
-scene.cycles.use_denoising = True
 try:
+    import _cycles
+    oidn = _cycles.with_openimagedenoise
+except (ImportError, AttributeError):
+    oidn = False
+if oidn:
+    scene.cycles.use_denoising = True
     scene.cycles.denoiser = "OPENIMAGEDENOISE"
-except TypeError:
-    pass
+else:
+    # a Blender without the denoiser (e.g. Debian's): more samples instead
+    scene.cycles.use_denoising = False
+    scene.cycles.samples *= 4
+    print("no OpenImageDenoise in this Blender: %d samples, no denoiser" % scene.cycles.samples)
 scene.render.resolution_x, scene.render.resolution_y = w, h
 scene.render.resolution_percentage = 100
 try:

@@ -32,6 +32,9 @@ permissions:
 
 env:
   HDMI_REPO: gianlucarenzi/Vera-HDMI-Expansion
+  # the official build: the Debian one has no OpenImageDenoise (denoiser)
+  BLENDER: blender-4.2.23-linux-x64
+  BLENDER_URL: https://download.blender.org/release/Blender4.2/blender-4.2.23-linux-x64.tar.xz
 
 defaults:
   run:
@@ -43,11 +46,24 @@ jobs:
     container: debian:latest
     timeout-minutes: 120
     steps:
-      - name: Packages (Blender, Git LFS)
+      - name: Packages (Git LFS, libraries of the official Blender)
         run: |
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-            git git-lfs ca-certificates blender python3
+            git git-lfs ca-certificates curl xz-utils zstd \
+            libx11-6 libxi6 libxxf86vm1 libxfixes3 libxrender1 libxkbcommon0 libsm6 libice6 \
+            libgl1 libegl1 libglu1-mesa libwayland-client0 libwayland-cursor0 libwayland-egl1 libdecor-0-0
+
+      - name: Blender (cached)
+        id: blender
+        uses: actions/cache@v4
+        with:
+          path: /opt/${{ env.BLENDER }}
+          key: ${{ env.BLENDER }}
+
+      - name: Download Blender
+        if: steps.blender.outputs.cache-hit != 'true'
+        run: curl -fsSL "$BLENDER_URL" | tar -xJ -C /opt
 
       - uses: actions/checkout@v4
         with:
@@ -70,8 +86,9 @@ jobs:
           RENDER_RES: ${{ inputs.resolution }}
           RENDER_OUT: ${{ github.workspace }}/render/${{ github.event.repository.name }}-${{ inputs.variant }}-${{ inputs.pose }}.png
         run: |
+          export PATH="/opt/$BLENDER:$PATH"
           blender --version | head -1
-          nproc
+          echo "$(nproc) CPUs"
           blender -b --python-exit-code 1 -P tools/render_enclosure.py
           test -s "$RENDER_OUT"
 
