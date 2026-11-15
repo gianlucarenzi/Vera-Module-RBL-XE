@@ -5,12 +5,13 @@
 #   OUT-teaser.mp4     the animation fading to black in the last second, then
 #                      a black end card (TITLE, big and bold, in the centre,
 #                      SUBTITLE at the bottom) fading out in CARD seconds;
-#                      with MUSIC, the track fades in over 1.5 s and fades
+#                      with MUSIC (from MUSIC_START s, loudness normalised
+#                      to -16 LUFS), the track fades in over 1.5 s and fades
 #                      out with the picture
 #
 # Usage: tools/make_video.sh FRAMES_DIR OUT [MUSIC]
 # Environment: FPS (24), TITLE ("COMING SOON"), SUBTITLE ("Available Q1 2027"),
-#              CARD (5 s), FONT (DejaVu Sans Bold)
+#              CARD (5 s), FONT (DejaVu Sans Bold), MUSIC_START (0 s)
 set -e -o pipefail
 FRAMES=${1:?usage: $0 FRAMES_DIR OUT [MUSIC]}
 OUT=${2:?usage: $0 FRAMES_DIR OUT [MUSIC]}
@@ -19,6 +20,7 @@ FPS=${FPS:-24}
 TITLE=${TITLE:-COMING SOON}
 SUBTITLE=${SUBTITLE:-Available Q1 2027}
 CARD=${CARD:-5}
+MUSIC_START=${MUSIC_START:-0}
 FONT=${FONT:-/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf}
 [ -f "${FONT}" ] || { echo "font ${FONT} missing (apt install fonts-dejavu-core)"; exit 1; }
 
@@ -34,7 +36,7 @@ mkdir -p "$(dirname "${OUT}")"
 ffmpeg -v error -y -framerate "${FPS}" -i "${FRAMES}/f%04d.png" \
 	-c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p -movflags +faststart "${OUT}-assembly.mp4"
 ffmpeg -v error -y -framerate "${FPS}" -i "${FRAMES}/f%04d.png" \
-	-vf "fps=15,scale=720:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=160[p];[b][p]paletteuse=dither=bayer:bayer_scale=3" \
+	-vf "fps=12,scale=720:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=160[p];[b][p]paletteuse=dither=bayer:bayer_scale=3" \
 	-loop 0 "${OUT}-assembly.gif"
 
 # the end card: both lines fade out together over CARD seconds
@@ -45,7 +47,7 @@ VIDEO="[0:v]fade=t=out:st=${FADE_AT}:d=1,format=yuv420p,setsar=1[a];[1:v]${TXT},
 if [ -n "${MUSIC}" ]; then
 	ffmpeg -v error -y -framerate "${FPS}" -i "${FRAMES}/f%04d.png" \
 		-f lavfi -i "color=c=black:s=${SIZE}:r=${FPS}:d=${CARD}" -i "${MUSIC}" \
-		-filter_complex "${VIDEO};[2:a]atrim=0:${D},afade=t=in:st=0:d=1.5,afade=t=out:st=${FADE_AT}:d=1,apad[m]" \
+		-filter_complex "${VIDEO};[2:a]atrim=${MUSIC_START}:$(awk "BEGIN{print ${MUSIC_START}+${D}}"),asetpts=PTS-STARTPTS,loudnorm=I=-16:TP=-1.5:LRA=11,aresample=48000,afade=t=in:st=0:d=1.5,afade=t=out:st=${FADE_AT}:d=1,apad[m]" \
 		-map "[v]" -map "[m]" -t "${TOTAL}" -c:v libx264 -preset slow -crf 18 -c:a aac -b:a 192k \
 		-movflags +faststart "${OUT}-teaser.mp4"
 else

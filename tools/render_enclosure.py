@@ -480,7 +480,7 @@ if env("RENDER_MODE", "still") == "still":
 # ---------------------------------------------------------------- animation
 # The assembly as in the GIF (tools/enclosure_assembly.py): every part comes
 # from its exploded place, one after the other, while the camera turns
-# around the enclosure and comes closer. Frames f0001.png ... of the range
+# around the enclosure, comes closer and ends on the port side. Frames f0001.png ... of the range
 # RENDER_FRAMES (a-b, 1-based) of RENDER_SECONDS at RENDER_FPS, so a long
 # animation can be split over many machines.
 FPS = int(env("RENDER_FPS", "24"))
@@ -527,9 +527,9 @@ def pose(t):
         for c in (glo + d, ghi + d):
             blo = Vector((min(blo.x, c.x), min(blo.y, c.y), min(blo.z, c.z)))
             bhi = Vector((max(bhi.x, c.x), max(bhi.y, c.y), max(bhi.z, c.z)))
-    # half a turn around, from the port side, coming lower
+    # half a turn around, coming lower, ending three quarters on the port side
     s = smooth(t / SECONDS)
-    az = math.atan2(PORT_SIDE.y, PORT_SIDE.x) - math.radians(150) * s
+    az = math.atan2(PORT_SIDE.y, PORT_SIDE.x) + math.radians(150) * (1 - s)
     el = math.radians(36 - 14 * s)
     aim((math.cos(el) * math.cos(az), math.cos(el) * math.sin(az), math.sin(el)), (blo, bhi))
 

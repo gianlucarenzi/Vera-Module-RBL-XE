@@ -11,6 +11,9 @@ on:
       music:
         description: "music URL for the teaser (empty: silent)"
         default: ""
+      music_start:
+        description: "start of the music in the track (s)"
+        default: "0"
       seconds:
         description: "animation length (s)"
         default: "12"
@@ -199,6 +202,7 @@ jobs:
       - name: GIF, MP4 and teaser
         env:
           MUSIC_URL: ${{ inputs.music }}
+          MUSIC_START: ${{ inputs.music_start }}
           FPS: ${{ inputs.fps }}
           TITLE: ${{ inputs.title }}
           SUBTITLE: ${{ inputs.subtitle }}
