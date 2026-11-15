@@ -9,7 +9,9 @@ Environment (all optional):
   RENDER_OUT      output PNG (enclosure/<name>-render.png)
   RENDER_NAME     enclosure name (VERA-<board>-enclosure, as make_enclosure.sh)
   RENDER_VARIANT  backpanel (default) or open
-  RENDER_POSE     open (top shell lifted, panel out) or closed
+  RENDER_MODE     still (default) or anim (the assembly, frames to RENDER_FRAMES_DIR)
+  RENDER_POSE     still: open (top shell lifted, panel out) or closed
+  RENDER_FPS, RENDER_SECONDS, RENDER_FRAMES (a-b)   anim: 24, 12, all
   RENDER_COLOR    case colour, sRGB hex (default E3D9C6, RAL 1013 Oyster white)
   RENDER_SAMPLES  Cycles samples (default 128), RENDER_RES  WxH (1920x1080)
   RENDER_LIGHT    multiplier of the light powers (default 1.0)
@@ -355,26 +357,22 @@ top = import_stl(prefix + "-top.stl", mat_z)
 panel = import_stl(prefix + "-panel.stl", mat_y) if VARIANT == "backpanel" else None
 
 brass = principled("brass", hex_rgb("C9A44C"), 0.3, 1.0)
-for k, h in enumerate(data["holes"]):
-    hex_prism(h[0], -h[1], T, T + STANDOFF, 5.5, brass, "standoff%d" % k)
+standoffs = [hex_prism(h[0], -h[1], T, T + STANDOFF, 5.5, brass, "standoff%d" % k)
+             for k, h in enumerate(data["holes"])]
 
-if POSE == "open":
-    top.location.z += 45 * MM
-    if panel:
-        panel.location.y += 30 * MM
 
-# floor, lights, world: framed on the enclosure pieces (the boards are inside
-# them, and a VRML may carry stray parts far from its board)
-objs = [o for o in (bottom, top, panel) if o is not None]
-bpy.context.view_layer.update()             # matrix_world after the moves above
-lo = Vector((min(min((o.matrix_world @ Vector(c)).x for c in o.bound_box) for o in objs),
-             min(min((o.matrix_world @ Vector(c)).y for c in o.bound_box) for o in objs),
-             min(min((o.matrix_world @ Vector(c)).z for c in o.bound_box) for o in objs)))
-hi = Vector((max(max((o.matrix_world @ Vector(c)).x for c in o.bound_box) for o in objs),
-             max(max((o.matrix_world @ Vector(c)).y for c in o.bound_box) for o in objs),
-             max(max((o.matrix_world @ Vector(c)).z for c in o.bound_box) for o in objs)))
+def world_box(obs):
+    bpy.context.view_layer.update()
+    pts = [o.matrix_world @ Vector(c) for o in obs for c in o.bound_box]
+    return (Vector((min(p.x for p in pts), min(p.y for p in pts), min(p.z for p in pts))),
+            Vector((max(p.x for p in pts), max(p.y for p in pts), max(p.z for p in pts))))
+
+
+# the closed enclosure: floor, lights and the centre of the camera moves (the
+# boards are inside it, and a VRML may carry stray parts far from its board)
+shells = [o for o in (bottom, top, panel) if o is not None]
+lo, hi = world_box(shells)
 centre = (lo + hi) / 2
-radius = (hi - lo).length / 2
 
 bpy.ops.mesh.primitive_plane_add(size=40, location=(centre.x, centre.y, lo.z))
 floor = bpy.context.active_object
@@ -406,34 +404,41 @@ area_light("key", 42 * LIGHT, 1.2, (0.8, 0.5, 1.0), 1.6)
 area_light("fill", 15 * LIGHT, 2.0, (-0.9, 0.7, 0.5), 1.8)
 area_light("rim", 27 * LIGHT, 1.0, (-0.3, -1.0, 0.8), 1.6)
 
-# camera: three quarters from the port side, above
-cam_dir = Vector((0.55, 0.65, 0.52)).normalized()
+# ---------------------------------------------------------------- camera
 cam = bpy.data.cameras.new("cam")
 cam.lens = 70
 cam.sensor_width = 36
 cam_ob = bpy.data.objects.new("cam", cam)
 scene.collection.objects.link(cam_ob)
 scene.camera = cam_ob
-w, h = (int(x) for x in env("RENDER_RES", "1920x1080").split("x"))
-# distance that fits the subject's box, projected on the image plane
-right = Vector((0, 0, 1)).cross(cam_dir).normalized()
-up = cam_dir.cross(right)
-corners = [Vector((x, y, z)) for x in (lo.x, hi.x) for y in (lo.y, hi.y) for z in (lo.z, hi.z)]
-half_w = max(abs((c - centre).dot(right)) for c in corners)
-half_h = max(abs((c - centre).dot(up)) for c in corners)
-depth = max((c - centre).dot(cam_dir) for c in corners)
-tan_w = cam.sensor_width / 2 / cam.lens
-tan_h = tan_w * h / w
-MARGIN = 1.12
-cam_ob.location = centre + cam_dir * (max(half_w / tan_w, half_h / tan_h) * MARGIN + depth)
-cam_ob.rotation_euler = (-cam_dir).to_track_quat("-Z", "Y").to_euler()
 cam.clip_start = 0.01
 cam.clip_end = 20
 cam.dof.use_dof = True
-cam.dof.focus_distance = (cam_ob.location - centre).length
 cam.dof.aperture_fstop = 11
+w, h = (int(x) for x in env("RENDER_RES", "1920x1080").split("x"))
+MARGIN = 1.12
 
-# render
+
+def aim(direction, box):
+    """camera on `direction` from the centre of `box`, at the distance that
+    fits the box projected on the image plane"""
+    d = Vector(direction).normalized()
+    blo, bhi = box
+    c = (blo + bhi) / 2
+    right = Vector((0, 0, 1)).cross(d).normalized()
+    up = d.cross(right)
+    corners = [Vector((x, y, z)) for x in (blo.x, bhi.x) for y in (blo.y, bhi.y) for z in (blo.z, bhi.z)]
+    half_w = max(abs((p - c).dot(right)) for p in corners)
+    half_h = max(abs((p - c).dot(up)) for p in corners)
+    depth = max((p - c).dot(d) for p in corners)
+    tan_w = cam.sensor_width / 2 / cam.lens
+    tan_h = tan_w * h / w
+    cam_ob.location = c + d * (max(half_w / tan_w, half_h / tan_h) * MARGIN + depth)
+    cam_ob.rotation_euler = (-d).to_track_quat("-Z", "Y").to_euler()
+    cam.dof.focus_distance = (cam_ob.location - c).length
+
+
+# ---------------------------------------------------------------- render settings
 scene.render.engine = "CYCLES"
 scene.cycles.device = "CPU"
 scene.cycles.samples = int(env("RENDER_SAMPLES", "128"))
@@ -457,7 +462,82 @@ try:
 except TypeError:
     scene.view_settings.view_transform = "Filmic"
 scene.render.image_settings.file_format = "PNG"
-scene.render.filepath = OUT
-print("rendering %dx%d, %d samples, to %s" % (w, h, scene.cycles.samples, OUT))
-bpy.ops.render.render(write_still=True)
-print("written", OUT)
+
+PORT_SIDE = Vector((0.55, 0.65, 0.52))      # three quarters from the port side, above
+
+if env("RENDER_MODE", "still") == "still":
+    if POSE == "open":
+        top.location.z += 45 * MM
+        if panel:
+            panel.location.y += 30 * MM
+    aim(PORT_SIDE, world_box(shells))
+    scene.render.filepath = OUT
+    print("rendering %dx%d, %d samples, to %s" % (w, h, scene.cycles.samples, OUT))
+    bpy.ops.render.render(write_still=True)
+    print("written", OUT)
+    sys.exit(0)
+
+# ---------------------------------------------------------------- animation
+# The assembly as in the GIF (tools/enclosure_assembly.py): every part comes
+# from its exploded place, one after the other, while the camera turns
+# around the enclosure and comes closer. Frames f0001.png ... of the range
+# RENDER_FRAMES (a-b, 1-based) of RENDER_SECONDS at RENDER_FPS, so a long
+# animation can be split over many machines.
+FPS = int(env("RENDER_FPS", "24"))
+SECONDS = float(env("RENDER_SECONDS", "12"))
+TOTAL = int(round(FPS * SECONDS))
+first, last = (int(x) for x in env("RENDER_FRAMES", "1-%d" % TOTAL).split("-"))
+FRAMES_DIR = os.path.abspath(env("RENDER_FRAMES_DIR", "frames"))
+os.makedirs(FRAMES_DIR, exist_ok=True)
+
+# (objects, exploded offset in mm, start s, end s)
+groups = [(board_obs, (0, 0, 70), 0.6, 2.2),
+          (standoffs, (0, 0, 50), 1.8, 3.0),
+          (hdmi_obs, (0, 0, 90), 2.6, 4.2),
+          ([top], (0, 0, 120), 4.0, 5.8)]
+if panel:
+    groups.append(([panel], (0, 60, 0), 5.6, 7.2))
+home = {o.name: o.location.copy() for g in groups for o in g[0]}
+# boxes of the moving groups, closed, for the framing: the boards as the
+# space they fill inside the case (a VRML may carry stray parts)
+inner = lambda z0, z1: (Vector((lo.x, lo.y, z0 * MM)), Vector((hi.x, hi.y, z1 * MM)))
+gbox = [inner(0, T + 10), world_box(standoffs), inner(T + STANDOFF, T + STANDOFF + 12), world_box([top])]
+if panel:
+    gbox.append(world_box([panel]))
+
+
+def ease(x):
+    x = min(max(x, 0.0), 1.0)
+    return 1 - (1 - x) ** 3                 # fast in, slow at the end
+
+
+def smooth(x):
+    x = min(max(x, 0.0), 1.0)
+    return x * x * (3 - 2 * x)
+
+
+def pose(t):
+    """parts and camera at time t (s)"""
+    blo, bhi = Vector(lo), Vector(hi)
+    for (obs, off, t0, t1), (glo, ghi) in zip(groups, gbox):
+        k = 1 - ease((t - t0) / (t1 - t0))
+        d = Vector(off) * MM * k
+        for o in obs:
+            o.location = home[o.name] + d
+        for c in (glo + d, ghi + d):
+            blo = Vector((min(blo.x, c.x), min(blo.y, c.y), min(blo.z, c.z)))
+            bhi = Vector((max(bhi.x, c.x), max(bhi.y, c.y), max(bhi.z, c.z)))
+    # half a turn around, from the port side, coming lower
+    s = smooth(t / SECONDS)
+    az = math.atan2(PORT_SIDE.y, PORT_SIDE.x) - math.radians(150) * s
+    el = math.radians(36 - 14 * s)
+    aim((math.cos(el) * math.cos(az), math.cos(el) * math.sin(az), math.sin(el)), (blo, bhi))
+
+
+print("rendering frames %d-%d of %d (%d fps), %dx%d, %d samples, to %s" % (
+    first, last, TOTAL, FPS, w, h, scene.cycles.samples, FRAMES_DIR))
+for f in range(first, last + 1):
+    pose((f - 1) / FPS)
+    scene.render.filepath = os.path.join(FRAMES_DIR, "f%04d.png" % f)
+    bpy.ops.render.render(write_still=True)
+    print("frame", f, "written")
