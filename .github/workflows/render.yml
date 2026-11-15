@@ -1,0 +1,82 @@
+# Photorealistic still of the enclosure (tools/render_enclosure.py): Blender
+# and Cycles in a debian:latest container, the boards from their VRML, the
+# shells and the back panel from enclosure/*.stl. By hand only: Actions >
+# Render > Run workflow. The PNG is in the "render" artifact.
+name: Render
+
+on:
+  workflow_dispatch:
+    inputs:
+      pose:
+        description: "open (top shell lifted, panel out) or closed"
+        type: choice
+        options: [open, closed]
+        default: open
+      variant:
+        description: "backpanel or open (port window)"
+        type: choice
+        options: [backpanel, open]
+        default: backpanel
+      color:
+        description: "case colour, sRGB hex (E3D9C6 = RAL 1013 Oyster white)"
+        default: E3D9C6
+      samples:
+        description: "Cycles samples"
+        default: "128"
+      resolution:
+        description: "WxH"
+        default: 1920x1080
+
+permissions:
+  contents: read
+
+env:
+  HDMI_REPO: gianlucarenzi/Vera-HDMI-Expansion
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    container: debian:latest
+    timeout-minutes: 120
+    steps:
+      - name: Packages (Blender, Git LFS)
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            git git-lfs ca-certificates blender python3
+
+      - uses: actions/checkout@v4
+        with:
+          lfs: true       # images/*.wrl
+
+      - name: VERA-HDMI-Expansion (VRML of the add-on board)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.HDMI_REPO }}
+          path: Vera-HDMI-Expansion
+          lfs: true
+
+      - name: Render
+        env:
+          HDMI_DIR: ${{ github.workspace }}/Vera-HDMI-Expansion
+          RENDER_POSE: ${{ inputs.pose }}
+          RENDER_VARIANT: ${{ inputs.variant }}
+          RENDER_COLOR: ${{ inputs.color }}
+          RENDER_SAMPLES: ${{ inputs.samples }}
+          RENDER_RES: ${{ inputs.resolution }}
+          RENDER_OUT: ${{ github.workspace }}/render/${{ github.event.repository.name }}-${{ inputs.variant }}-${{ inputs.pose }}.png
+        run: |
+          blender --version | head -1
+          nproc
+          blender -b --python-exit-code 1 -P tools/render_enclosure.py
+          test -s "$RENDER_OUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: render
+          path: render/*.png
+          if-no-files-found: error

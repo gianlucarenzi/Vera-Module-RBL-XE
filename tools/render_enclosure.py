@@ -1,0 +1,426 @@
+# -*- coding: utf-8 -*-
+"""Photorealistic render of the enclosure with Blender (Cycles): the boards
+from their VRML (colours of the 3D models), the shells and the back panel
+from the STL of tools/make_enclosure.py, brass standoffs, a light studio.
+
+  blender -b -P tools/render_enclosure.py
+
+Environment (all optional):
+  RENDER_OUT      output PNG (enclosure/<name>-render.png)
+  RENDER_NAME     enclosure name (VERA-<board>-enclosure, as make_enclosure.sh)
+  RENDER_VARIANT  backpanel (default) or open
+  RENDER_POSE     open (top shell lifted, panel out) or closed
+  RENDER_COLOR    case colour, sRGB hex (default E3D9C6, RAL 1013 Oyster white)
+  RENDER_SAMPLES  Cycles samples (default 128), RENDER_RES  WxH (1920x1080)
+  HDMI_DIR        the VERA-HDMI-Expansion (default ../Vera-HDMI-Expansion)
+
+The VRML is read by a small parser of its own (Transform, Group, Shape,
+IndexedFaceSet, DEF/USE): the VRML importer is not part of Blender 4.x.
+Each VRML is placed like the STEP in make_enclosure.py: its board (the
+widest flat shape) on the KiCad outline from enclosure/board.json.
+"""
+import colorsys
+import json
+import math
+import os
+import re
+import sys
+
+import bpy
+from mathutils import Matrix, Vector
+
+env = os.environ.get
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+os.chdir(ROOT)
+data = json.load(open("enclosure/board.json"))
+T = data["thickness"]
+STANDOFF = float(re.search(r"^STANDOFF = ([\d.]+)", open("tools/make_enclosure.py").read(), re.M).group(1))
+NAME = env("RENDER_NAME") or "VERA-%s-enclosure" % os.path.basename(ROOT).replace("Vera-Module-", "")
+VARIANT = env("RENDER_VARIANT", "backpanel")
+POSE = env("RENDER_POSE", "open")
+OUT = os.path.abspath(env("RENDER_OUT") or "enclosure/%s%s-render.png" % (NAME, "-backpanel" if VARIANT == "backpanel" else ""))
+HDMI_DIR = env("HDMI_DIR") or os.path.join(ROOT, "..", "Vera-HDMI-Expansion")
+MM = 0.001                      # scene in metres, data in mm
+
+
+def srgb_to_linear(c):
+    return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+
+
+def hex_rgb(h):
+    h = h.lstrip("#")
+    return tuple(srgb_to_linear(int(h[i:i + 2], 16) / 255.0) for i in (0, 2, 4))
+
+
+# ---------------------------------------------------------------- VRML
+TOKEN = re.compile(r'"[^"]*"|[{}\[\]]|[^\s,{}\[\]"#]+|#[^\n]*')
+NUM = re.compile(r"^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$")
+
+
+class Parser:
+    def __init__(self, text):
+        self.toks = [t for t in TOKEN.findall(text) if not t.startswith("#")]
+        self.i = 0
+        self.defs = {}
+
+    def peek(self):
+        return self.toks[self.i] if self.i < len(self.toks) else None
+
+    def next(self):
+        t = self.toks[self.i]
+        self.i += 1
+        return t
+
+    def node(self):
+        t = self.next()
+        if t == "USE":
+            return self.defs.get(self.next())
+        name = None
+        if t == "DEF":
+            name = self.next()
+            t = self.next()
+        if t == "NULL":
+            return None
+        n = {"type": t, "f": {}}
+        if name:
+            self.defs[name] = n
+        assert self.next() == "{", "expected { after " + t
+        while self.peek() != "}":
+            field = self.next()
+            if field in ("ROUTE", "PROTO", "EXTERNPROTO"):
+                raise ValueError("unsupported VRML: " + field)
+            n["f"][field] = self.value()
+        self.next()
+        return n
+
+    def value(self):
+        t = self.peek()
+        if t == "[":
+            self.next()
+            if self.peek() == "]":
+                self.next()
+                return []
+            if NUM.match(self.peek()):
+                vals = []
+                while self.peek() != "]":
+                    vals.append(float(self.next()))
+                self.next()
+                return vals
+            items = []
+            while self.peek() != "]":
+                items.append(self.node())
+            self.next()
+            return items
+        if NUM.match(t):
+            vals = []
+            while self.peek() is not None and NUM.match(self.peek()):
+                vals.append(float(self.next()))
+            return vals
+        if t in ("TRUE", "FALSE") or t.startswith('"'):
+            return self.next()
+        return self.node()
+
+    def scene(self):
+        nodes = []
+        while self.peek() is not None:
+            nodes.append(self.node())
+        return nodes
+
+
+def children(n):
+    c = n["f"].get("children", [])
+    return c if isinstance(c, list) else [c]
+
+
+def transform(n):
+    f = n["f"]
+    t = Vector(f.get("translation", [0, 0, 0]))
+    c = Vector(f.get("center", [0, 0, 0]))
+    r = f.get("rotation", [0, 0, 1, 0])
+    s = f.get("scale", [1, 1, 1])
+    return (Matrix.Translation(t) @ Matrix.Translation(c) @ Matrix.Rotation(r[3], 4, Vector(r[:3]))
+            @ Matrix.Diagonal((s[0], s[1], s[2], 1)) @ Matrix.Translation(-c))
+
+
+def read_vrml(path):
+    """[(material key, vertices, faces)] in file units, transforms applied"""
+    shapes = []
+
+    def walk(n, m):
+        if n is None:
+            return
+        if n["type"] == "Transform":
+            m = m @ transform(n)
+        if n["type"] in ("Transform", "Group", "Collision", "Anchor", "Billboard"):
+            for c in children(n):
+                walk(c, m)
+        elif n["type"] == "Shape":
+            g = n["f"].get("geometry")
+            if not g or g["type"] != "IndexedFaceSet" or not g["f"].get("coord"):
+                return
+            mat = ((n["f"].get("appearance") or {"f": {}})["f"].get("material") or {"f": {}})["f"]
+            key = (tuple(round(x, 3) for x in mat.get("diffuseColor", [0.8, 0.8, 0.8])),
+                   round(mat.get("shininess", [0.2])[0], 2), round(mat.get("transparency", [0])[0], 2))
+            p = g["f"]["coord"]["f"]["point"]
+            verts = [tuple(m @ Vector(p[i:i + 3])) for i in range(0, len(p) - 2, 3)]
+            faces, cur = [], []
+            for k in g["f"].get("coordIndex", []):
+                k = int(k)
+                if k < 0:
+                    if len(cur) >= 3:
+                        faces.append(cur)
+                    cur = []
+                else:
+                    cur.append(k)
+            if len(cur) >= 3:
+                faces.append(cur)
+            if faces:
+                shapes.append((key, verts, faces))
+
+    for n in Parser(open(path, encoding="utf-8", errors="replace").read()).scene():
+        walk(n, Matrix.Identity(4))
+    return shapes
+
+
+def bbox(verts):
+    xs, ys, zs = zip(*verts)
+    return min(xs), max(xs), min(ys), max(ys), min(zs), max(zs)
+
+
+def place_board(shapes, outline, z0):
+    """scale and move the VRML so its board lies on the KiCad outline (case
+    coordinates: X = KiCad x, Y = -KiCad y) with its bottom at z0"""
+    boxes = [bbox(v) for k, v, f in shapes]
+    area = [(b[1] - b[0]) * (b[3] - b[2]) for b in boxes]
+    big = max(area)
+    # the board body: the thickest of the widest shapes (not a mask layer)
+    i = max((j for j in range(len(shapes)) if area[j] > 0.98 * big), key=lambda j: boxes[j][5] - boxes[j][4])
+    b = boxes[i]
+    xs = [p[0] for p in outline]
+    ys = [-p[1] for p in outline]
+    s = (max(xs) - min(xs)) / (b[1] - b[0])
+    off = Vector((min(xs) - b[0] * s, min(ys) - b[2] * s, z0 - b[4] * s))
+    return [(k, [tuple((Vector(p) * s + off) * MM) for p in v], f) for k, v, f in shapes]
+
+
+# ---------------------------------------------------------------- materials
+def principled(name, rgb, rough, metal=0.0, alpha=1.0):
+    m = bpy.data.materials.new(name)
+    m.use_nodes = True
+    b = m.node_tree.nodes["Principled BSDF"]
+    b.inputs["Base Color"].default_value = rgb + (1,)
+    b.inputs["Roughness"].default_value = rough
+    b.inputs["Metallic"].default_value = metal
+    if alpha < 1:
+        b.inputs["Alpha"].default_value = alpha
+    return m
+
+
+def vrml_material(key, cache={}):
+    """KiCad/FreeCAD colours to PBR: greys and golds that look like metal
+    become metal, the solder mask glossy, the rest plastic"""
+    if key in cache:
+        return cache[key]
+    rgb, shin, tr = key
+    h, s, v = colorsys.rgb_to_hsv(*rgb)
+    lin = tuple(srgb_to_linear(c) for c in rgb)
+    if s < 0.10 and 0.55 < v < 0.86:
+        m = principled("metal", lin, 0.28, 1.0)                 # tin, nickel shells
+    elif 0.07 < h < 0.17 and s > 0.35 and v > 0.6:
+        m = principled("gold", lin, 0.22, 1.0)                  # gold fingers, pins
+    elif 0.2 < h < 0.5 and s > 0.3:
+        m = principled("mask", lin, 0.25, 0.0)                  # solder mask
+    else:
+        m = principled("plastic", lin, 0.45 if v > 0.3 else 0.35, 0.0, 1 - tr)
+    cache[key] = m
+    return m
+
+
+def case_material(name, rgb, axis):
+    """matte FDM plastic with faint 0.2 mm layer lines along `axis`"""
+    m = principled(name, rgb, 0.55)
+    nt = m.node_tree
+    b = nt.nodes["Principled BSDF"]
+    tc = nt.nodes.new("ShaderNodeTexCoord")
+    wave = nt.nodes.new("ShaderNodeTexWave")
+    wave.wave_type = "BANDS"
+    wave.bands_direction = axis
+    wave.inputs["Scale"].default_value = 2 * math.pi / (20 * 0.0002)    # 0.2 mm period
+    bump = nt.nodes.new("ShaderNodeBump")
+    bump.inputs["Strength"].default_value = 0.12
+    bump.inputs["Distance"].default_value = 0.00004
+    nt.links.new(tc.outputs["Object"], wave.inputs["Vector"])
+    nt.links.new(wave.outputs["Fac"], bump.inputs["Height"])
+    nt.links.new(bump.outputs["Normal"], b.inputs["Normal"])
+    return m
+
+
+# ---------------------------------------------------------------- objects
+def mesh_object(name, verts, faces, mat, smooth=True):
+    me = bpy.data.meshes.new(name)
+    me.from_pydata(verts, [], faces)
+    me.validate()
+    ob = bpy.data.objects.new(name, me)
+    bpy.context.scene.collection.objects.link(ob)
+    ob.data.materials.append(mat)
+    if smooth:
+        smooth_by_angle(ob)
+    return ob
+
+
+def smooth_by_angle(ob, angle=0.6):
+    bpy.ops.object.select_all(action="DESELECT")
+    ob.select_set(True)
+    bpy.context.view_layer.objects.active = ob
+    try:
+        bpy.ops.object.shade_smooth_by_angle(angle=angle)      # Blender 4.1+
+    except Exception:
+        bpy.ops.object.shade_smooth()
+        ob.data.use_auto_smooth = True
+        ob.data.auto_smooth_angle = angle
+
+
+def board_objects(name, shapes):
+    """one object per material, so a big board stays a few objects"""
+    groups = {}
+    for key, v, f in shapes:
+        g = groups.setdefault(key, ([], []))
+        base = len(g[0])
+        g[0].extend(v)
+        g[1].extend([[base + k for k in face] for face in f])
+    obs = []
+    for j, (key, (v, f)) in enumerate(groups.items()):
+        obs.append(mesh_object("%s_%d" % (name, j), v, f, vrml_material(key)))
+    return obs
+
+
+def import_stl(path, mat):
+    before = set(bpy.data.objects)
+    try:
+        bpy.ops.wm.stl_import(filepath=path, global_scale=MM)       # Blender 4.1+
+    except AttributeError:
+        bpy.ops.import_mesh.stl(filepath=path, global_scale=MM)
+    ob = (set(bpy.data.objects) - before).pop()
+    ob.data.materials.clear()
+    ob.data.materials.append(mat)
+    smooth_by_angle(ob, 0.5)
+    return ob
+
+
+def hex_prism(x, y, z0, z1, across_flats, mat, name):
+    r = across_flats / 2 / math.cos(math.pi / 6)
+    ring = [(x + r * math.cos(math.pi / 6 + k * math.pi / 3), y + r * math.sin(math.pi / 6 + k * math.pi / 3)) for k in range(6)]
+    verts = [(px * MM, py * MM, z0 * MM) for px, py in ring] + [(px * MM, py * MM, z1 * MM) for px, py in ring]
+    faces = [list(range(5, -1, -1)), list(range(6, 12))] + [[k, (k + 1) % 6, 6 + (k + 1) % 6, 6 + k] for k in range(6)]
+    return mesh_object(name, verts, faces, mat, smooth=False)
+
+
+# ---------------------------------------------------------------- scene
+bpy.ops.wm.read_factory_settings(use_empty=True)
+scene = bpy.context.scene
+
+print("reading the board VRML")
+board = place_board(read_vrml("images/VERA-MODULE-RBL.wrl"), data["outline"], 0.0)
+board_obs = board_objects("board", board)
+hdmi_obs = []
+hdmi_wrl = os.path.join(HDMI_DIR, "images", "VERA-HDMI-Expansion.wrl")
+if "hdmi" in data and os.path.isfile(hdmi_wrl):
+    print("reading the HDMI VRML")
+    hdmi = place_board(read_vrml(hdmi_wrl), data["hdmi"]["outline"], T + STANDOFF)
+    hdmi_obs = board_objects("hdmi", hdmi)
+else:
+    print("no VERA-HDMI-Expansion VRML in", HDMI_DIR)
+
+case_rgb = hex_rgb(env("RENDER_COLOR", "E3D9C6"))
+mat_z = case_material("case", case_rgb, "Z")         # shells: layers along Z
+mat_y = case_material("panel", case_rgb, "Y")        # panel printed on its flange
+prefix = "enclosure/%s%s" % (NAME, "-backpanel" if VARIANT == "backpanel" else "")
+bottom = import_stl(prefix + "-bottom.stl", mat_z)
+top = import_stl(prefix + "-top.stl", mat_z)
+panel = import_stl(prefix + "-panel.stl", mat_y) if VARIANT == "backpanel" else None
+
+brass = principled("brass", hex_rgb("C9A44C"), 0.3, 1.0)
+for k, h in enumerate(data["holes"]):
+    hex_prism(h[0], -h[1], T, T + STANDOFF, 5.5, brass, "standoff%d" % k)
+
+if POSE == "open":
+    top.location.z += 45 * MM
+    if panel:
+        panel.location.y += 30 * MM
+
+# floor, lights, world
+objs = [o for o in scene.objects if o.type == "MESH"]
+lo = Vector((min(min((o.matrix_world @ Vector(c)).x for c in o.bound_box) for o in objs),
+             min(min((o.matrix_world @ Vector(c)).y for c in o.bound_box) for o in objs),
+             min(min((o.matrix_world @ Vector(c)).z for c in o.bound_box) for o in objs)))
+hi = Vector((max(max((o.matrix_world @ Vector(c)).x for c in o.bound_box) for o in objs),
+             max(max((o.matrix_world @ Vector(c)).y for c in o.bound_box) for o in objs),
+             max(max((o.matrix_world @ Vector(c)).z for c in o.bound_box) for o in objs)))
+centre = (lo + hi) / 2
+radius = (hi - lo).length / 2
+
+bpy.ops.mesh.primitive_plane_add(size=40, location=(centre.x, centre.y, lo.z))
+floor = bpy.context.active_object
+floor.data.materials.append(principled("floor", (0.85, 0.85, 0.86), 0.6))
+
+world = bpy.data.worlds.new("studio")
+scene.world = world
+world.use_nodes = True
+world.node_tree.nodes["Background"].inputs["Color"].default_value = (0.85, 0.86, 0.88, 1)
+world.node_tree.nodes["Background"].inputs["Strength"].default_value = 0.35
+
+
+def area_light(name, power, size, direction, dist):
+    d = Vector(direction).normalized()
+    li = bpy.data.lights.new(name, "AREA")
+    li.energy = power
+    li.size = size
+    ob = bpy.data.objects.new(name, li)
+    scene.collection.objects.link(ob)
+    ob.location = centre + d * dist
+    ob.rotation_euler = (-d).to_track_quat("-Z", "Y").to_euler()
+    return ob
+
+
+area_light("key", 120, 0.6, (0.8, 0.5, 1.0), 0.8)
+area_light("fill", 40, 1.0, (-0.9, 0.7, 0.5), 0.9)
+area_light("rim", 80, 0.5, (-0.3, -1.0, 0.8), 0.8)
+
+# camera: three quarters from the port side, above
+cam_dir = Vector((0.55, 0.65, 0.52)).normalized()
+cam = bpy.data.cameras.new("cam")
+cam.lens = 70
+cam.sensor_width = 36
+cam_ob = bpy.data.objects.new("cam", cam)
+scene.collection.objects.link(cam_ob)
+scene.camera = cam_ob
+w, h = (int(x) for x in env("RENDER_RES", "1920x1080").split("x"))
+fov = 2 * math.atan(cam.sensor_width / 2 / cam.lens) * min(1.0, h / w)
+cam_ob.location = centre + cam_dir * (radius / math.sin(fov / 2) * 1.02)
+cam_ob.rotation_euler = (-cam_dir).to_track_quat("-Z", "Y").to_euler()
+cam.clip_start = 0.01
+cam.clip_end = 20
+cam.dof.use_dof = True
+cam.dof.focus_distance = (cam_ob.location - centre).length
+cam.dof.aperture_fstop = 11
+
+# render
+scene.render.engine = "CYCLES"
+scene.cycles.device = "CPU"
+scene.cycles.samples = int(env("RENDER_SAMPLES", "128"))
+scene.cycles.use_denoising = True
+try:
+    scene.cycles.denoiser = "OPENIMAGEDENOISE"
+except TypeError:
+    pass
+scene.render.resolution_x, scene.render.resolution_y = w, h
+scene.render.resolution_percentage = 100
+try:
+    scene.view_settings.view_transform = "AgX"
+except TypeError:
+    scene.view_settings.view_transform = "Filmic"
+scene.render.image_settings.file_format = "PNG"
+scene.render.filepath = OUT
+print("rendering %dx%d, %d samples, to %s" % (w, h, scene.cycles.samples, OUT))
+bpy.ops.render.render(write_still=True)
+print("written", OUT)
