@@ -31,6 +31,11 @@ on:
       resolution:
         description: "WxH"
         default: 1920x1080
+      floor:
+        description: "table under the enclosure"
+        type: choice
+        options: [oak, pine, grey]
+        default: oak
 
 permissions:
   contents: read
@@ -144,7 +149,8 @@ jobs:
           RENDER_COLOR: ${{ inputs.color }}
           RENDER_SAMPLES: ${{ inputs.samples }}
           RENDER_RES: ${{ inputs.resolution }}
-          RENDER_OUT: ${{ github.workspace }}/render/${{ github.event.repository.name }}-${{ inputs.variant }}-${{ inputs.pose }}.png
+          RENDER_FLOOR: ${{ inputs.floor }}
+          RENDER_OUT: ${{ github.workspace }}/render/${{ github.event.repository.name }}-${{ inputs.variant }}-${{ inputs.pose }}-${{ inputs.floor }}.png
         run: |
           export PATH="/opt/$BLENDER:$PATH"
           blender --version | head -1

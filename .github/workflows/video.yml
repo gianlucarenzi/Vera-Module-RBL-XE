@@ -32,6 +32,11 @@ on:
       color:
         description: "case colour, sRGB hex (E3D9C6 = RAL 1013 Oyster white)"
         default: E3D9C6
+      floor:
+        description: "table under the enclosure"
+        type: choice
+        options: [oak, pine, grey]
+        default: oak
 
 permissions:
   contents: read
@@ -155,6 +160,7 @@ jobs:
           RENDER_HDMI_WRL: ${{ github.workspace }}/vrml/VERA-HDMI-Expansion.wrl
           RENDER_VARIANT: ${{ inputs.variant }}
           RENDER_COLOR: ${{ inputs.color }}
+          RENDER_FLOOR: ${{ inputs.floor }}
           RENDER_SAMPLES: ${{ inputs.samples }}
           RENDER_RES: ${{ inputs.resolution }}
           RENDER_FPS: ${{ inputs.fps }}

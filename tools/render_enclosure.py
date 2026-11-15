@@ -15,6 +15,7 @@ Environment (all optional):
   RENDER_COLOR    case colour, sRGB hex (default E3D9C6, RAL 1013 Oyster white)
   RENDER_SAMPLES  Cycles samples (default 128), RENDER_RES  WxH (1920x1080)
   RENDER_LIGHT    multiplier of the light powers (default 1.0)
+  RENDER_FLOOR    the table: oak (default), pine or grey
   RENDER_MASK     solder mask colour of a module VRML made from the STEP,
                   sRGB hex (default 1F4F36)
   HDMI_DIR        the VERA-HDMI-Expansion (default ../Vera-HDMI-Expansion)
@@ -374,9 +375,50 @@ shells = [o for o in (bottom, top, panel) if o is not None]
 lo, hi = world_box(shells)
 centre = (lo + hi) / 2
 
+def wood_material(kind):
+    """procedural wood for the table: grain along X (rings of a Wave texture
+    bent by noise), two tones, varnish-like roughness, a faint relief"""
+    tones = {"oak": ("6B4426", "A9774A", 0.0035),       # dark, light, grain period (m)
+             "pine": ("A8743F", "DDB47A", 0.0060)}
+    dark, light, period = tones[kind]
+    m = principled("wood_" + kind, hex_rgb(light), 0.42)
+    nt = m.node_tree
+    b = nt.nodes["Principled BSDF"]
+    tc = nt.nodes.new("ShaderNodeTexCoord")
+    mp = nt.nodes.new("ShaderNodeMapping")
+    mp.inputs["Scale"].default_value = (0.15, 1.0, 1.0)  # long grain along X
+    noise = nt.nodes.new("ShaderNodeTexNoise")
+    noise.inputs["Scale"].default_value = 8.0
+    noise.inputs["Detail"].default_value = 6.0
+    wave = nt.nodes.new("ShaderNodeTexWave")
+    wave.wave_type = "BANDS"
+    wave.bands_direction = "Y"
+    wave.inputs["Scale"].default_value = 2 * math.pi / (20 * period)
+    wave.inputs["Distortion"].default_value = 6.0
+    wave.inputs["Detail"].default_value = 3.0
+    ramp = nt.nodes.new("ShaderNodeValToRGB")
+    ramp.color_ramp.elements[0].position = 0.25
+    ramp.color_ramp.elements[0].color = hex_rgb(dark) + (1,)
+    ramp.color_ramp.elements[1].position = 0.85
+    ramp.color_ramp.elements[1].color = hex_rgb(light) + (1,)
+    bump = nt.nodes.new("ShaderNodeBump")
+    bump.inputs["Strength"].default_value = 0.08
+    bump.inputs["Distance"].default_value = 0.0002
+    nt.links.new(tc.outputs["Object"], mp.inputs["Vector"])
+    nt.links.new(mp.outputs["Vector"], noise.inputs["Vector"])
+    nt.links.new(noise.outputs["Color"], wave.inputs["Vector"])
+    nt.links.new(wave.outputs["Fac"], ramp.inputs["Fac"])
+    nt.links.new(ramp.outputs["Color"], b.inputs["Base Color"])
+    nt.links.new(wave.outputs["Fac"], bump.inputs["Height"])
+    nt.links.new(bump.outputs["Normal"], b.inputs["Normal"])
+    return m
+
+
 bpy.ops.mesh.primitive_plane_add(size=40, location=(centre.x, centre.y, lo.z))
 floor = bpy.context.active_object
-floor.data.materials.append(principled("floor", (0.55, 0.55, 0.56), 0.6))
+FLOOR = env("RENDER_FLOOR", "oak")
+floor.data.materials.append(wood_material(FLOOR) if FLOOR in ("oak", "pine")
+                            else principled("floor", (0.55, 0.55, 0.56), 0.6))
 
 world = bpy.data.worlds.new("studio")
 scene.world = world
