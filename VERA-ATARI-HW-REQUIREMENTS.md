@@ -176,7 +176,7 @@ open-drain dà esattamente questo comportamento con POKEY, PIA e gli altri devic
 open-drain, SOT-23-5, LCSC C7829), alimentato a 3,3 V:
 
 ```
- 3V3 ──┬── VCC (pin 5)              C69 100 nF (C840116) fra 3V3 e GND, vicino al chip
+ 3V3 ──┬── VCC (pin 5)              C69 100 nF (C28233) fra 3V3 e GND, vicino al chip
  ~mVIRQ (FPGA U2 pin 32, 3,3 V, attivo basso) ──► A (pin 2)      GND (pin 3), pin 1 NC
  Y (pin 4, open-drain) ──► ~IRQ, ECI1 pin B (5 V)   [nessun pull-up proprio verso 5 V]
 ```
@@ -289,7 +289,7 @@ disaccoppiamento vicino.
 di §2.1 anche l'invertitore 3→4 non serve più. Nello schema ora vanno a GND:
 - `U23` pin 3, 5, 9, 11, 13 (le uscite 4, 6, 8, 10, 12 restano libere);
 - gli ingressi dei canali di riserva dei 74LVC4245, **ciascuno con una propria resistenza da 0 Ω**
-  (CREZ0805, LCSC C328378) verso GND, così ogni canale si può riusare togliendo una resistenza:
+  (CREZ0805, LCSC C17477) verso GND, così ogni canale si può riusare togliendo una resistenza:
   `U16` pin 14 → `R72`, 15 → `R75`, 19 → `R73`, 20 → `R76`,
   21 → `R77` (lato scheda). Le uscite corrispondenti (`U16` pin 3, 4, 5, 9, 10) restano libere.
   `U6` A7/B7 (pin 10/14) non è più di riserva: porta `RST` a GPIO 48 (§3), `R74` è stata tolta.
@@ -309,7 +309,7 @@ brown-out); i livelli devono essere validi alla salita di CHIP_PU e per 3 ms dop
 
 **Rete `~ABUS_OE`.** `~OE` (pin 22) di `U3` (A8–A15) e di `U4` (A0–A7) è pilotato da **GPIO 47**
 (pin 37, prima libero), con pull-up `R7` e `R34` (prima 0 Ω a GND, ora 10 kΩ → 3V3, stessa parte
-LCSC C84376 delle altre pull-up). GPIO 47 dopo il reset è un ingresso senza pull e senza glitch
+LCSC C17414 delle altre pull-up). GPIO 47 dopo il reset è un ingresso senza pull e senza glitch
 (datasheet Table 2-1/2-2): durante il reset dell'ESP32 le pull-up spengono `U3`/`U4`, le uscite verso
 l'ESP32 sono in alta impedenza e i pull-down interni (45 kΩ) danno GPIO 45 = GPIO 46 = LOW a ogni
 reset, qualunque cosa faccia l'Atari. Il firmware (`PIN_ABUS_OE_N` in `main.cpp`) porta GPIO 47 basso
