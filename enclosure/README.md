@@ -25,6 +25,7 @@ Ogni build produce **due varianti**:
 | `VERA-RBL-XE-enclosure-backpanel-light.FCStd` | lo stesso, con le schede semplificate |
 | `VERA-RBL-XE-enclosure-backpanel-assembly.gif` | assemblaggio, con il pannello che entra |
 | `board.json` | dati presi dal PCB (contorno, fori, componenti) |
+| `VERA-RBL-XE-module.FCStd` | il modulo come un'unica App::Part: scheda, HDMI, distanziali, gusci e pannello (variante `-backpanel`); origine sulla punta del pettine |
 
 ## Generarlo
 
@@ -73,6 +74,34 @@ Macro… → seleziona il file, oppure dalla console Python). Anima il documento
 **Documenti `-light`:** gusci e pannello sono quelli veri; le schede sono
 semplificate (contorno del PCB e un parallelepipedo per ogni componente). Pesano
 circa 0,5 MB contro 2,6 MB e si aprono e ruotano subito anche con 4 GB di RAM.
+
+## Ingombri nel 130XE (FreeCAD)
+
+```bash
+tools/fc_assembly.sh
+```
+
+Rifà `VERA-RBL-XE-module.FCStd` e `VERA-RBL-XE-in-Atari130XE.FCStd` dal guscio
+attuale (`VERA-RBL-XE-enclosure-backpanel.FCStd`): dopo aver cambiato
+l'involucro, prima `tools/make_enclosure.sh` (o il workflow Enclosure), poi questo.
+Ci vuole meno di un minuto.
+
+- **130XE**: coperchi e tastiera della scena del teaser (`tools/fc_context.py` li
+  esporta da Blender senza renderizzare). I coperchi vengono da un repository
+  privato (`DESK_ASSETS`, predefinito `~/Progetti-CVS/3DRepo/Atari/XE`), quindi
+  `VERA-RBL-XE-in-Atari130XE.FCStd` resta fuori da git. Coordinate del computer:
+  retro a y 0, fronte verso +Y, tavolo a z 0.
+- **Scheda madre**: `images/Atari65XEC070067RevB.wrl` (65XE, C070067 rev. B),
+  convertito in un mesh per colore da `tools/wrl2stl.py`. Sette fori sulle
+  torrette del coperchio inferiore (sommità a z 7,5), i due da 4 mm sui perni di
+  centraggio. Si usa solo qui, non nei render.
+- **Modulo**: i due pettini nei connettori CART ed ECI (ad angolo retto,
+  feritoie verso il retro, a 50,8 mm l'uno dall'altro come i pettini del
+  modulo), il piano medio della scheda su quello delle feritoie, le punte a 0,5 mm
+  dal fondo. Nel teaser la posa è un'altra (`tools/desk_scene.py`).
+
+Servono Blender 4.2 (`BLENDER=...`, predefinito `blender-4.2`), FreeCAD,
+`xvfb-run`, python3 con numpy e Pillow, i file LFS (`git lfs pull`).
 
 ## Cosa serve
 
