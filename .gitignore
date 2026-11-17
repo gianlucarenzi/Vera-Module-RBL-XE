@@ -43,4 +43,4 @@ _autosave-*
 __pycache__/
 # FreeCAD backups (made when a document is saved again)
 *.FCBak
-enclosure/VERA-RBL-XE-in-Atari130XE.FCStd
+enclosure/VERA-RBL-XE-in-Atari130XE*.FCStd
